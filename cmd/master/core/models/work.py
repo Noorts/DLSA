@@ -1,14 +1,17 @@
 from typing import Literal, List, Tuple, Dict
+from uuid import UUID
 
 from pydantic import BaseModel
 
 from .job import Sequence, SequenceId, TargetQueryCombination, Alignment
 
-WorkerStatus = Literal["READY", "WORKING", "GONE"]
+WorkerStatus = Literal["IDLE", "WORKING", "DEAD"]
+
+WorkerIdType = UUID
 
 
 class WorkerId(BaseModel):
-    id: str
+    id: WorkerIdType
 
 
 class WorkerResources(BaseModel):

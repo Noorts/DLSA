@@ -1,8 +1,10 @@
 from fastapi import APIRouter
 
 from ..models import WorkerResources, WorkerId, WorkPackage, WorkStatus, WorkResult
+from ..worker.worker_collector import WorkerCollector
 
 worker_router = APIRouter()
+_worker_collector = WorkerCollector()
 
 
 # 1. worker registers itself (Provides available resources. Is assigned a worker_id.)
@@ -18,7 +20,13 @@ worker_router = APIRouter()
 
 @worker_router.post("/worker/register")
 def register_worker(resources: WorkerResources) -> WorkerId:
-    pass
+    return WorkerId(id=_worker_collector.register(resources))
+
+
+# called in an interval no matter the state
+@worker_router.post("/worker/pulse")
+def worker_pulse(worker_id: WorkerId) -> None:
+    _worker_collector.add_life_pulse(worker_id.id)
 
 
 # request work returns a piece of work (for worker, called in an interval while not working)
@@ -37,10 +45,4 @@ def update_work_status(work_status: WorkStatus) -> None:
 # to allow incremental result sharing
 @worker_router.post("/work/{work_id}/result")
 def work_result(result: WorkResult) -> None:
-    pass
-
-
-# called in an interval no matter the state
-@worker_router.post("/worker/pulse")
-def worker_pulse(worker_id: WorkerId) -> WorkerId:
     pass
