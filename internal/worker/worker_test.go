@@ -15,7 +15,7 @@ func TestGetSpecs(t *testing.T) {
 	}
 }
 
-func TestInitWorker(t *testing.T) (*Worker, error) {
+func InitTestWorker(t *testing.T) (*Worker, error) {
 	client := InitRestClient(baseURL)
 	worker, err := InitWorker(client)
 	if err != nil {
@@ -27,7 +27,7 @@ func TestInitWorker(t *testing.T) (*Worker, error) {
 }
 
 func TestRegisterWorker(t *testing.T) {
-	worker, err := TestInitWorker(t)
+	worker, err := InitTestWorker(t)
 	if err != nil {
 		t.Errorf("Error registering worker: %s", err)
 	} else {
@@ -42,7 +42,7 @@ func TestRegisterWorker(t *testing.T) {
 }
 
 func TestGetWork(t *testing.T) {
-	worker, err := TestInitWorker(t)
+	worker, err := InitTestWorker(t)
 	if err != nil {
 		t.Errorf("Error getting work: %s", err)
 	} else {
