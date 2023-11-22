@@ -13,14 +13,14 @@ func main() {
 	client := worker.InitRestClient(baseURL)
 
 	// Create a new worker instance with the machine specs, the worker ID is null
-	worker, err := worker.InitWorker(client)
+	w, err := worker.InitWorker(client)
 	if err != nil {
 		log.Fatalf("Error creating worker: %v", err)
 	}
 
 	//Loop to register the worker
 	for {
-		_, err := worker.RegisterWorker()
+		_, err := w.RegisterWorker()
 		if err != nil {
 			log.Printf("Error registering worker: %v", err)
 			//The worker waits for 20 seconds before trying to register again
@@ -30,7 +30,7 @@ func main() {
 		//if we registered successfully, we request work
 		//TODO: Have some kind of stopping criteria, max tries or something
 		for {
-			work, err := worker.GetWork()
+			work, err := w.GetWork()
 			//TODO: Should there be a response from the server that says I will never have work for you?
 			if err != nil {
 				log.Printf("Error fetching task: %v", err)
@@ -38,14 +38,12 @@ func main() {
 				continue
 			}
 
-			_, err = worker.ExecuteWork(work)
+			_, err = w.ExecuteWork(work)
 
 			if err != nil {
 				log.Printf("Error executing task: %v", err)
 				continue
 			}
-			//TODO: Heartbeat functionality
-
 		}
 	}
 }
