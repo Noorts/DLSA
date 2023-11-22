@@ -15,7 +15,7 @@ func TestGetSpecs(t *testing.T) {
 	}
 }
 
-func TestInitWorker(t *testing.T) (*WorkerImpl, error) {
+func TestInitWorker(t *testing.T) (*Worker, error) {
 	client := InitRestClient(baseURL)
 	worker, err := InitWorker(client)
 	if err != nil {
