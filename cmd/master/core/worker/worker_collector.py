@@ -16,7 +16,7 @@ class WorkerNotFoundException(HTTPException):
 
 
 class WorkerCollector(Cleaner, Singleton):
-    _CLEANING_INTERVAL = 5
+    _CLEANING_INTERVAL = 5 * 1000
     _WORKER_TIMEOUT = 10 * 1000
 
     def __init__(self):

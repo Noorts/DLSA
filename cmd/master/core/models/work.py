@@ -8,7 +8,7 @@ from .job import Sequence, SequenceId, TargetQueryCombination, Alignment
 WorkerStatus = Literal["IDLE", "WORKING", "DEAD"]
 
 WorkerIdType = UUID
-
+WorkPackageIdType = UUID
 
 class WorkerId(BaseModel):
     id: WorkerIdType
@@ -22,7 +22,7 @@ class WorkerResources(BaseModel):
 
 class WorkPackage(BaseModel):
     # work package id
-    id: str
+    id: WorkPackageIdType
     targets: Dict[SequenceId, Sequence]
     queries: Dict[SequenceId, Sequence]
 

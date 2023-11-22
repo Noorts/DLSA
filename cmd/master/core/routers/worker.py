@@ -1,10 +1,12 @@
 from fastapi import APIRouter
 
 from ..models import WorkerResources, WorkerId, WorkPackage, WorkStatus, WorkResult
+from ..work.scheduler.work_scheduler import WorkScheduler
 from ..worker.worker_collector import WorkerCollector
 
 worker_router = APIRouter()
 _worker_collector = WorkerCollector()
+_work_scheduler = WorkScheduler.create()
 
 
 # 1. worker registers itself (Provides available resources. Is assigned a worker_id.)
@@ -32,7 +34,8 @@ def worker_pulse(worker_id: WorkerId) -> None:
 # request work returns a piece of work (for worker, called in an interval while not working)
 @worker_router.post("/work/")
 def get_work(worker_id: WorkerId) -> WorkPackage | None:
-    pass
+    worker = _worker_collector.get_worker_by_id(worker_id.id)
+    return _work_scheduler.schedule_work_for(worker)
 
 
 # send the status of a current work (how much is done, ...), called in an interval while working
