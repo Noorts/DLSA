@@ -172,14 +172,7 @@ func (c *RestClient) SendHeartbeat(workerId int) error {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", c.baseURL+"/worker/pulse", bytes.NewBuffer(jsonData))
-	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
+	resp, err := c.client.Post(c.baseURL+"/worker/pulse", "application/json", bytes.NewReader(jsonData))
 	resp.Body.Close()
 	return err
 }
