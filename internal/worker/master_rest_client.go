@@ -46,6 +46,10 @@ type WorkResult struct {
 	Alignments []AlignmentDetails `json:"alignments"`
 }
 
+type Heartbeat struct {
+	WorkerId int `json:"workerId"`
+}
+
 type AlignmentDetails struct {
 	Combination TargetQueryCombination `json:"combination"`
 	Alignment   Alignment              `json:"alignment"`
@@ -159,4 +163,23 @@ func (c *RestClient) SendResult(result WorkResult) error {
 	}
 
 	return nil
+}
+
+func (c *RestClient) SendHeartbeat(workerId int) error {
+	heartbeat := Heartbeat{WorkerId: workerId}
+	jsonData, err := json.Marshal(heartbeat)
+	if err != nil {
+		return err
+	}
+
+	req, err := http.NewRequest("POST", c.baseURL+"/worker/pulse", bytes.NewBuffer(jsonData))
+	if err != nil {
+		return err
+	}
+
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := c.client.Do(req)
+	resp.Body.Close()
+	return err
 }

@@ -3,6 +3,7 @@ package worker
 import (
 	"dlsa/internal/smithwaterman"
 	"log"
+	"time"
 )
 
 // Implementation of the worker interface
@@ -15,7 +16,16 @@ type Worker struct {
 	workerId *int          // Unique ID of the worker
 	// workPackage *WorkPackage  // Work package of the worker, can be null
 	client *RestClient // Client to communicate with the master
+	status Status
 }
+
+type Status byte
+
+const (
+	Waiting Status = 0
+	Working Status = 1
+	Dead    Status = 2
+)
 
 // TODO: Decide what happens if the specs arent't returned return nil for now
 func InitWorker(client *RestClient) (*Worker, error) {
@@ -26,6 +36,7 @@ func InitWorker(client *RestClient) (*Worker, error) {
 	return &Worker{
 		specs:  machineSpecs,
 		client: client,
+		status: Waiting,
 	}, nil
 }
 
@@ -38,6 +49,7 @@ func (w *Worker) RegisterWorker() (*int, error) {
 		return nil, err
 	}
 	w.workerId = workerId
+	go w.heartbeatRoutine()
 	return workerId, nil
 }
 
@@ -58,7 +70,8 @@ func (w *Worker) GetWork() (*WorkPackage, error) {
 // For now we just execute the work sequentially and send the result back for every seq,tar pair
 // TODO: This seems kinda hacky for now idk should think about this
 // TODO: Parallelization work
-func (w *Worker) ExecuteWork(work *WorkPackage) []WorkResult {
+func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
+	w.status = Working
 	results := make([]WorkResult, len(work.Sequences))
 	for ind, comb := range work.Sequences {
 		targetSeq, ok1 := work.Targets[comb.Target]
@@ -96,6 +109,15 @@ func (w *Worker) ExecuteWork(work *WorkPackage) []WorkResult {
 		}
 		results[ind] = result
 	}
-	return results
+	w.status = Waiting
+	return results, nil
+}
 
+func (w *Worker) heartbeatRoutine() {
+	for w.status != Dead {
+		time.Sleep(30 * time.Second)
+		for w.client.SendHeartbeat(*w.workerId) != nil {
+			time.Sleep(2 * time.Second)
+		}
+	}
 }

@@ -38,11 +38,14 @@ func main() {
 				continue
 			}
 
-			if err := worker.ExecuteWork(work); err != nil {
+			_, err = worker.ExecuteWork(work)
+
+			if err != nil {
 				log.Printf("Error executing task: %v", err)
 				continue
 			}
 			//TODO: Heartbeat functionality
+
 		}
 	}
 }
