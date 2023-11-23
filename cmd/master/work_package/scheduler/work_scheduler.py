@@ -1,31 +1,12 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
 
 from settings import SETTINGS
-from ...api_models import WorkPackage
+from .scheduled_work_package import ScheduledWorkPackage
 from ...job_queue.job_queue import JobQueue
 from ...worker.worker import Worker
 from ...worker.worker_collector import WorkerCollector
-
-
-@dataclass
-class ScheduledWorkPackage:
-    package: WorkPackage
-    worker: Worker
-
-    @property
-    def percentage_done(self) -> float:
-        # Get the length of the sequences that should be done in the work package
-        sequence_length = len(self.package.sequences)
-        completed_sequences = 0
-
-        for sequence in self.package.sequences:
-            if sequence in self.package.job.completed_sequences:
-                completed_sequences += 1
-
-        return completed_sequences / sequence_length
 
 
 class WorkPackageScheduler(ABC):

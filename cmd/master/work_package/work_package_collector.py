@@ -3,12 +3,10 @@ from uuid import UUID
 from fastapi import HTTPException
 
 from .scheduler.work_scheduler import WorkPackageScheduler, ScheduledWorkPackage
-from ..api_models import WorkPackage
 from ..api_models import WorkResult
 from ..settings import SETTINGS
 from ..utils.cleaner import Cleaner
 from ..utils.singleton import Singleton
-from ..worker.worker import Worker
 from ..worker.worker_collector import WorkerCollector
 
 
@@ -23,14 +21,6 @@ class WorkPackageCollector(Cleaner, Singleton):
         self._work_scheduler = WorkPackageScheduler.create()
         self._work_packages: list[ScheduledWorkPackage] = []
         super().__init__(interval=SETTINGS.work_package_cleaning_interval)
-
-    def get_work(self, worker: Worker) -> WorkPackage | None:
-        work = self._work_scheduler.schedule_work_for(worker)
-        if not work:
-            return None
-
-        self._work_packages += work
-        return work.package
 
     def execute_clean(self) -> None:
         for package in self._work_packages:
@@ -47,7 +37,6 @@ class WorkPackageCollector(Cleaner, Singleton):
 
     def update_work_result(self, work_id: UUID, result: WorkResult) -> None:
         work_package = self.get_package_by_id(work_id)
-        # TODO Job does not exist anymore
         completed_sequences = work_package.package.job.completed_sequences
 
         for [target_query_combination, alignment] in result.alignments:

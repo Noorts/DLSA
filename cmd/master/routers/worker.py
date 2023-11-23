@@ -45,7 +45,15 @@ def worker_pulse(worker_id: WorkerId) -> None:
 @worker_router.post("/work/")
 def get_work_for_worker(worker_id: WorkerId) -> WorkPackage | None:
     worker = _worker_collector.get_worker_by_id(worker_id.id)
-    return _work_scheduler.schedule_work_for(worker)
+    scheduled_package = _work_scheduler.schedule_work_for(worker)
+    if not scheduled_package:
+        return None
+
+    return WorkPackage(
+        id=scheduled_package.package.id,
+        job_id=scheduled_package.package.job.id,
+        sequences=scheduled_package.package.sequences,
+    )
 
 
 # if a worker is done, it sends its results using this endpoint, can be multiple times for one work_id

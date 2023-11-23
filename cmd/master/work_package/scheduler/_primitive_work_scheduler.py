@@ -1,7 +1,7 @@
 from uuid import uuid4, UUID
 
-from .work_scheduler import WorkPackageScheduler, ScheduledWorkPackage
-from ...api_models import WorkPackage
+from .scheduled_work_package import ScheduledWorkPackage, InternalWorkPackage
+from .work_scheduler import WorkPackageScheduler
 
 
 class PrimitiveWorkPackageScheduler(WorkPackageScheduler):
@@ -10,7 +10,7 @@ class PrimitiveWorkPackageScheduler(WorkPackageScheduler):
         if not job:
             return None
 
-        package = WorkPackage(
+        package = InternalWorkPackage(
             id=uuid4(),
             job=job,
             sequences=job.missing_sequences(),
