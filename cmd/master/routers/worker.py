@@ -1,6 +1,8 @@
+from uuid import UUID
+
 from fastapi import APIRouter
 
-from ..api_models import WorkerResources, WorkerId, WorkPackage, WorkStatus, WorkResult
+from ..api_models import WorkerResources, WorkerId, WorkPackage, WorkResult
 from ..job_queue.job_queue import JobQueue
 from ..work_package.scheduler.work_scheduler import WorkPackageScheduler
 from ..work_package.work_package_collector import WorkPackageCollector
@@ -46,14 +48,8 @@ def get_work_for_worker(worker_id: WorkerId) -> WorkPackage | None:
     return _work_scheduler.schedule_work_for(worker)
 
 
-# send the status of a current work (how much is done, ...), called in an interval while working
-@worker_router.post("/work/{work_id}/status")
-def update_work_status(work_status: WorkStatus) -> None:
-    pass
-
-
 # if a worker is done, it sends its results using this endpoint, can be multiple times for one work_id
 # to allow incremental result sharing
 @worker_router.post("/work/{work_id}/result")
-def work_result(result: WorkResult) -> None:
-    pass
+def work_result(result: WorkResult, work_id: UUID) -> None:
+    _work_collector.update_work_result(work_id, result)

@@ -27,6 +27,7 @@ class JobStatus(BaseModel):
     progress: Annotated[float, Field(strict=True, gt=0, lt=1)]
 
 
+# noinspection SpellCheckingInspection
 class Alignment(BaseModel):
     # ABDAABDABDAC
     alignment: str

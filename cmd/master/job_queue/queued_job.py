@@ -1,21 +1,14 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from ..api_models import JobRequest, TargetQueryCombination, JobState
-
-
-@dataclass
-class CompletedSequence:
-    target: TargetQueryCombination
-    alignment: str
-    length: int
-    score: int
+from ..api_models import JobRequest, TargetQueryCombination, JobState, Alignment
 
 
 @dataclass
 class QueuedJob:
     request: JobRequest
-    completed_sequences: dict[TargetQueryCombination, CompletedSequence]
+    completed_sequences: dict[TargetQueryCombination, Alignment]
+    sequences_in_progress: list[TargetQueryCombination]
     id: UUID
 
     @property

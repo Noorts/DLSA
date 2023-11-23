@@ -19,7 +19,7 @@ class JobQueue(Singleton):
 
     def add_job_to_queue(self, request: JobRequest) -> QueuedJob:
         job_id = uuid4()
-        self._jobs[job_id] = QueuedJob(request, {}, job_id)
+        self._jobs[job_id] = QueuedJob(request=request, completed_sequences={}, sequences_in_progress=[], id=job_id)
         return self._jobs[job_id]
 
     def unfinished_jobs(self) -> list[QueuedJob]:

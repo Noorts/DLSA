@@ -11,8 +11,8 @@ from ..utils.time import current_ms
 
 
 class WorkerNotFoundException(HTTPException):
-    def __init__(self):
-        super().__init__(status_code=404, detail="Worker not found")
+    def __init__(self, worker_id: UUID):
+        super().__init__(status_code=404, detail=f"Worker with id {worker_id} not found")
 
 
 class WorkerCollector(Cleaner, Singleton):
@@ -34,11 +34,11 @@ class WorkerCollector(Cleaner, Singleton):
     def get_worker_by_id(self, worker_id: UUID) -> Worker:
         worker = self._workers.get(worker_id)
         if not worker:
-            raise WorkerNotFoundException()
+            raise WorkerNotFoundException(worker_id)
 
         return worker
 
-    def add_life_pulse(self, worker_id: UUID):
+    def add_life_pulse(self, worker_id: UUID) -> None:
         worker = self.get_worker_by_id(worker_id)
         worker.last_seen_alive = current_ms()
 
@@ -53,7 +53,7 @@ class WorkerCollector(Cleaner, Singleton):
                 return False
         return worker.last_seen_alive > current_ms() - SETTINGS.worker_timout and worker.status != "DEAD"
 
-    def execute_clean(self):
+    def execute_clean(self) -> None:
         for worker in self._workers.values():
             if not self.is_alive(worker):
                 self._workers[worker.worker_id].status = "DEAD"

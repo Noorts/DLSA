@@ -9,11 +9,11 @@ class Cleaner(ABC):
         self._interval = interval // 1000
         self._cleaning_thread.start()
 
-    def _cleaning_loop(self):
+    def _cleaning_loop(self) -> None:
         while True:
             self.execute_clean()
             time.sleep(self._interval)
 
     @abstractmethod
-    def execute_clean(self):
+    def execute_clean(self) -> None:
         """This method will be called every self._interval seconds"""

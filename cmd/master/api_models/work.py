@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from .job import Sequence, SequenceId, TargetQueryCombination, Alignment
+from .job import TargetQueryCombination, Alignment
 
 WorkerStatus = Literal["IDLE", "WORKING", "DEAD"]
 
@@ -21,15 +21,11 @@ class WorkerResources(BaseModel):
 class WorkPackage(BaseModel):
     # work package id
     id: UUID
-    targets: dict[SequenceId, Sequence]
-    queries: dict[SequenceId, Sequence]
-
+    job_id: UUID
     sequences: list[TargetQueryCombination]
 
 
 class WorkStatus(BaseModel):
-    # work package id
-    id: UUID
     percentage_done: float
 
 
