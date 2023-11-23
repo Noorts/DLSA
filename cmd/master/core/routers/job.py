@@ -1,3 +1,5 @@
+from uuid import UUID
+
 from fastapi import APIRouter
 
 from ..models import JobRequest, JobId, JobStatus, JobResult
@@ -16,13 +18,13 @@ def submit_job(body: JobRequest) -> JobId:
 
 # returns the state of a job (for a client)
 @job_router.get("/job/{job_id}/status")
-def get_job(job_id: str) -> JobStatus:
+def get_job(job_id: UUID) -> JobStatus:
     job = _job_queue.get_job_by_id(job_id)
     return JobStatus(id=job.request.id, state=job.state, progress=job.completed_percentage())
 
 
 # returns the state of a job (for a client)
 @job_router.get("/job/{job_id}/result")
-def get_job(job_id: str) -> JobResult:
+def get_job(job_id: UUID) -> JobResult:
     job = _job_queue.get_job_by_id(job_id)
     return JobResult(alignments=[*job.completed_sequences.items()])

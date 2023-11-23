@@ -1,9 +1,10 @@
 from typing import Literal
+from uuid import UUID
 
 from pydantic import BaseModel
 
 Sequence = str
-SequenceId = str
+SequenceId = UUID
 JobState = Literal["IN_QUEUE", "IN_PROGRESS", "DONE"]
 TargetQueryCombination = tuple[SequenceId, SequenceId]
 
@@ -16,11 +17,11 @@ class JobRequest(BaseModel):
 
 
 class JobId(BaseModel):
-    id: str
+    id: UUID
 
 
 class JobStatus(BaseModel):
-    id: str
+    id: UUID
     state: JobState
     # the progress as percentage [0-1]
     progress: float
