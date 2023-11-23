@@ -1,7 +1,7 @@
 from uuid import uuid4, UUID
 
 from .work_scheduler import WorkScheduler, ScheduledWorkPackage, WorkPackageStatus
-from ...models import  WorkPackage
+from ...api_models import  WorkPackage
 from ...utils.singleton import Singleton
 
 

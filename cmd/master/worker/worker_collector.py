@@ -2,7 +2,7 @@ from uuid import uuid4, UUID
 
 from fastapi import HTTPException
 
-from ..models import WorkerResources
+from ..api_models import WorkerResources
 from .worker import Worker
 from ..utils.cleaner import Cleaner
 from ..utils.singleton import Singleton

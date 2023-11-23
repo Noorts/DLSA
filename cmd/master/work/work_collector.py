@@ -1,5 +1,5 @@
 from .scheduler.work_scheduler import WorkScheduler
-from ..models import WorkPackage
+from ..api_models import WorkPackage
 from ..utils.cleaner import Cleaner
 from ..utils.singleton import Singleton
 from ..worker.worker import Worker

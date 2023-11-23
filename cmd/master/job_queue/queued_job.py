@@ -1,6 +1,6 @@
 from dataclasses import dataclass
 
-from ..models import JobRequest, TargetQueryCombination, JobState
+from ..api_models import JobRequest, TargetQueryCombination, JobState
 
 
 @dataclass
@@ -15,6 +15,10 @@ class CompletedSequence:
 class QueuedJob:
     request: JobRequest
     completed_sequences: dict[TargetQueryCombination, CompletedSequence]
+
+    @property
+    def id(self) -> str:
+        return self.request.id
 
     @property
     def state(self) -> JobState:

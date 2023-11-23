@@ -1,27 +1,34 @@
 from fastapi import APIRouter
 
-from ..models import WorkerResources, WorkerId, WorkPackage, WorkStatus, WorkResult
+from ..api_models import WorkerResources, WorkerId, WorkPackage, WorkStatus, WorkResult
+from ..job_queue.job_queue import JobQueue
 from ..work.scheduler.work_scheduler import WorkScheduler
+from ..work.work_collector import WorkCollector
 from ..worker.worker_collector import WorkerCollector
 
-worker_router = APIRouter()
+worker_router = APIRouter(tags=["worker"])
+
 _worker_collector = WorkerCollector()
 _work_scheduler = WorkScheduler.create()
+_work_collector = WorkCollector()
+_job_queue = JobQueue()
 
 
-# 1. worker registers itself (Provides available resources. Is assigned a worker_id.)
-# 2. worker requests work (using worker_id) -> no work
-# 3. sends life pulse, so the master knows that it is still available
-# 4. worker requests work (using worker_id) -> work available
-# 5. worker sends work status to master
-# 6. sends life pulse, so the master knows that it is still available
-# 7. worker sends work-result to master
-# 8. worker exits
-# 9. master notices that the worker is gone (no update for n seconds)...
-
-
+# register a worker, returns a worker id (for worker)
 @worker_router.post("/worker/register")
 def register_worker(resources: WorkerResources) -> WorkerId:
+    """
+    ## Worker registration process
+    1. worker registers itself (Provides available resources. Is assigned a worker_id.)
+    2. worker requests work (using worker_id) -> no work
+    3. sends life pulse, so the master knows that it is still available
+    4. worker requests work (using worker_id) -> work available
+    5. worker sends work status to master
+    6. sends life pulse, so the master knows that it is still available
+    7. worker sends work-result to master
+    8. worker exits
+    9. master notices that the worker is gone (no update for n seconds)...
+    """
     return WorkerId(id=_worker_collector.register(resources))
 
 

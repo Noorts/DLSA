@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Literal
 from uuid import UUID
 
-from ...models import WorkPackage
+from ...api_models import WorkPackage
 from ...job_queue.job_queue import JobQueue
 from ...worker.worker import Worker
 from ...worker.worker_collector import WorkerCollector
@@ -45,15 +45,14 @@ class WorkScheduler(ABC):
     def create(scheduler_type: SchedulerType = "primitive") -> WorkScheduler:
         from ._primitive_work_scheduler import PrimitiveWorkScheduler
 
-        worker_collector = WorkerCollector()
-        job_queue = JobQueue()
-
         # Return the already created scheduler if it exists
         if WorkScheduler._created_scheduler:
             if WorkScheduler._created_scheduler_type != scheduler_type:
                 raise RuntimeError("Cannot create multiple different work schedulers")
             return WorkScheduler._created_scheduler
 
+        worker_collector = WorkerCollector()
+        job_queue = JobQueue()
         scheduler: WorkScheduler
         if scheduler_type == "primitive":
             WorkScheduler._created_scheduler = PrimitiveWorkScheduler(worker_collector, job_queue)
