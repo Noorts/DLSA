@@ -1,4 +1,4 @@
-from typing import Literal, List, Tuple, Dict
+from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
@@ -9,6 +9,7 @@ WorkerStatus = Literal["IDLE", "WORKING", "DEAD"]
 
 WorkerIdType = UUID
 WorkPackageIdType = UUID
+
 
 class WorkerId(BaseModel):
     id: WorkerIdType
@@ -23,10 +24,10 @@ class WorkerResources(BaseModel):
 class WorkPackage(BaseModel):
     # work package id
     id: WorkPackageIdType
-    targets: Dict[SequenceId, Sequence]
-    queries: Dict[SequenceId, Sequence]
+    targets: dict[SequenceId, Sequence]
+    queries: dict[SequenceId, Sequence]
 
-    sequences: List[TargetQueryCombination]
+    sequences: list[TargetQueryCombination]
 
 
 class WorkStatus(BaseModel):
@@ -37,4 +38,4 @@ class WorkStatus(BaseModel):
 
 class WorkResult(BaseModel):
     work_id: str
-    alignments: List[Tuple[TargetQueryCombination, Alignment]]
+    alignments: list[tuple[TargetQueryCombination, Alignment]]

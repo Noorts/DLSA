@@ -1,5 +1,3 @@
-from typing import Dict
-
 from .scheduler.work_scheduler import WorkScheduler
 from ..models import WorkPackage
 from ..utils.cleaner import Cleaner
@@ -14,7 +12,7 @@ class WorkCollector(Cleaner, Singleton):
     def __init__(self):
         self._worker_collector = WorkerCollector()
         self._work_scheduler = WorkScheduler.create()
-        self._work_packages: Dict[Worker, WorkPackage] = {}
+        self._work_packages: dict[Worker, WorkPackage] = {}
         super().__init__(interval=self._CLEANING_INTERVAL)
 
     def get_work(self, worker: Worker) -> WorkPackage | None:

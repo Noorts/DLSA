@@ -1,4 +1,3 @@
-from typing import Dict, List
 from uuid import uuid4, UUID
 
 from fastapi import HTTPException
@@ -20,11 +19,11 @@ class WorkerCollector(Cleaner, Singleton):
     _WORKER_TIMEOUT = 10 * 1000
 
     def __init__(self):
-        self._workers: Dict[WorkerIdType, Worker] = {}
+        self._workers: dict[WorkerIdType, Worker] = {}
         super().__init__(interval=self._CLEANING_INTERVAL)
 
     @property
-    def workers(self) -> List[Worker]:
+    def workers(self) -> list[Worker]:
         return list(self._workers.values())
 
     def register(self, resources: WorkerResources) -> UUID:

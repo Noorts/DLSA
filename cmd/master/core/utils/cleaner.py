@@ -16,4 +16,4 @@ class Cleaner(ABC):
 
     @abstractmethod
     def execute_clean(self):
-        pass
+        """This method will be called every self._interval seconds"""

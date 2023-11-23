@@ -1,13 +1,18 @@
-from typing import Dict
+from fastapi import HTTPException
 
 from ..models import JobRequest
 from ..queue.queued_job import QueuedJob
 from ..utils.singleton import Singleton
 
 
+class JobNotFound(HTTPException):
+    def __init__(self, job_id: str):
+        super().__init__(status_code=404, detail=f"Job with id {job_id} not found")
+
+
 class JobQueue(Singleton):
     def __init__(self):
-        self._jobs: Dict[str, QueuedJob] = {}
+        self._jobs: dict[str, QueuedJob] = {}
 
     def queue_job(self, job: JobRequest):
         self._jobs[job.id] = QueuedJob(job, {})
@@ -16,4 +21,7 @@ class JobQueue(Singleton):
         return [job for job in self._jobs.values() if not job.done()]
 
     def get_job_by_id(self, job_id: str) -> QueuedJob:
-        return self._jobs[job_id]
+        job = self._jobs.get(job_id)
+        if not job:
+            raise JobNotFound(job_id)
+        return job

@@ -1,18 +1,18 @@
-from typing import Dict, List, Tuple, Literal
+from typing import Literal
 
 from pydantic import BaseModel
 
 Sequence = str
 SequenceId = str
 JobState = Literal["IN_QUEUE", "IN_PROGRESS", "DONE"]
-TargetQueryCombination = Tuple[SequenceId, SequenceId]
+TargetQueryCombination = tuple[SequenceId, SequenceId]
 
 
 class JobRequest(BaseModel):
-    targets: Dict[SequenceId, Sequence]
-    queries: Dict[SequenceId, Sequence]
+    targets: dict[SequenceId, Sequence]
+    queries: dict[SequenceId, Sequence]
 
-    sequences: List[TargetQueryCombination]
+    sequences: list[TargetQueryCombination]
 
 
 class JobId(BaseModel):
@@ -35,4 +35,4 @@ class Alignment(BaseModel):
 
 # the result returned to the client, ordered by length
 class JobResult(BaseModel):
-    alignments: List[Alignment]
+    alignments: list[Alignment]
