@@ -3,13 +3,13 @@ from uuid import UUID
 from fastapi import APIRouter
 
 from ..models import JobRequest, JobId, JobStatus, JobResult
-from ..queue.job_queue import JobQueue
+from ..job_queue.job_queue import JobQueue
 
 job_router = APIRouter()
 _job_queue = JobQueue()
 
 
-# submit a job to the job queue, returns a job id (for client)
+# submit a job to the job job_queue, returns a job id (for client)
 @job_router.post("/job/format/internal")
 def submit_job(body: JobRequest) -> JobId:
     job = _job_queue.queue_job(body)

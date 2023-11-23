@@ -26,5 +26,5 @@ class WorkCollector(Cleaner, Singleton):
     def execute_clean(self):
         for worker in self._work_packages.keys():
             if worker.status == "DEAD":
-                # todo mark all work as failed where the worker is not alive anymore -> return it into the queue
+                # todo mark all work as failed where the worker is not alive anymore -> return it into the job_queue
                 pass

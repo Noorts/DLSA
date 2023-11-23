@@ -3,7 +3,7 @@ from uuid import UUID
 from fastapi import HTTPException
 
 from ..models import JobRequest
-from ..queue.queued_job import QueuedJob
+from ..job_queue.queued_job import QueuedJob
 from ..utils.singleton import Singleton
 
 
@@ -13,7 +13,9 @@ class JobNotFound(HTTPException):
 
 
 class JobQueue(Singleton):
+
     def __init__(self):
+        super().__init__()
         self._jobs: dict[UUID, QueuedJob] = {}
 
     def queue_job(self, job: JobRequest):

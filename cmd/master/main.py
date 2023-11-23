@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 
-from cmd.master.core.routers import worker_router, job_router
+from cmd.master.routers import worker_router, job_router
 
 app = FastAPI()
 app.include_router(job_router)

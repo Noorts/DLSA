@@ -2,8 +2,10 @@ from __future__ import annotations
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
 from typing import Literal
-from ...models import WorkPackage, WorkPackageIdType
-from ...queue.job_queue import JobQueue
+from uuid import UUID
+
+from ...models import WorkPackage
+from ...job_queue.job_queue import JobQueue
 from ...worker.worker import Worker
 from ...worker.worker_collector import WorkerCollector
 
@@ -27,7 +29,7 @@ class WorkScheduler(ABC):
     _created_scheduler_type: SchedulerType | None = None
 
     def __init__(self, worker_collector: WorkerCollector, job_queue: JobQueue):
-        self._packages_in_process: dict[WorkPackageIdType, ScheduledWorkPackage] = {}
+        self._packages_in_process: dict[UUID, ScheduledWorkPackage] = {}
         self._worker_collector = worker_collector
         self._job_queue = job_queue
 
@@ -36,7 +38,7 @@ class WorkScheduler(ABC):
         """Schedules work for a worker if possible and return the work package"""
 
     @abstractmethod
-    def abort_work_package(self, work_package: WorkPackageIdType):
+    def abort_work_package(self, work_package: UUID):
         """Aborts a work package"""
 
     @staticmethod

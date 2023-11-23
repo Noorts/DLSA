@@ -1,11 +1,12 @@
 from dataclasses import dataclass
+from uuid import UUID
 
-from ..models import WorkerIdType, WorkerResources, WorkerStatus
+from ..models import WorkerResources, WorkerStatus
 
 
 @dataclass
 class Worker:
-    worker_id: WorkerIdType
+    worker_id: UUID
     resources: WorkerResources
     last_seen_alive: int
     status: WorkerStatus
