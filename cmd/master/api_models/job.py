@@ -1,7 +1,7 @@
-from typing import Literal
+from typing import Literal, Annotated
 from uuid import UUID
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 Sequence = str
 SequenceId = UUID
@@ -24,7 +24,7 @@ class JobStatus(BaseModel):
     id: UUID
     state: JobState
     # the progress as percentage [0-1]
-    progress: float
+    progress: Annotated[float, Field(strict=True, gt=0, lt=1)]
 
 
 class Alignment(BaseModel):

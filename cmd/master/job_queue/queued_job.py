@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from uuid import UUID
 
 from ..api_models import JobRequest, TargetQueryCombination, JobState
 
@@ -15,10 +16,7 @@ class CompletedSequence:
 class QueuedJob:
     request: JobRequest
     completed_sequences: dict[TargetQueryCombination, CompletedSequence]
-
-    @property
-    def id(self) -> str:
-        return self.request.id
+    id: UUID
 
     @property
     def state(self) -> JobState:
@@ -28,6 +26,10 @@ class QueuedJob:
             return "IN_PROGRESS"
         else:
             return "IN_QUEUE"
+
+    @property
+    def percentage_done(self) -> float:
+        return len(self.completed_sequences) / len(self.request.sequences) * 100
 
     def done(self) -> bool:
         return len(self.completed_sequences) == len(self.request.sequences)
@@ -39,6 +41,3 @@ class QueuedJob:
                 missing.append(sequence)
 
         return missing
-
-    def completed_percentage(self) -> float:
-        return len(self.completed_sequences) / len(self.request.sequences)

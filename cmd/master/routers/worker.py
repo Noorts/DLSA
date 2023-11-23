@@ -2,15 +2,15 @@ from fastapi import APIRouter
 
 from ..api_models import WorkerResources, WorkerId, WorkPackage, WorkStatus, WorkResult
 from ..job_queue.job_queue import JobQueue
-from ..work.scheduler.work_scheduler import WorkScheduler
-from ..work.work_collector import WorkCollector
+from ..work_package.scheduler.work_scheduler import WorkPackageScheduler
+from ..work_package.work_package_collector import WorkPackageCollector
 from ..worker.worker_collector import WorkerCollector
 
 worker_router = APIRouter(tags=["worker"])
 
 _worker_collector = WorkerCollector()
-_work_scheduler = WorkScheduler.create()
-_work_collector = WorkCollector()
+_work_scheduler = WorkPackageScheduler.create()
+_work_collector = WorkPackageCollector()
 _job_queue = JobQueue()
 
 
@@ -29,7 +29,8 @@ def register_worker(resources: WorkerResources) -> WorkerId:
     8. worker exits
     9. master notices that the worker is gone (no update for n seconds)...
     """
-    return WorkerId(id=_worker_collector.register(resources))
+    worker_id = _worker_collector.register(resources)
+    return WorkerId(id=worker_id)
 
 
 # called in an interval no matter the state
@@ -40,7 +41,7 @@ def worker_pulse(worker_id: WorkerId) -> None:
 
 # request work returns a piece of work (for worker, called in an interval while not working)
 @worker_router.post("/work/")
-def get_work(worker_id: WorkerId) -> WorkPackage | None:
+def get_work_for_worker(worker_id: WorkerId) -> WorkPackage | None:
     worker = _worker_collector.get_worker_by_id(worker_id.id)
     return _work_scheduler.schedule_work_for(worker)
 

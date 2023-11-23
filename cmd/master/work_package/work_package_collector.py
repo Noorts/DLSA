@@ -1,19 +1,18 @@
-from .scheduler.work_scheduler import WorkScheduler
+from .scheduler.work_scheduler import WorkPackageScheduler
 from ..api_models import WorkPackage
+from ..settings import SETTINGS
 from ..utils.cleaner import Cleaner
 from ..utils.singleton import Singleton
 from ..worker.worker import Worker
 from ..worker.worker_collector import WorkerCollector
 
 
-class WorkCollector(Cleaner, Singleton):
-    _CLEANING_INTERVAL = 5 * 1000
-
+class WorkPackageCollector(Cleaner, Singleton):
     def __init__(self):
         self._worker_collector = WorkerCollector()
-        self._work_scheduler = WorkScheduler.create()
+        self._work_scheduler = WorkPackageScheduler.create()
         self._work_packages: dict[Worker, WorkPackage] = {}
-        super().__init__(interval=self._CLEANING_INTERVAL)
+        super().__init__(interval=SETTINGS.work_package_cleaning_interval)
 
     def get_work(self, worker: Worker) -> WorkPackage | None:
         work = self._work_scheduler.schedule_work_for(worker)

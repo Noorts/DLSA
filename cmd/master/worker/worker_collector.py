@@ -2,8 +2,9 @@ from uuid import uuid4, UUID
 
 from fastapi import HTTPException
 
-from ..api_models import WorkerResources
 from .worker import Worker
+from ..api_models import WorkerResources
+from ..settings import SETTINGS
 from ..utils.cleaner import Cleaner
 from ..utils.singleton import Singleton
 from ..utils.time import current_ms
@@ -15,12 +16,9 @@ class WorkerNotFoundException(HTTPException):
 
 
 class WorkerCollector(Cleaner, Singleton):
-    _CLEANING_INTERVAL = 5 * 1000
-    _WORKER_TIMEOUT = 10 * 1000
-
     def __init__(self):
         self._workers: dict[UUID, Worker] = {}
-        super().__init__(interval=self._CLEANING_INTERVAL)
+        super().__init__(interval=SETTINGS.worker_cleaning_interval)
 
     @property
     def workers(self) -> list[Worker]:
@@ -53,7 +51,7 @@ class WorkerCollector(Cleaner, Singleton):
                 worker = self.get_worker_by_id(worker)
             except WorkerNotFoundException:
                 return False
-        return worker.last_seen_alive > current_ms() - self._WORKER_TIMEOUT and worker.status != "DEAD"
+        return worker.last_seen_alive > current_ms() - SETTINGS.worker_timout and worker.status != "DEAD"
 
     def execute_clean(self):
         for worker in self._workers.values():

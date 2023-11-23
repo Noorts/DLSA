@@ -1,15 +1,14 @@
 from __future__ import annotations
+
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Literal
 from uuid import UUID
 
+from settings import SETTINGS
 from ...api_models import WorkPackage
 from ...job_queue.job_queue import JobQueue
 from ...worker.worker import Worker
 from ...worker.worker_collector import WorkerCollector
-
-SchedulerType = Literal["primitive"]
 
 
 @dataclass
@@ -24,9 +23,8 @@ class ScheduledWorkPackage:
     status: WorkPackageStatus
 
 
-class WorkScheduler(ABC):
-    _created_scheduler: WorkScheduler | None = None
-    _created_scheduler_type: SchedulerType | None = None
+class WorkPackageScheduler(ABC):
+    _created_scheduler: WorkPackageScheduler | None = None
 
     def __init__(self, worker_collector: WorkerCollector, job_queue: JobQueue):
         self._packages_in_process: dict[UUID, ScheduledWorkPackage] = {}
@@ -42,21 +40,20 @@ class WorkScheduler(ABC):
         """Aborts a work package"""
 
     @staticmethod
-    def create(scheduler_type: SchedulerType = "primitive") -> WorkScheduler:
-        from ._primitive_work_scheduler import PrimitiveWorkScheduler
+    def create() -> WorkPackageScheduler:
+        from ._primitive_work_scheduler import PrimitiveWorkPackageScheduler
 
         # Return the already created scheduler if it exists
-        if WorkScheduler._created_scheduler:
-            if WorkScheduler._created_scheduler_type != scheduler_type:
-                raise RuntimeError("Cannot create multiple different work schedulers")
-            return WorkScheduler._created_scheduler
+        if WorkPackageScheduler._created_scheduler:
+            return WorkPackageScheduler._created_scheduler
 
         worker_collector = WorkerCollector()
         job_queue = JobQueue()
-        scheduler: WorkScheduler
-        if scheduler_type == "primitive":
-            WorkScheduler._created_scheduler = PrimitiveWorkScheduler(worker_collector, job_queue)
-        else:
-            raise NotImplementedError()
 
-        return WorkScheduler._created_scheduler
+        match SETTINGS.scheduler_type:
+            case "primitive":
+                WorkPackageScheduler._created_scheduler = PrimitiveWorkPackageScheduler(worker_collector, job_queue)
+            case _:
+                raise NotImplementedError()
+
+        return WorkPackageScheduler._created_scheduler

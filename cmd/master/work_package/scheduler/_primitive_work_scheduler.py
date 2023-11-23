@@ -1,11 +1,10 @@
 from uuid import uuid4, UUID
 
-from .work_scheduler import WorkScheduler, ScheduledWorkPackage, WorkPackageStatus
-from ...api_models import  WorkPackage
-from ...utils.singleton import Singleton
+from .work_scheduler import WorkPackageScheduler, ScheduledWorkPackage, WorkPackageStatus
+from ...api_models import WorkPackage
 
 
-class PrimitiveWorkScheduler(WorkScheduler):
+class PrimitiveWorkPackageScheduler(WorkPackageScheduler):
     def schedule_work_for(self, worker_id: UUID) -> None | WorkPackage:
         job = self._job_queue.unfinished_jobs().pop()
         if not job:

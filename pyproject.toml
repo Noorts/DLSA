@@ -12,7 +12,12 @@ packages = [
 python = "^3.10"
 fastapi = "^0.104.1"
 uvicorn = "^0.24.0.post1"
+black = { extras = ["d"], version = "^23.11.0" }
+pydantic-settings = "^2.1.0"
 
+[tool.black]
+line-length = 120
+target-version = ['py310']
 
 [build-system]
 requires = ["poetry-core"]

@@ -1,4 +1,4 @@
-from uuid import UUID
+from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 
@@ -13,13 +13,14 @@ class JobNotFoundException(HTTPException):
 
 
 class JobQueue(Singleton):
-
     def __init__(self):
         super().__init__()
         self._jobs: dict[UUID, QueuedJob] = {}
 
-    def add_request_to_queue(self, request: JobRequest):
-        self._jobs[request.id] = QueuedJob(request, {})
+    def add_job_to_queue(self, request: JobRequest) -> QueuedJob:
+        job_id = uuid4()
+        self._jobs[job_id] = QueuedJob(request, {}, job_id)
+        return self._jobs[job_id]
 
     def unfinished_jobs(self) -> list[QueuedJob]:
         return [job for job in self._jobs.values() if not job.done()]
