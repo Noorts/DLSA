@@ -2,11 +2,11 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from master.api_models import WorkResult, WorkerId, WorkPackage
-from master.settings import SETTINGS
-from master.utils.cleaner import Cleaner
-from master.utils.singleton import Singleton
-from master.worker.worker_collector import WorkerCollector
+from api_models import WorkResult, WorkerId, WorkPackage
+from settings import SETTINGS
+from utils.cleaner import Cleaner
+from utils.singleton import Singleton
+from worker.worker_collector import WorkerCollector
 from ._scheduler.work_scheduler import WorkPackageScheduler, ScheduledWorkPackage
 
 

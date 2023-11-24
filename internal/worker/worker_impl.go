@@ -11,9 +11,9 @@ import (
 // The worker also has a work package, which contains the queries and targets
 // The worker also contains it's specs (CPU, RAM, etc.)
 
-type Worker struct {
+type WorkerImpl struct {
 	specs    *MachineSpecs // Machine specs of the worker
-	workerId *int          // Unique ID of the worker
+	workerId *string       // Unique ID of the worker
 	// workPackage *WorkPackage  // Work package of the worker, can be null
 	client *RestClient // Client to communicate with the master
 	status Status
@@ -28,12 +28,12 @@ const (
 )
 
 // TODO: Decide what happens if the specs arent't returned return nil for now
-func InitWorker(client *RestClient) (*Worker, error) {
+func InitWorker(client *RestClient) (*WorkerImpl, error) {
 	machineSpecs, err := GetMachineSpecs()
 	if err != nil {
 		return nil, err
 	}
-	return &Worker{
+	return &WorkerImpl{
 		specs:  machineSpecs,
 		client: client,
 		status: Waiting,
@@ -42,7 +42,7 @@ func InitWorker(client *RestClient) (*Worker, error) {
 
 // Function to register the worker with the master, returns the worker ID if successful
 // TODO: Decide what happens if the worker is already registered ()
-func (w *Worker) RegisterWorker() (*int, error) {
+func (w *WorkerImpl) RegisterWorker() (*string, error) {
 	// Logic to register the worker, call the register endpoint
 	workerId, err := w.client.RegisterWorker(w.specs)
 	if err != nil {
@@ -54,7 +54,7 @@ func (w *Worker) RegisterWorker() (*int, error) {
 }
 
 // Function to request work from the master, returns the work package if successful
-func (w *Worker) GetWork() (*WorkPackage, error) {
+func (w *WorkerImpl) GetWork() (*WorkPackage, error) {
 	// Logic to fetch a task from the master, call the work endpoint
 	if w.workerId == nil {
 		//some error message
@@ -70,7 +70,7 @@ func (w *Worker) GetWork() (*WorkPackage, error) {
 // For now we just execute the work sequentially and send the result back for every seq,tar pair
 // TODO: This seems kinda hacky for now idk should think about this
 // TODO: Parallelization work
-func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
+func (w *WorkerImpl) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 	w.status = Working
 	results := make([]WorkResult, len(work.Sequences))
 	for ind, comb := range work.Sequences {
@@ -113,7 +113,7 @@ func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 	return results, nil
 }
 
-func (w *Worker) heartbeatRoutine() {
+func (w *WorkerImpl) heartbeatRoutine() {
 	for w.status != Dead {
 		time.Sleep(30 * time.Second)
 		for w.client.SendHeartbeat(*w.workerId) != nil {

@@ -2,8 +2,8 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 
-from master.api_models import JobRequest, JobId, JobStatus, JobResult
-from master.job_queue.job_queue import JobQueue
+from api_models import JobRequest, JobId, JobStatus, JobResult
+from job_queue.job_queue import JobQueue
 
 job_router = APIRouter(tags=["external"])
 _job_queue = JobQueue()

@@ -4,7 +4,7 @@ import (
 	"testing"
 )
 
-var baseURL = "http://localhost:8080"
+var baseURL = "127.0.0.1:59327"
 
 func TestGetSpecs(t *testing.T) {
 	specs, err := GetMachineSpecs()
@@ -15,7 +15,7 @@ func TestGetSpecs(t *testing.T) {
 	}
 }
 
-func InitTestWorker(t *testing.T) (*Worker, error) {
+func TestInitWorker(t *testing.T) (*WorkerImpl, error) {
 	client := InitRestClient(baseURL)
 	worker, err := InitWorker(client)
 	if err != nil {
@@ -27,7 +27,7 @@ func InitTestWorker(t *testing.T) (*Worker, error) {
 }
 
 func TestRegisterWorker(t *testing.T) {
-	worker, err := InitTestWorker(t)
+	worker, err := TestInitWorker(t)
 	if err != nil {
 		t.Errorf("Error registering worker: %s", err)
 	} else {
@@ -42,7 +42,8 @@ func TestRegisterWorker(t *testing.T) {
 }
 
 func TestGetWork(t *testing.T) {
-	worker, err := InitTestWorker(t)
+	client := InitRestClient(baseURL)
+	worker, err := InitWorker(client)
 	if err != nil {
 		t.Errorf("Error getting work: %s", err)
 	} else {
@@ -55,7 +56,17 @@ func TestGetWork(t *testing.T) {
 		}
 		//then register and get work
 		workerId, err := worker.RegisterWorker()
-
+		if err != nil {
+			t.Errorf("Error registering worker: %s", err)
+		} else {
+			t.Logf("Registered worker with ID: %d", *workerId)
+			work, err := worker.GetWork()
+			if err != nil {
+				t.Errorf("Error getting work: %s", err)
+			} else {
+				t.Logf("Got work: %+v", work)
+			}
+		}
 	}
 }
 

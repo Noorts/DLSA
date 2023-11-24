@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from master.api_models import JobRequest, TargetQueryCombination, JobState, Alignment
+from api_models import JobRequest, TargetQueryCombination, JobState, Alignment
 
 
 @dataclass

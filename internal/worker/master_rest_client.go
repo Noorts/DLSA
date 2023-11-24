@@ -35,10 +35,11 @@ type MachineSpecsRequest struct {
 	Threads     uint `json:"threads"`
 	MemorySpeed uint `json:"memory_speed"`
 	MemorySize  uint `json:"memory_size"`
+	GPU         bool `json:"gpu_resources"`
 }
 
 type WorkRequest struct {
-	WorkerId int `json:"workerId"`
+	WorkerId string `json:"worker_id"`
 }
 
 type WorkResult struct {
@@ -47,7 +48,7 @@ type WorkResult struct {
 }
 
 type Heartbeat struct {
-	WorkerId int `json:"workerId"`
+	WorkerId string `json:"worker_id"`
 }
 
 type AlignmentDetails struct {
@@ -67,7 +68,7 @@ func InitRestClient(baseURL string) *RestClient {
 	}
 }
 
-func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*int, error) {
+func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
 	specsReq := MachineSpecsRequest{
 		Cores:       specs.cores,
 		Cpus:        specs.cpus,
@@ -76,6 +77,8 @@ func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*int, error) {
 		MemorySize:  specs.memory_size,
 	}
 	jsonData, err := json.Marshal(specsReq)
+	fmt.Println("Registering worker")
+	fmt.Println(string(jsonData))
 	req, err := http.NewRequest("POST", c.baseURL+"/worker/register", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
@@ -92,19 +95,24 @@ func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*int, error) {
 
 	var workReq WorkRequest
 	if err := json.NewDecoder(resp.Body).Decode(&workReq); err != nil {
+		fmt.Println("Error decoding response", err)
 		return nil, err
 	}
-
+	fmt.Println("Registered worker")
+	fmt.Println(workReq)
 	//TODO: Maybe we should return the workReq
 	return &workReq.WorkerId, nil
 }
 
-func (c *RestClient) RequestWork(workerId int) (*WorkPackage, error) {
+func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 	workReq := WorkRequest{WorkerId: workerId}
 	jsonData, err := json.Marshal(workReq)
+
 	if err != nil {
 		return nil, err
 	}
+
+	fmt.Println(string(jsonData))
 
 	req, err := http.NewRequest("POST", c.baseURL+"/work", bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -165,7 +173,7 @@ func (c *RestClient) SendResult(result WorkResult) error {
 	return nil
 }
 
-func (c *RestClient) SendHeartbeat(workerId int) error {
+func (c *RestClient) SendHeartbeat(workerId string) error {
 	heartbeat := Heartbeat{WorkerId: workerId}
 	jsonData, err := json.Marshal(heartbeat)
 	if err != nil {
