@@ -18,7 +18,7 @@ class WorkPackageScheduler(ABC):
 
     @staticmethod
     def create() -> WorkPackageScheduler:
-        from ._primitive_work_scheduler import PrimitiveWorkPackageScheduler
+        from .primitive_work_scheduler import PrimitiveWorkPackageScheduler
 
         # Return the already created _scheduler if it exists
         if WorkPackageScheduler._created_scheduler:

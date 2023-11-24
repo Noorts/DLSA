@@ -18,9 +18,9 @@ class PrimitiveWorkPackageScheduler(WorkPackageScheduler):
             queries=queries,
             sequences={
                 # Query
-                **{sequence[0]: job.request.sequences[sequence[0]] for sequence in queries},
+                **{sequence.query: job.request.sequences[sequence.query] for sequence in queries},
                 # Target
-                **{sequence[1]: job.request.sequences[sequence[1]] for sequence in queries},
+                **{sequence.target: job.request.sequences[sequence.target] for sequence in queries},
             },
         )
 
