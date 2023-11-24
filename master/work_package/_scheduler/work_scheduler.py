@@ -20,7 +20,7 @@ class WorkPackageScheduler(ABC):
     def create() -> WorkPackageScheduler:
         from ._primitive_work_scheduler import PrimitiveWorkPackageScheduler
 
-        # Return the already created scheduler if it exists
+        # Return the already created _scheduler if it exists
         if WorkPackageScheduler._created_scheduler:
             return WorkPackageScheduler._created_scheduler
 

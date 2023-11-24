@@ -54,7 +54,7 @@ class WorkerCollector(Cleaner, Singleton):
         return worker.last_seen_alive > current_sec() - SETTINGS.worker_timout and worker.status != "DEAD"
 
     def execute_clean(self) -> None:
-        for worker in self._workers.values():
+        for worker in [*self._workers.values()]:
             if not self.is_alive(worker):
                 self._workers[worker.worker_id].status = "DEAD"
                 del self._workers[worker.worker_id]

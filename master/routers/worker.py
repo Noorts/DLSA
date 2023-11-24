@@ -4,14 +4,12 @@ from fastapi import APIRouter
 
 from master.api_models import WorkerResources, WorkerId, WorkPackage, WorkResult
 from master.job_queue.job_queue import JobQueue
-from master.work_package.scheduler.work_scheduler import WorkPackageScheduler
 from master.work_package.work_package_collector import WorkPackageCollector
 from master.worker.worker_collector import WorkerCollector
 
 worker_router = APIRouter(tags=["worker"])
 
 _worker_collector = WorkerCollector()
-_work_scheduler = WorkPackageScheduler.create()
 _work_collector = WorkPackageCollector()
 _job_queue = JobQueue()
 
@@ -44,16 +42,7 @@ def worker_pulse(worker_id: WorkerId) -> None:
 # request work returns a piece of work (for worker, called in an interval while not working)
 @worker_router.post("/work/")
 def get_work_for_worker(worker_id: WorkerId) -> WorkPackage | None:
-    worker = _worker_collector.get_worker_by_id(worker_id.id)
-    scheduled_package = _work_scheduler.schedule_work_for(worker)
-    if not scheduled_package:
-        return None
-
-    return WorkPackage(
-        id=scheduled_package.package.id,
-        job_id=scheduled_package.package.job.id,
-        sequences=scheduled_package.package.sequences,
-    )
+    return _work_collector.get_new_work_package(worker_id)
 
 
 # if a worker is done, it sends its results using this endpoint, can be multiple times for one work_id

@@ -25,6 +25,16 @@ class JobQueue(Singleton):
     def unfinished_jobs(self) -> list[QueuedJob]:
         return [job for job in self._jobs.values() if not job.done()]
 
+    def jobs_with_unassigned_sequences(self) -> list[QueuedJob]:
+        jobs: list[QueuedJob] = []
+
+        for job in self._jobs.values():
+            if not job.done() and len(job.sequences_in_progress) + len(job.completed_sequences) < len(
+                job.request.sequences
+            ):
+                jobs.append(job)
+        return jobs
+
     def get_job_by_id(self, job_id: UUID) -> QueuedJob:
         job = self._jobs.get(job_id)
         if not job:
