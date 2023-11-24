@@ -2,11 +2,11 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from settings import SETTINGS
+from master.job_queue.job_queue import JobQueue
+from master.settings import SETTINGS
+from master.worker.worker import Worker
+from master.worker.worker_collector import WorkerCollector
 from .scheduled_work_package import ScheduledWorkPackage
-from ...job_queue.job_queue import JobQueue
-from ...worker.worker import Worker
-from ...worker.worker_collector import WorkerCollector
 
 
 class WorkPackageScheduler(ABC):

@@ -2,12 +2,12 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
+from master.api_models import WorkResult
+from master.settings import SETTINGS
+from master.utils.cleaner import Cleaner
+from master.utils.singleton import Singleton
+from master.worker.worker_collector import WorkerCollector
 from .scheduler.work_scheduler import WorkPackageScheduler, ScheduledWorkPackage
-from ..api_models import WorkResult
-from ..settings import SETTINGS
-from ..utils.cleaner import Cleaner
-from ..utils.singleton import Singleton
-from ..worker.worker_collector import WorkerCollector
 
 
 class WorkPackageNotFoundException(HTTPException):

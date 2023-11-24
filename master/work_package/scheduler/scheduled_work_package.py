@@ -1,9 +1,9 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from job_queue.queued_job import QueuedJob
-from ...api_models import TargetQueryCombination
-from ...worker.worker import Worker
+from master.job_queue.queued_job import QueuedJob
+from master.api_models import TargetQueryCombination
+from master.worker.worker import Worker
 
 
 @dataclass

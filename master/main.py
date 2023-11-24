@@ -1,7 +1,7 @@
 import uvicorn
 from fastapi import FastAPI
 
-from .routers import worker_router, job_router
+from master.routers import worker_router, job_router
 
 app = FastAPI(title="DLSA Master")
 app.include_router(job_router)

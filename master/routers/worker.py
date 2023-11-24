@@ -2,11 +2,11 @@ from uuid import UUID
 
 from fastapi import APIRouter
 
-from ..api_models import WorkerResources, WorkerId, WorkPackage, WorkResult
-from ..job_queue.job_queue import JobQueue
-from ..work_package.scheduler.work_scheduler import WorkPackageScheduler
-from ..work_package.work_package_collector import WorkPackageCollector
-from ..worker.worker_collector import WorkerCollector
+from master.api_models import WorkerResources, WorkerId, WorkPackage, WorkResult
+from master.job_queue.job_queue import JobQueue
+from master.work_package.scheduler.work_scheduler import WorkPackageScheduler
+from master.work_package.work_package_collector import WorkPackageCollector
+from master.worker.worker_collector import WorkerCollector
 
 worker_router = APIRouter(tags=["worker"])
 

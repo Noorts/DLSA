@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 from uuid import UUID
 
-from ..api_models import WorkerResources, WorkerStatus
+from master.api_models import WorkerResources, WorkerStatus
 
 
 @dataclass

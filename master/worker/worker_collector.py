@@ -2,12 +2,12 @@ from uuid import uuid4, UUID
 
 from fastapi import HTTPException
 
+from master.api_models import WorkerResources
+from master.settings import SETTINGS
+from master.utils.cleaner import Cleaner
+from master.utils.singleton import Singleton
+from master.utils.time import current_ms
 from .worker import Worker
-from ..api_models import WorkerResources
-from ..settings import SETTINGS
-from ..utils.cleaner import Cleaner
-from ..utils.singleton import Singleton
-from ..utils.time import current_ms
 
 
 class WorkerNotFoundException(HTTPException):
