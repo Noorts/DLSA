@@ -4,7 +4,7 @@ from fastapi.testclient import TestClient
 
 from master.api_models import WorkerId, WorkerResources, WorkPackage, JobId, JobResult
 from master.settings import SETTINGS
-from master.tests.data import JOB_RESULT_COMPLETE
+from master.tests.data import JOB_RESULT_COMPLETE, JOB_RESULT_PART_1, JOB_RESULT_PART_2
 from master.utils.interval import StoppableThread
 
 
@@ -81,3 +81,45 @@ def test_work_package_returned_successfully_and_completely(
     response = f_client.get(f"/job/{f_job.id}/result")
     assert response.status_code == 200
     assert JobResult(**response.json())
+
+
+def test_work_package_partially_returned_and_picked_up_by_other_worker(
+    f_client: TestClient, f_job: JobId, f_worker_node: tuple[WorkerId, StoppableThread], f_work_package: WorkPackage
+):
+    # Return a partial result
+    response = f_client.post(f"/work/{f_work_package.id}/result", json=JOB_RESULT_PART_1.model_dump(mode="json"))
+    assert response.status_code == 200
+
+    # Check that there is no work available
+    response = f_client.post("/work/", json=f_worker_node[0].model_dump(mode="json"))
+    assert response.status_code == 200
+    assert not response.json()
+
+    # Close the worker
+    f_worker_node[1].stop()
+
+    # Wait for the worker to be removed from the worker list
+    sleep(SETTINGS.worker_cleaning_interval * 2 + SETTINGS.work_package_cleaning_interval * 2)
+
+    # Register a new worker
+    response = f_client.post(
+        "/worker/register", json=WorkerResources(ram_mb=100, cpu_resources=1, gpu_resources=0).model_dump(mode="json")
+    )
+    assert response.status_code == 200
+
+    # Request work from the master
+    response = f_client.post("/work/", json=response.json())
+    assert response.status_code == 200
+    new_work_package = WorkPackage(**response.json())
+
+    # Return the rest of the result
+    response = f_client.post(f"/work/{new_work_package.id}/result", json=JOB_RESULT_PART_2.model_dump(mode="json"))
+    assert response.status_code == 200
+
+    # Get the job result
+    response = f_client.get(f"/job/{f_job.id}/result")
+    assert response.status_code == 200
+
+    # Check if the result is correct
+    job_result = JobResult(**response.json())
+    assert job_result.alignments == JOB_RESULT_COMPLETE.alignments
