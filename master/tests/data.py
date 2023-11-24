@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from master.api_models import JobRequest, WorkResult, Alignment
+from master.api_models import JobRequest, WorkResult, Alignment, TargetQueryCombination
 
 JOB_REQUEST = JobRequest(
     sequences={
@@ -16,9 +16,15 @@ JOB_REQUEST = JobRequest(
         UUID("9e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "ABCD",
     },
     queries=[
-        (UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
-        (UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
-        (UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+        TargetQueryCombination(
+            target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+        ),
+        TargetQueryCombination(
+            target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+        ),
+        TargetQueryCombination(
+            target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+        ),
     ],
 )
 
@@ -26,15 +32,21 @@ JOB_REQUEST = JobRequest(
 JOB_RESULT_COMPLETE = WorkResult(
     alignments=[
         (
-            (UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+            TargetQueryCombination(
+                target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
             Alignment(alignment="ABCD", length=4, score=4),
         ),
         (
-            (UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+            TargetQueryCombination(
+                target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
             Alignment(alignment="ABCD", length=4, score=4),
         ),
         (
-            (UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+            TargetQueryCombination(
+                target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
             Alignment(alignment="ABCD", length=4, score=4),
         ),
     ]
@@ -43,11 +55,15 @@ JOB_RESULT_COMPLETE = WorkResult(
 JOB_RESULT_PART_1 = WorkResult(
     alignments=[
         (
-            (UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+            TargetQueryCombination(
+                target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
             Alignment(alignment="ABCD", length=4, score=4),
         ),
         (
-            (UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+            TargetQueryCombination(
+                target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
             Alignment(alignment="ABCD", length=4, score=4),
         ),
     ]
@@ -56,7 +72,9 @@ JOB_RESULT_PART_1 = WorkResult(
 JOB_RESULT_PART_2 = WorkResult(
     alignments=[
         (
-            (UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+            TargetQueryCombination(
+                target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
             Alignment(alignment="ABCD", length=4, score=4),
         ),
     ]

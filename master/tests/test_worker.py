@@ -3,7 +3,7 @@ from uuid import UUID
 
 from fastapi.testclient import TestClient
 
-from master.api_models import WorkerId, WorkerResources, WorkPackage, JobId, JobResult
+from master.api_models import WorkerId, WorkerResources, WorkPackage, JobId, JobResult, TargetQueryCombination
 from master.settings import SETTINGS
 from master.tests.data import JOB_RESULT_COMPLETE, JOB_RESULT_PART_1, JOB_RESULT_PART_2
 from master.utils.interval import StoppableThread
@@ -20,7 +20,7 @@ def test_register_worker(f_client: TestClient):
     response = f_client.post("/worker/pulse", json=worker_id.model_dump(mode="json"))
     assert response.status_code == 200
 
-    sleep(SETTINGS.worker_cleaning_interval * 2)
+    sleep(SETTINGS.worker_cleaning_interval * 3)
 
     # Send a pulse to the master -> worker should be gone
     response = f_client.post("/worker/pulse", json=worker_id.model_dump(mode="json"))
@@ -38,9 +38,15 @@ def test_get_work_for_worker(f_client: TestClient, f_job: JobId, f_worker_node: 
         id=work_package.id,
         job_id=f_job.id,
         queries=[
-            (UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
-            (UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
-            (UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+            TargetQueryCombination(
+                target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
+            TargetQueryCombination(
+                target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
+            TargetQueryCombination(
+                target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
         ],
         sequences={
             UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "ABCD",

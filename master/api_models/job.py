@@ -7,7 +7,14 @@ from pydantic import Field
 Sequence = str
 SequenceId = UUID
 JobState = Literal["IN_QUEUE", "IN_PROGRESS", "DONE"]
-TargetQueryCombination = tuple[SequenceId, SequenceId]
+
+
+class TargetQueryCombination(BaseModel):
+    target: SequenceId
+    query: SequenceId
+
+    def __hash__(self):
+        return hash((self.target, self.query))
 
 
 class JobRequest(BaseModel):
