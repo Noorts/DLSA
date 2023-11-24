@@ -4,6 +4,7 @@ from fastapi.testclient import TestClient
 
 from master.api_models import WorkerId, WorkerResources, WorkPackage
 from master.main import app
+from master.routers.test_job import JSON_JOB_REQUEST
 from master.settings import SETTINGS
 from master.utils.interval import set_interval
 
@@ -40,10 +41,15 @@ def test_get_work_for_worker():
         lambda: client.post("/worker/pulse", json=worker_id.model_dump(mode="json")), SETTINGS.worker_timout // 2
     )
 
+    # Create a job to consume
+    client.post("/job/format/json", json=JSON_JOB_REQUEST)
+
     # Request work from the master
     response = client.post("/work/", json=worker_id.model_dump(mode="json"))
     assert response.status_code == 200
-    work_package = WorkPackage(**response.json())
+    json_response = response.json()
+    assert json_response
+    work_package = WorkPackage(**json_response)
     assert work_package
 
     interval.stop()
