@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/json"
 	"fmt"
+	"io"
 	"net/http"
 	"time"
 )
@@ -12,8 +13,8 @@ type Sequence string
 type SequenceId string
 
 type TargetQueryCombination struct {
-	Target SequenceId
-	Query  SequenceId
+	//query first, then target
+	QueryTarget [2]SequenceId `json:"-"`
 }
 
 type Alignment struct {
@@ -23,23 +24,29 @@ type Alignment struct {
 }
 
 type WorkPackage struct {
-	ID        string                   `json:"id"`
-	Targets   map[SequenceId]Sequence  `json:"targets"`
-	Queries   map[SequenceId]Sequence  `json:"queries"`
-	Sequences []TargetQueryCombination `json:"sequences"`
+	ID        *string                 `json:"id"`
+	Targets   map[SequenceId]Sequence `json:"targets"`
+	Queries   map[SequenceId]Sequence `json:"queries"`
+	Sequences [][]SequenceId          `json:"sequences"`
 }
 
 type MachineSpecsRequest struct {
-	Cores       uint `json:"cores"`
-	Cpus        uint `json:"cpus"`
-	Threads     uint `json:"threads"`
-	MemorySpeed uint `json:"memory_speed"`
-	MemorySize  uint `json:"memory_size"`
-	GPU         bool `json:"gpu_resources"`
+	//For now only cpu resources
+
+	// Cores       uint `json:"cores"`
+	// Cpus        uint `json:"cpus"`
+	// Threads     uint `json:"threads"`
+	// MemorySpeed uint `json:"memory_speed"`
+	// MemorySize  uint `json:"memory_size"`
+	// GPU         bool `json:"gpu_resources"`
+
+	Ram uint `json:"ram_mb"`
+	Cpu uint `json:"cpu_resources"`
+	Gpu uint `json:"gpu_resources"`
 }
 
 type WorkRequest struct {
-	WorkerId string `json:"worker_id"`
+	WorkerId string `json:"id"`
 }
 
 type WorkResult struct {
@@ -70,17 +77,16 @@ func InitRestClient(baseURL string) *RestClient {
 
 func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
 	specsReq := MachineSpecsRequest{
-		Cores:       specs.cores,
-		Cpus:        specs.cpus,
-		Threads:     specs.threads,
-		MemorySpeed: specs.memory_speed,
-		MemorySize:  specs.memory_size,
+		Ram: specs.memory_size,
+		Cpu: specs.cores,
+		Gpu: specs.gpu,
 	}
 	jsonData, err := json.Marshal(specsReq)
 	fmt.Println("Registering worker")
 	fmt.Println(string(jsonData))
 	req, err := http.NewRequest("POST", c.baseURL+"/worker/register", bytes.NewBuffer(jsonData))
 	if err != nil {
+		fmt.Println("Error creating request", err)
 		return nil, err
 	}
 
@@ -112,6 +118,7 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
+	fmt.Println("Request some work")
 	fmt.Println(string(jsonData))
 
 	req, err := http.NewRequest("POST", c.baseURL+"/work", bytes.NewBuffer(jsonData))
@@ -119,10 +126,13 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
+	fmt.Printf("Requesting work from %s\n", c.baseURL+"/work")
+
 	req.Header.Set("Content-Type", "application/json")
 
 	resp, err := c.client.Do(req)
 	if err != nil {
+		fmt.Println("Error sending request", err)
 		return nil, err
 	}
 
@@ -134,10 +144,19 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, fmt.Errorf("unexpected status: %s", resp.Status)
 	}
 
+	// Read the response
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	fmt.Println("Got work")
+	fmt.Println(string(body))
 	// Decode the response
 	var workPkg WorkPackage
-	err = json.NewDecoder(resp.Body).Decode(&workPkg)
+	err = json.Unmarshal(body, &workPkg)
 	if err != nil {
+		fmt.Printf("Error decoding response: %s", err)
 		return nil, err
 	}
 

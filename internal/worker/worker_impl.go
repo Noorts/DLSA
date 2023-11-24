@@ -2,6 +2,7 @@ package worker
 
 import (
 	"dlsa/internal/smithwaterman"
+	"fmt"
 	"log"
 	"time"
 )
@@ -60,9 +61,15 @@ func (w *WorkerImpl) GetWork() (*WorkPackage, error) {
 		//some error message
 	}
 	work, err := w.client.RequestWork(*w.workerId)
+
 	if err != nil {
 		return nil, err
 	}
+	if work.ID == nil {
+		return nil, fmt.Errorf("No work available")
+	}
+	log.Printf("Got work: %+v", work)
+
 	return work, nil
 }
 
@@ -74,8 +81,9 @@ func (w *WorkerImpl) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 	w.status = Working
 	results := make([]WorkResult, len(work.Sequences))
 	for ind, comb := range work.Sequences {
-		targetSeq, ok1 := work.Targets[comb.Target]
-		querySeq, ok2 := work.Queries[comb.Query]
+		//indexing here is a bit weird, should tell master to use a map
+		targetSeq, ok1 := work.Targets[comb[1]]
+		querySeq, ok2 := work.Queries[comb[0]]
 
 		// Check if both sequences are in the work package
 		if !ok1 || !ok2 {
@@ -92,11 +100,12 @@ func (w *WorkerImpl) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 				Score:           10,
 				Length:          len(stringScore),
 			},
-			Combination: TargetQueryCombination{comb.Target, comb.Query},
+			Combination: TargetQueryCombination{
+				[2]SequenceId{comb[0], comb[1]}},
 		}
 
 		result := WorkResult{
-			WorkID:     work.ID,
+			WorkID:     *work.ID,
 			Alignments: []AlignmentDetails{alignment},
 		}
 

@@ -35,7 +35,7 @@ func TestRegisterWorker(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error registering worker: %s", err)
 		} else {
-			t.Logf("Registered worker with ID: %d", *workerId)
+			t.Logf("Registered worker with ID: %d", &workerId)
 		}
 	}
 
@@ -59,7 +59,7 @@ func TestGetWork(t *testing.T) {
 		if err != nil {
 			t.Errorf("Error registering worker: %s", err)
 		} else {
-			t.Logf("Registered worker with ID: %d", *workerId)
+			t.Logf("Registered worker with ID: %d", &workerId)
 			work, err := worker.GetWork()
 			if err != nil {
 				t.Errorf("Error getting work: %s", err)
