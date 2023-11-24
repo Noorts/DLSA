@@ -4,6 +4,7 @@ from fastapi import APIRouter, HTTPException
 
 from master.api_models import JobRequest, JobId, JobStatus, JobResult
 from master.job_queue.job_queue import JobQueue
+from master.settings import SETTINGS
 
 job_router = APIRouter(tags=["external"])
 _job_queue = JobQueue()
@@ -20,7 +21,7 @@ def submit_job(body: JobRequest) -> JobId:
 @job_router.get("/job/{job_id}/status")
 def get_job(job_id: UUID) -> JobStatus:
     job = _job_queue.get_job_by_id(job_id)
-    return JobStatus(id=job.id, state=job.state, progress=job.percentage_done)
+    return JobStatus(state=job.state, progress=job.percentage_done)
 
 
 # returns the state of a job (for a client)
@@ -36,5 +37,12 @@ def get_job(job_id: UUID) -> JobResult:
 
 @job_router.delete("/job/{job_id}")
 def delete_job(job_id: UUID):
+    """
+    This is only intended for testing purposes.<br>
+    Job deletion might have unwanted side effects, as workers might still be working on the job and work packages are
+    not cleaned up.
+    """
+    if not SETTINGS.enable_job_deletion:
+        raise HTTPException(status_code=403, detail="Job deletion is disabled")
+
     _job_queue.delete_job_by_id(job_id)
-    # TODO purge job from work package

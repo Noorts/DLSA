@@ -32,5 +32,4 @@ class WorkStatus(BaseModel):
 
 
 class WorkResult(BaseModel):
-    work_id: UUID
     alignments: list[tuple[TargetQueryCombination, Alignment]]

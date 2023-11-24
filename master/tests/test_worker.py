@@ -2,8 +2,9 @@ from time import sleep
 
 from fastapi.testclient import TestClient
 
-from master.api_models import WorkerId, WorkerResources, WorkPackage, JobId
+from master.api_models import WorkerId, WorkerResources, WorkPackage, JobId, JobResult
 from master.settings import SETTINGS
+from master.tests.data import JOB_RESULT_COMPLETE
 from master.utils.interval import StoppableThread
 
 
@@ -62,3 +63,21 @@ def test_work_package_gets_returned(
     assert json_response
     work_package = WorkPackage(**json_response)
     assert work_package
+
+
+def test_work_package_returned_successfully_and_completely(
+    f_client: TestClient, f_job: JobId, f_worker_node: tuple[WorkerId, StoppableThread], f_work_package: WorkPackage
+):
+    # Return some arbitrary result
+    response = f_client.post(f"/work/{f_work_package.id}/result", json=JOB_RESULT_COMPLETE.model_dump(mode="json"))
+    assert response.status_code == 200
+
+    # Check if there is work available -> should be none
+    response = f_client.post("/work/", json=f_worker_node[0].model_dump(mode="json"))
+    assert response.status_code == 200
+    assert not response.json()
+
+    # Get the job result
+    response = f_client.get(f"/job/{f_job.id}/result")
+    assert response.status_code == 200
+    assert JobResult(**response.json())

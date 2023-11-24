@@ -4,16 +4,16 @@ from fastapi.testclient import TestClient
 from master.api_models import JobId, WorkerResources, WorkerId, WorkPackage
 from master.main import app
 from master.settings import SETTINGS
-from master.tests.test_job import JSON_JOB_REQUEST
+from master.tests.data import JOB_REQUEST
 from master.utils.interval import set_interval, StoppableThread
 
 
 @pytest.fixture(scope="module")
 def f_job(f_client: TestClient) -> JobId:
     # Create a job to consume
-    response = f_client.post("/job/format/json", json=JSON_JOB_REQUEST)
-    yield
+    response = f_client.post("/job/format/json", json=JOB_REQUEST.model_dump(mode="json"))
     job_id = JobId(**response.json())
+    yield job_id
 
     # Delete the job
     f_client.delete(f"/job/{job_id.id}")
