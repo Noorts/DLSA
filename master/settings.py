@@ -10,6 +10,7 @@ class _Settings(BaseSettings):
     work_package_cleaning_interval: int = 5
     worker_cleaning_interval: int = 5
     worker_timout: int = 10
+    enable_job_deletion: bool = True
 
 
 SETTINGS = _Settings()

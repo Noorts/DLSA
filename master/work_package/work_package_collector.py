@@ -52,7 +52,6 @@ class WorkPackageCollector(Cleaner, Singleton):
         )
 
     def execute_clean(self) -> None:
-        print(self._work_packages)
         for package in self._work_packages:
             if package.worker.status == "DEAD":
                 self._work_scheduler.abort_work_package(package)
