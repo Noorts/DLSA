@@ -22,14 +22,14 @@ class QueuedJob:
 
     @property
     def percentage_done(self) -> float:
-        return len(self.completed_sequences) / len(self.request.sequences)
+        return len(self.completed_sequences) / len(self.request.queries)
 
     def done(self) -> bool:
-        return len(self.completed_sequences) == len(self.request.sequences)
+        return len(self.completed_sequences) == len(self.request.queries)
 
     def missing_sequences(self) -> list[TargetQueryCombination]:
         missing: list[TargetQueryCombination] = []
-        for sequence in self.request.sequences:
+        for sequence in self.request.queries:
             if not self.completed_sequences.get(sequence):
                 missing.append(sequence)
 

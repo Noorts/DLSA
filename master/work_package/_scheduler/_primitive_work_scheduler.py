@@ -11,13 +11,20 @@ class PrimitiveWorkPackageScheduler(WorkPackageScheduler):
         if not unfinished_jobs:
             return None
         job = unfinished_jobs.pop(0)
+        queries = job.missing_sequences()
         package = InternalWorkPackage(
             id=uuid4(),
             job=job,
-            sequences=job.missing_sequences(),
+            queries=queries,
+            sequences={
+                # Query
+                **{sequence[0]: job.request.sequences[sequence[0]] for sequence in queries},
+                # Target
+                **{sequence[1]: job.request.sequences[sequence[1]] for sequence in queries},
+            },
         )
 
-        job.sequences_in_progress += package.sequences
+        job.sequences_in_progress += package.queries
 
         return ScheduledWorkPackage(
             package=package,

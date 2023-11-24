@@ -11,10 +11,8 @@ TargetQueryCombination = tuple[SequenceId, SequenceId]
 
 
 class JobRequest(BaseModel):
-    targets: dict[SequenceId, Sequence]
-    queries: dict[SequenceId, Sequence]
-
-    sequences: list[TargetQueryCombination]
+    sequences: dict[SequenceId, Sequence]
+    queries: list[TargetQueryCombination]
 
 
 class JobId(BaseModel):

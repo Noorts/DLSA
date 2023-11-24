@@ -1,4 +1,5 @@
 from time import sleep
+from uuid import UUID
 
 from fastapi.testclient import TestClient
 
@@ -33,7 +34,21 @@ def test_get_work_for_worker(f_client: TestClient, f_job: JobId, f_worker_node: 
     json_response = response.json()
     assert json_response
     work_package = WorkPackage(**json_response)
-    assert work_package
+    assert work_package == WorkPackage(
+        id=work_package.id,
+        job_id=f_job.id,
+        queries=[
+            (UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+            (UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+            (UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")),
+        ],
+        sequences={
+            UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "ABCD",
+            UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "ABCD",
+            UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "ABCD",
+            UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "ABCD",
+        },
+    )
 
 
 def test_work_package_gets_returned(

@@ -30,7 +30,7 @@ class JobQueue(Singleton):
 
         for job in self._jobs.values():
             if not job.done() and len(job.sequences_in_progress) + len(job.completed_sequences) < len(
-                job.request.sequences
+                job.request.queries
             ):
                 jobs.append(job)
         return jobs

@@ -45,11 +45,15 @@ class WorkPackageCollector(Cleaner, Singleton):
             return None
 
         self._work_packages.append(scheduled_package)
-        return WorkPackage(
-            id=scheduled_package.package.id,
-            job_id=scheduled_package.package.job.id,
-            sequences=scheduled_package.package.sequences,
-        )
+        try:
+            return WorkPackage(
+                id=scheduled_package.package.id,
+                job_id=scheduled_package.package.job.id,
+                queries=scheduled_package.package.queries,
+                sequences=scheduled_package.package.sequences,
+            )
+        except Exception as e:
+            return None
 
     def execute_clean(self) -> None:
         for package in self._work_packages:
