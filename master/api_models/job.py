@@ -1,29 +1,31 @@
-from typing import Dict, List, Tuple, Literal
+from typing import Literal, Annotated
+from uuid import UUID
 
+from pydantic import Field
 from pydantic import BaseModel
 
 Sequence = str
-SequenceId = str
+SequenceId = UUID
 JobState = Literal["IN_QUEUE", "IN_PROGRESS", "DONE"]
-TargetQueryCombination = Tuple[SequenceId, SequenceId]
+TargetQueryCombination = tuple[SequenceId, SequenceId]
 
 
 class JobRequest(BaseModel):
-    targets: Dict[SequenceId, Sequence]
-    queries: Dict[SequenceId, Sequence]
+    targets: dict[SequenceId, Sequence]
+    queries: dict[SequenceId, Sequence]
 
-    sequences: List[TargetQueryCombination]
+    sequences: list[TargetQueryCombination]
 
 
 class JobId(BaseModel):
-    id: str
+    id: UUID
 
 
 class JobStatus(BaseModel):
-    id: str
+    id: UUID
     state: JobState
     # the progress as percentage [0-1]
-    progress: float
+    progress: Annotated[float, Field(strict=True, ge=0, le=1)]
 
 
 class Alignment(BaseModel):
@@ -35,4 +37,4 @@ class Alignment(BaseModel):
 
 # the result returned to the client, ordered by length
 class JobResult(BaseModel):
-    alignments: List[Alignment]
+    alignments: list[Alignment]
