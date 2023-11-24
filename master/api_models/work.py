@@ -1,45 +1,36 @@
-from dataclasses import dataclass as py_dataclass
 from typing import Literal
 from uuid import UUID
 
-from pydantic.dataclasses import dataclass
+from pydantic import BaseModel
 
 from .job import TargetQueryCombination, Alignment
 
 WorkerStatus = Literal["IDLE", "WORKING", "DEAD"]
 
 
-@dataclass
-@py_dataclass
-class WorkerId:
+class WorkerId(BaseModel):
     id: UUID
 
 
-@dataclass
-@py_dataclass
-class WorkerResources:
+class WorkerResources(BaseModel):
     ram_mb: int
     # determined using benchmarking/cpu_cores, ...
     cpu_resources: int
+    # determined using benchmarking/gpu_cores, ...
+    gpu_resources: int
 
 
-@dataclass
-@py_dataclass
-class WorkPackage:
+class WorkPackage(BaseModel):
     # work package id
     id: UUID
     job_id: UUID
     sequences: list[TargetQueryCombination]
 
 
-@dataclass
-@py_dataclass
-class WorkStatus:
+class WorkStatus(BaseModel):
     percentage_done: float
 
 
-@dataclass
-@py_dataclass
-class WorkResult:
+class WorkResult(BaseModel):
     work_id: UUID
     alignments: list[tuple[TargetQueryCombination, Alignment]]

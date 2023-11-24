@@ -2,8 +2,7 @@ from typing import Literal, Annotated
 from uuid import UUID
 
 from pydantic import Field
-from pydantic.dataclasses import dataclass
-from dataclasses import dataclass as py_dataclass
+from pydantic import BaseModel
 
 Sequence = str
 SequenceId = UUID
@@ -11,33 +10,25 @@ JobState = Literal["IN_QUEUE", "IN_PROGRESS", "DONE"]
 TargetQueryCombination = tuple[SequenceId, SequenceId]
 
 
-@dataclass
-@py_dataclass
-class JobRequest:
+class JobRequest(BaseModel):
     targets: dict[SequenceId, Sequence]
     queries: dict[SequenceId, Sequence]
 
     sequences: list[TargetQueryCombination]
 
 
-@dataclass
-@py_dataclass
-class JobId:
+class JobId(BaseModel):
     id: UUID
 
 
-@dataclass
-@py_dataclass
-class JobStatus:
+class JobStatus(BaseModel):
     id: UUID
     state: JobState
     # the progress as percentage [0-1]
-    progress: Annotated[float, Field(strict=True, gt=0, lt=1)]
+    progress: Annotated[float, Field(strict=True, ge=0, le=1)]
 
 
-@dataclass
-@py_dataclass
-class Alignment:
+class Alignment(BaseModel):
     # ABDAABDABDAC
     alignment: str
     length: int
@@ -45,7 +36,5 @@ class Alignment:
 
 
 # the result returned to the client, ordered by length
-@dataclass
-@py_dataclass
-class JobResult:
+class JobResult(BaseModel):
     alignments: list[Alignment]

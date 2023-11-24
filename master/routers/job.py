@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
 from master.api_models import JobRequest, JobId, JobStatus, JobResult
 from master.job_queue.job_queue import JobQueue
@@ -27,4 +27,14 @@ def get_job(job_id: UUID) -> JobStatus:
 @job_router.get("/job/{job_id}/result")
 def get_job(job_id: UUID) -> JobResult:
     job = _job_queue.get_job_by_id(job_id)
+
+    if job.state != "DONE":
+        raise HTTPException(status_code=404, detail="Job not done yet")
+
     return JobResult(alignments=[*job.completed_sequences.items()])
+
+
+@job_router.delete("/job/{job_id}")
+def delete_job(job_id: UUID):
+    _job_queue.delete_job_by_id(job_id)
+    # TODO purge job from work package

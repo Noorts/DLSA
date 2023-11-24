@@ -7,9 +7,9 @@ SchedulerType = Literal["primitive"]
 
 class _Settings(BaseSettings):
     scheduler_type: SchedulerType = "primitive"
-    work_package_cleaning_interval: int = 5 * 1000
-    worker_cleaning_interval: int = 5 * 1000
-    worker_timout: int = 10 * 1000
+    work_package_cleaning_interval: int = 5
+    worker_cleaning_interval: int = 5
+    worker_timout: int = 10
 
 
 SETTINGS = _Settings()

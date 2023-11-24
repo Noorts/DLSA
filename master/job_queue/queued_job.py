@@ -22,7 +22,7 @@ class QueuedJob:
 
     @property
     def percentage_done(self) -> float:
-        return len(self.completed_sequences) / len(self.request.sequences) * 100
+        return len(self.completed_sequences) / len(self.request.sequences)
 
     def done(self) -> bool:
         return len(self.completed_sequences) == len(self.request.sequences)

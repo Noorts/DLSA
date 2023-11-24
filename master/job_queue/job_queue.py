@@ -30,3 +30,7 @@ class JobQueue(Singleton):
         if not job:
             raise JobNotFoundException(job_id)
         return job
+
+    def delete_job_by_id(self, job_id: UUID):
+        self.get_job_by_id(job_id)
+        del self._jobs[job_id]

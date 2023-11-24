@@ -6,7 +6,7 @@ from master.api_models import WorkerResources
 from master.settings import SETTINGS
 from master.utils.cleaner import Cleaner
 from master.utils.singleton import Singleton
-from master.utils.time import current_ms
+from master.utils.time import current_sec
 from .worker import Worker
 
 
@@ -27,7 +27,7 @@ class WorkerCollector(Cleaner, Singleton):
     def register(self, resources: WorkerResources) -> UUID:
         worker_id = uuid4()
         self._workers[worker_id] = Worker(
-            worker_id=worker_id, resources=resources, last_seen_alive=current_ms(), status="IDLE"
+            worker_id=worker_id, resources=resources, last_seen_alive=current_sec(), status="IDLE"
         )
         return worker_id
 
@@ -40,7 +40,7 @@ class WorkerCollector(Cleaner, Singleton):
 
     def add_life_pulse(self, worker_id: UUID) -> None:
         worker = self.get_worker_by_id(worker_id)
-        worker.last_seen_alive = current_ms()
+        worker.last_seen_alive = current_sec()
 
     def idle_workers(self) -> list[Worker]:
         return [worker for worker in self._workers.values() if worker.status == "IDLE"]
@@ -51,7 +51,7 @@ class WorkerCollector(Cleaner, Singleton):
                 worker = self.get_worker_by_id(worker)
             except WorkerNotFoundException:
                 return False
-        return worker.last_seen_alive > current_ms() - SETTINGS.worker_timout and worker.status != "DEAD"
+        return worker.last_seen_alive > current_sec() - SETTINGS.worker_timout and worker.status != "DEAD"
 
     def execute_clean(self) -> None:
         for worker in self._workers.values():
