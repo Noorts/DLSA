@@ -44,5 +44,5 @@ class WorkPackageScheduler(ABC):
         job = work_package.package.job
 
         for in_progress_sequence in job.sequences_in_progress:
-            if in_progress_sequence in work_package.package.sequences:
+            if in_progress_sequence in work_package.package.queries:
                 job.sequences_in_progress.remove(in_progress_sequence)
