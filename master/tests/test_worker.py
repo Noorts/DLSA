@@ -47,12 +47,10 @@ def test_work_package_gets_returned(
     f_worker_node[1].stop()
 
     # Wait for the worker to be removed from the worker list
-    sleep(SETTINGS.worker_cleaning_interval * 2)
+    sleep(SETTINGS.worker_cleaning_interval * 2 + SETTINGS.work_package_cleaning_interval * 2)
 
-    # Check if there is work available -> there should be work available again, however we first need to register the
-    # worker again
-
-    # Register the worker again
+    # Check if there is work available -> there should be work available again
+    # However, we first need to register the worker again
     response = f_client.post(
         "/worker/register", json=WorkerResources(ram_mb=100, cpu_resources=1, gpu_resources=0).model_dump(mode="json")
     )
