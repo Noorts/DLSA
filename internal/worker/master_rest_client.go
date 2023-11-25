@@ -61,8 +61,8 @@ type WorkResult struct {
 }
 
 type AlignmentDetail struct {
-	TargetQueryCombination TargetQueryCombination `json:"0"`
-	Alignment              Alignment              `json:"1"`
+	TargetQueryCombination TargetQueryCombination `json:"combination"`
+	Alignment              Alignment              `json:"alignment"`
 }
 
 type RestClient struct {
