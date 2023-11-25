@@ -2,10 +2,11 @@ package worker
 
 import (
 	"fmt"
+	"os/exec"
 	"testing"
 )
 
-var baseURL = "127.0.0.1:59327"
+var baseURL = "http://0.0.0.0:8000"
 
 func TestGetSpecs(t *testing.T) {
 	specs, err := GetMachineSpecs()
@@ -107,7 +108,9 @@ func TestExecuteWork(t *testing.T) {
 }
 
 func CreateWorkPackage() WorkPackage {
-	id := "0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"
+
+	id := "ce670188-5567-4b51-a8c5-d894dbfbacbd"
+
 	WorkPackage := WorkPackage{
 		ID: &id,
 		Queries: []QueryTargetType{
@@ -127,4 +130,14 @@ func CreateWorkPackage() WorkPackage {
 		},
 	}
 	return WorkPackage
+}
+
+func CreateJob() string {
+	cmd := exec.Command("bash", "-c", "./create_master_curl.sh")
+	stdoutStderr, err := cmd.CombinedOutput() // This will capture both stdout and stderr
+	if err != nil {
+		fmt.Printf("Error: %s\n", err)
+	}
+	fmt.Printf("%s\n", stdoutStderr)
+	return string(stdoutStderr)
 }

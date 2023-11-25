@@ -2,9 +2,9 @@ from uuid import UUID, uuid4
 
 from fastapi import HTTPException
 
-from api_models import JobRequest
-from job_queue.queued_job import QueuedJob
-from utils.singleton import Singleton
+from master.api_models import JobRequest
+from master.job_queue.queued_job import QueuedJob
+from master.utils.singleton import Singleton
 
 
 class JobNotFoundException(HTTPException):

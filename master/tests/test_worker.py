@@ -91,6 +91,7 @@ def test_work_package_returned_successfully_and_completely(
 ):
     # Return some arbitrary result
     response = f_client.post(f"/work/{f_work_package.id}/result", json=JOB_RESULT_COMPLETE.model_dump(mode="json"))
+    print(JOB_RESULT_COMPLETE.model_dump(mode="json"))
     assert response.status_code == 200
 
     # Check if there is work available -> should be none
@@ -109,6 +110,7 @@ def test_work_package_partially_returned_and_picked_up_by_other_worker(
 ):
     # Return a partial result
     response = f_client.post(f"/work/{f_work_package.id}/result", json=JOB_RESULT_PART_1.model_dump(mode="json"))
+    print(JOB_RESULT_PART_1.model_dump(mode="json"))
     assert response.status_code == 200
 
     # Check that there is no work available

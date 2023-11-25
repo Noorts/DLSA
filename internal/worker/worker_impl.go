@@ -93,30 +93,29 @@ func (w *WorkerImpl) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 
 		qRes, _, score := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq))
 
-		alignment := AlignmentDetails{
+		alignment := AlignmentDetail{
 			Alignment: Alignment{
 				AlignmentString: qRes,
 				Score:           score,
 				Length:          len(qRes),
 			},
-			Combination: QueryTargetType{
+			TargetQueryCombination: TargetQueryCombination{
 				Query:  comb.Query,
 				Target: comb.Target,
 			},
 		}
 
 		result := WorkResult{
-			WorkID:     *work.ID,
-			Alignments: []AlignmentDetails{alignment},
+			Alignments: []AlignmentDetail{alignment},
 		}
 
-		// log.Printf("Result: %v", result)
-		// err := w.client.SendResult(result)
-		// if err != nil {
-		// 	//TODO: Should we just log the error and continue?
-		// 	log.Printf("Error sending result: %v", err)
-		// 	continue
-		// }
+		log.Printf("Result: %v", result)
+		err := w.client.SendResult(result, *work.ID)
+		if err != nil {
+			//TODO: Should we just log the error and continue?
+			log.Printf("Error sending result: %v", err)
+			continue
+		}
 		results[ind] = result
 	}
 	w.status = Waiting

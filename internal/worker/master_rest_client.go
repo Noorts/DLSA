@@ -47,19 +47,22 @@ type MachineSpecsRequest struct {
 type WorkRequest struct {
 	WorkerId string `json:"id"`
 }
-
-type WorkResult struct {
-	WorkID     string             `json:"work_id"`
-	Alignments []AlignmentDetails `json:"alignments"`
-}
-
 type Heartbeat struct {
 	WorkerId string `json:"worker_id"`
 }
 
-type AlignmentDetails struct {
-	Combination QueryTargetType `json:"combination"`
-	Alignment   Alignment       `json:"alignment"`
+type TargetQueryCombination struct {
+	Target SequenceId `json:"target"`
+	Query  SequenceId `json:"query"`
+}
+
+type WorkResult struct {
+	Alignments []AlignmentDetail `json:"alignments"`
+}
+
+type AlignmentDetail struct {
+	TargetQueryCombination TargetQueryCombination `json:"0"`
+	Alignment              Alignment              `json:"1"`
 }
 
 type RestClient struct {
@@ -76,8 +79,8 @@ func InitRestClient(baseURL string) *RestClient {
 
 func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
 	specsReq := MachineSpecsRequest{
-		Ram: specs.memory_size,
-		Cpu: specs.cores,
+		Ram: 800,
+		Cpu: 1,
 		Gpu: specs.gpu,
 	}
 	jsonData, err := json.Marshal(specsReq)
@@ -110,15 +113,13 @@ func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
 }
 
 func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
+	fmt.Println("Requesting work")
 	workReq := WorkRequest{WorkerId: workerId}
 	jsonData, err := json.Marshal(workReq)
 
 	if err != nil {
 		return nil, err
 	}
-
-	fmt.Println("Request some work")
-	fmt.Println(string(jsonData))
 
 	req, err := http.NewRequest("POST", c.baseURL+"/work", bytes.NewBuffer(jsonData))
 	if err != nil {
@@ -149,8 +150,6 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
-	fmt.Println("Got work")
-	fmt.Println(string(body))
 	// Decode the response
 	var workPkg WorkPackage
 	err = json.Unmarshal(body, &workPkg)
@@ -158,22 +157,25 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		fmt.Printf("Error decoding response: %s", err)
 		return nil, err
 	}
-
+	fmt.Println("Got work", &workPkg)
 	return &workPkg, nil
 }
 
-func (c *RestClient) SendResult(result WorkResult) error {
+func (c *RestClient) SendResult(result WorkResult, workId string) error {
 	jsonData, err := json.Marshal(result)
 	if err != nil {
 		return err
 	}
 
-	req, err := http.NewRequest("POST", c.baseURL+"/result", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", c.baseURL+"/work/"+workId+"/result", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return err
 	}
 
 	req.Header.Set("Content-Type", "application/json")
+
+	fmt.Println("Sending result to url: " + c.baseURL + "/work/" + workId + "/result")
+	fmt.Println(string(jsonData))
 
 	resp, err := c.client.Do(req)
 	if err != nil {

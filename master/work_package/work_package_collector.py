@@ -2,11 +2,11 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from api_models import WorkResult, WorkerId, WorkPackage
-from settings import SETTINGS
-from utils.cleaner import Cleaner
-from utils.singleton import Singleton
-from worker.worker_collector import WorkerCollector
+from master.api_models import WorkResult, WorkerId, WorkPackage
+from master.settings import SETTINGS
+from master.utils.cleaner import Cleaner
+from master.utils.singleton import Singleton
+from master.worker.worker_collector import WorkerCollector
 from ._scheduler.work_scheduler import WorkPackageScheduler, ScheduledWorkPackage
 
 
@@ -41,19 +41,24 @@ class WorkPackageCollector(Cleaner, Singleton):
     def get_new_work_package(self, worker_id: WorkerId) -> None | WorkPackage:
         worker = self._worker_collector.get_worker_by_id(worker_id.id)
         scheduled_package = self._work_scheduler.schedule_work_for(worker)
+
         if not scheduled_package:
+            print('No work package available')
             return None
 
         self._work_packages.append(scheduled_package)
-        print('debug')
-        print(scheduled_package.package.queries)
-        print(scheduled_package.package.sequences)
+
         return WorkPackage(
-            id=scheduled_package.package.id,
-            job_id=scheduled_package.package.job.id,
-            queries=scheduled_package.package.queries,
-            sequences=scheduled_package.package.sequences,
-        )
+        id=scheduled_package.package.id,
+        job_id=scheduled_package.package.job.id,
+        queries=[
+            {"target": query.target, "query": query.query}
+            for query in scheduled_package.package.queries
+        ],
+        sequences={
+            str(uuid): sequence for uuid, sequence in scheduled_package.package.sequences.items()
+        },
+    )
 
     def execute_clean(self) -> None:
         for package in self._work_packages:
