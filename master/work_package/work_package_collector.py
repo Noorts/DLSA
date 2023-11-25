@@ -33,10 +33,10 @@ class WorkPackageCollector(Cleaner, Singleton):
         work_package = self.get_package_by_id(work_id)
         completed_sequences = work_package.package.job.completed_sequences
 
-        for [target_query_combination, alignment] in result.alignments:
-            completed_sequences[target_query_combination] = alignment
+        for res in result.alignments:
+            completed_sequences[res.combination] = res.alignment
             # Remove the sequence from the in progress list
-            work_package.package.job.sequences_in_progress.remove(target_query_combination)
+            work_package.package.job.sequences_in_progress.remove(res.combination)
 
     def get_new_work_package(self, worker_id: WorkerId) -> None | WorkPackage:
         worker = self._worker_collector.get_worker_by_id(worker_id.id)

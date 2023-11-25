@@ -2,7 +2,15 @@ from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
 
-from master.api_models import JobRequest, JobId, JobStatus, JobResult
+from master.api_models import (
+    JobRequest,
+    JobId,
+    JobStatus,
+    JobResult,
+    JobResultCombination,
+    TargetQueryCombination,
+    Alignment,
+)
 from master.job_queue.job_queue import JobQueue
 from master.settings import SETTINGS
 
@@ -32,7 +40,15 @@ def get_job(job_id: UUID) -> JobResult:
     if job.state != "DONE":
         raise HTTPException(status_code=404, detail="Job not done yet")
 
-    return JobResult(alignments=[*job.completed_sequences.items()])
+    return JobResult(
+        alignments=[
+            JobResultCombination(
+                combination=combination,
+                alignment=alignment,
+            )
+            for combination, alignment in job.completed_sequences.items()
+        ]
+    )
 
 
 @job_router.delete("/job/{job_id}")

@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from .job import TargetQueryCombination, Alignment, SequenceId, Sequence
+from .job import TargetQueryCombination, Alignment, SequenceId, Sequence, JobResultCombination
 
 WorkerStatus = Literal["IDLE", "WORKING", "DEAD"]
 
@@ -33,4 +33,4 @@ class WorkStatus(BaseModel):
 
 
 class WorkResult(BaseModel):
-    alignments: list[tuple[TargetQueryCombination, Alignment]]
+    alignments: list[JobResultCombination]

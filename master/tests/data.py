@@ -1,6 +1,6 @@
 from uuid import UUID
 
-from master.api_models import JobRequest, WorkResult, Alignment, TargetQueryCombination
+from master.api_models import JobRequest, WorkResult, Alignment, TargetQueryCombination, JobResultCombination
 
 JOB_REQUEST = JobRequest(
     sequences={
@@ -28,54 +28,53 @@ JOB_REQUEST = JobRequest(
     ],
 )
 
-
 JOB_RESULT_COMPLETE = WorkResult(
     alignments=[
-        (
-            TargetQueryCombination(
+        JobResultCombination(
+            combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            Alignment(alignment="ABCD", length=4, score=4),
+            alignment=Alignment(alignment="ABCD", length=4, score=4),
         ),
-        (
-            TargetQueryCombination(
+        JobResultCombination(
+            combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            Alignment(alignment="ABCD", length=4, score=4),
+            alignment=Alignment(alignment="ABCD", length=4, score=4),
         ),
-        (
-            TargetQueryCombination(
+        JobResultCombination(
+            combination=TargetQueryCombination(
                 target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            Alignment(alignment="ABCD", length=4, score=4),
+            alignment=Alignment(alignment="ABCD", length=4, score=4),
         ),
     ]
 )
 
 JOB_RESULT_PART_1 = WorkResult(
     alignments=[
-        (
-            TargetQueryCombination(
+        JobResultCombination(
+            combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            Alignment(alignment="ABCD", length=4, score=4),
+            alignment=Alignment(alignment="ABCD", length=4, score=4),
         ),
-        (
-            TargetQueryCombination(
+        JobResultCombination(
+            combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            Alignment(alignment="ABCD", length=4, score=4),
+            alignment=Alignment(alignment="ABCD", length=4, score=4),
         ),
     ]
 )
 
 JOB_RESULT_PART_2 = WorkResult(
     alignments=[
-        (
-            TargetQueryCombination(
+        JobResultCombination(
+            combination=TargetQueryCombination(
                 target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            Alignment(alignment="ABCD", length=4, score=4),
+            alignment=Alignment(alignment="ABCD", length=4, score=4),
         ),
     ]
 )
