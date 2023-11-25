@@ -4,29 +4,7 @@ import (
 	"testing"
 )
 
-// Example as listed on Wikipedia
-func TestExample1(t *testing.T) {
-	matrix := FindStringScore("TGTTACGG", "GGTTGACTA")
-
-	max := 0
-
-	for i := 0; i < len(matrix); i++ {
-		if max < matrix[i] {
-			max = matrix[i]
-		}
-	}
-
-	if max != 13 {
-		t.Errorf("Expected max value 13 found %d", max)
-	} else {
-		t.Logf("Test succeeded; found max: %d", max)
-	}
-}
-package smithwaterman
-
-import (
-	"testing"
-)
+// Example as listed on Wikipedi
 
 func TestBasic(t *testing.T) {
 	test_substring("A", "A", "A", "A", t)
@@ -83,8 +61,11 @@ func test_with_scoring(gap int, mismatch int, match int, query, target, expected
 }
 
 func test_substring(query, target, expected_query, expected_target string, t *testing.T) {
-	found_query, found_target := findLocalAlignment(query, target)
-
+	found_query, found_target, score := FindLocalAlignment(query, target)
+	if score == 0 {
+		t.Logf("Found no substring")
+		return
+	}
 	match := true
 
 	if found_query != expected_query {

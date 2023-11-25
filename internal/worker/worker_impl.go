@@ -79,11 +79,11 @@ func (w *WorkerImpl) GetWork() (*WorkPackage, error) {
 // TODO: Parallelization work
 func (w *WorkerImpl) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 	w.status = Working
-	results := make([]WorkResult, len(work.Sequences))
-	for ind, comb := range work.Sequences {
+	results := make([]WorkResult, len(work.Queries))
+	for ind, comb := range work.Queries {
 		//indexing here is a bit weird, should tell master to use a map
-		targetSeq, ok1 := work.Targets[comb[1]]
-		querySeq, ok2 := work.Queries[comb[0]]
+		targetSeq, ok1 := work.Sequences[comb.Target]
+		querySeq, ok2 := work.Sequences[comb.Query]
 
 		// Check if both sequences are in the work package
 		if !ok1 || !ok2 {
@@ -91,17 +91,18 @@ func (w *WorkerImpl) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 			continue
 		}
 
-		stringScore := smithwaterman.FindStringScore(string(targetSeq), string(querySeq))
-		resultString := "ASDFADFSD" //for now since SW only returns that matrix
+		qRes, _, score := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq))
 
 		alignment := AlignmentDetails{
 			Alignment: Alignment{
-				AlignmentString: resultString,
-				Score:           10,
-				Length:          len(stringScore),
+				AlignmentString: qRes,
+				Score:           score,
+				Length:          len(qRes),
 			},
-			Combination: TargetQueryCombination{
-				[2]SequenceId{comb[0], comb[1]}},
+			Combination: QueryTargetType{
+				Query:  comb.Query,
+				Target: comb.Target,
+			},
 		}
 
 		result := WorkResult{
@@ -109,13 +110,13 @@ func (w *WorkerImpl) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 			Alignments: []AlignmentDetails{alignment},
 		}
 
-		log.Printf("Result: %v", result)
-		err := w.client.SendResult(result)
-		if err != nil {
-			//TODO: Should we just log the error and continue?
-			log.Printf("Error sending result: %v", err)
-			continue
-		}
+		// log.Printf("Result: %v", result)
+		// err := w.client.SendResult(result)
+		// if err != nil {
+		// 	//TODO: Should we just log the error and continue?
+		// 	log.Printf("Error sending result: %v", err)
+		// 	continue
+		// }
 		results[ind] = result
 	}
 	w.status = Waiting

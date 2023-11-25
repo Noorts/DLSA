@@ -12,9 +12,9 @@ import (
 type Sequence string
 type SequenceId string
 
-type TargetQueryCombination struct {
-	//query first, then target
-	QueryTarget [2]SequenceId `json:"-"`
+type QueryTargetType struct {
+	Query  SequenceId `json:"query"`
+	Target SequenceId `json:"target"`
 }
 
 type Alignment struct {
@@ -25,9 +25,8 @@ type Alignment struct {
 
 type WorkPackage struct {
 	ID        *string                 `json:"id"`
-	Targets   map[SequenceId]Sequence `json:"targets"`
-	Queries   map[SequenceId]Sequence `json:"queries"`
-	Sequences [][]SequenceId          `json:"sequences"`
+	Queries   []QueryTargetType       `json:"queries"`
+	Sequences map[SequenceId]Sequence `json:"sequences"`
 }
 
 type MachineSpecsRequest struct {
@@ -59,8 +58,8 @@ type Heartbeat struct {
 }
 
 type AlignmentDetails struct {
-	Combination TargetQueryCombination `json:"combination"`
-	Alignment   Alignment              `json:"alignment"`
+	Combination QueryTargetType `json:"combination"`
+	Alignment   Alignment       `json:"alignment"`
 }
 
 type RestClient struct {

@@ -44,7 +44,7 @@ func findStringScore(query string, target string) []int {
 	return score
 }
 
-func findLocalAlignment(query, target string) (string, string) {
+func FindLocalAlignment(query, target string) (string, string, int) {
 	score := findStringScore(query, target)
 
 	max_index := 0
@@ -112,7 +112,7 @@ func findLocalAlignment(query, target string) (string, string) {
 		query_result.WriteRune('-')
 	}
 
-	return string_rev(query_result.String()), string_rev(target_result.String())
+	return string_rev(query_result.String()), string_rev(target_result.String()), max_score
 }
 
 func string_rev(inp string) string {

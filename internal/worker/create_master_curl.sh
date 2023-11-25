@@ -3,23 +3,20 @@ curl -X 'POST' \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
-  "queries": {
-    "0e22cdce-68b5-4f94-a8a0-2980cbeeb74c": "ABCD",
-    "1e22cdce-68b5-4f94-a8a0-2980cbeeb74c": "ABCD",
-    "2e22cdce-68b5-4f94-a8a0-2980cbeeb74c": "ABCD"
-  },
-  "targets": {
-    "5e22cdce-68b5-4f94-a8a0-2980cbeeb74c": "ABCD",
-    "6e22cdce-68b5-4f94-a8a0-2980cbeeb74c": "ABCD"
-  },
-  "sequences": [
-    [
-      "0e22cdce-68b5-4f94-a8a0-2980cbeeb74c",
-      "1e22cdce-68b5-4f94-a8a0-2980cbeeb74c"
-    ], 
-    [
-      "0e22cdce-68b5-4f94-a8a0-2980cbeeb74c",
-      "1e22cdce-68b5-4f94-a8a0-2980cbeeb74c"
-    ]
-  ]
+  "queries": [
+    {
+      "target": "0e22cdce-68b5-4f94-a8a0-2980cbeeb74c",
+      "query": "2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"
+    },
+    {
+      "target": "1e22cdce-68b5-4f94-a8a0-2980cbeeb74c",
+      "query": "3e22cdce-68b5-4f94-a8a0-2980cbeeb74c"
+    }
+  ],
+  "sequences": {
+    "0e22cdce-68b5-4f94-a8a0-2980cbeeb74c": "ABCDEF",
+    "2e22cdce-68b5-4f94-a8a0-2980cbeeb74c": "ABCDEF",
+    "1e22cdce-68b5-4f94-a8a0-2980cbeeb74c": "ABCDEF",
+    "3e22cdce-68b5-4f94-a8a0-2980cbeeb74c": "ABCDEF"
+  }
 }'

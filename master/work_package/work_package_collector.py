@@ -45,6 +45,9 @@ class WorkPackageCollector(Cleaner, Singleton):
             return None
 
         self._work_packages.append(scheduled_package)
+        print('debug')
+        print(scheduled_package.package.queries)
+        print(scheduled_package.package.sequences)
         return WorkPackage(
             id=scheduled_package.package.id,
             job_id=scheduled_package.package.job.id,
