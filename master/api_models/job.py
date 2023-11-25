@@ -39,6 +39,11 @@ class Alignment(BaseModel):
     score: int
 
 
+class JobResultCombination(BaseModel):
+    combination: TargetQueryCombination
+    alignment: Alignment
+
+
 # the result returned to the client, ordered by length
 class JobResult(BaseModel):
-    alignments: list[tuple[TargetQueryCombination, Alignment]]
+    alignments: list[JobResultCombination]
