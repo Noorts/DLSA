@@ -27,7 +27,7 @@ The worker runs in an infite loop, which tries to register with the master node 
 
 To test the master and worker simultaneously you first have to run an instance of the master (see docs)
 
-To create a job on the master you can use the spawn_job.sh script, the request parameters can be modified to your liking.
+Once the master is up and running you can create a job by using the spawn_job.sh script, the request parameters can be modified to your liking.
 
 `sh spawn_job.sh`
 
