@@ -48,7 +48,7 @@ type WorkRequest struct {
 	WorkerId string `json:"id"`
 }
 type Heartbeat struct {
-	WorkerId string `json:"worker_id"`
+	WorkerId string `json:"id"`
 }
 
 type TargetQueryCombination struct {
@@ -78,6 +78,7 @@ func InitRestClient(baseURL string) *RestClient {
 }
 
 func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
+	//TODO: Machine specs vaildation
 	specsReq := MachineSpecsRequest{
 		Ram: 800,
 		Cpu: 1,
@@ -199,7 +200,8 @@ func (c *RestClient) SendHeartbeat(workerId string) error {
 	if err != nil {
 		return err
 	}
-
+	fmt.Println("Sending heartbeat to url: " + c.baseURL + "/worker/pulse")
+	fmt.Println(string(jsonData))
 	resp, err := c.client.Post(c.baseURL+"/worker/pulse", "application/json", bytes.NewReader(jsonData))
 	resp.Body.Close()
 	return err

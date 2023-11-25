@@ -124,9 +124,9 @@ func (w *WorkerImpl) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 
 func (w *WorkerImpl) heartbeatRoutine() {
 	for w.status != Dead {
-		time.Sleep(30 * time.Second)
+		time.Sleep(2 * time.Second)
 		for w.client.SendHeartbeat(*w.workerId) != nil {
-			time.Sleep(2 * time.Second)
+			time.Sleep(8 * time.Second)
 		}
 	}
 }
