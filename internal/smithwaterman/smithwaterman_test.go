@@ -17,10 +17,11 @@ func TestNoMatch(t *testing.T) {
 }
 
 func TestGap(t *testing.T) {
+	test_with_scoring(1, 1, 2, "CCAA", "GATA", "A-A", "ATA", t)
 	test_with_scoring(1, 1, 2, "AA", "ATA", "A-A", "ATA", t)
 	test_with_scoring(1, 1, 2, "AA", "ATTA", "A", "A", t)
 	test_with_scoring(1, 1, 3, "AA", "ATTA", "A--A", "ATTA", t)
-	test_with_scoring(1, 1, 3, "ATA", "ATTA", "AT-A", "ATTA", t)
+	test_with_scoring(1, 1, 3, "ATA", "ATTA", "A-TA", "ATTA", t)
 	test_with_scoring(1, 1, 2, "AAAAAAAAA", "AAATTAAATTAAA", "AAA--AAA--AAA", "AAATTAAATTAAA", t)
 }
 

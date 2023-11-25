@@ -1,8 +1,7 @@
 package smithwaterman
 
 import (
-	"bytes"
-	"fmt"
+	"strings"
 )
 
 var GAP_PENALTY = 1
@@ -31,13 +30,10 @@ func findStringScore(query string, target string) []int {
 				sub_score = -MISMATCH_PENALTY
 			}
 
-			score[index(x, y, width)] = max(
-				max(0, score[index(x-1, y-1, width)]+sub_score),
-				max(
-					score[index(x-1, y, width)]-GAP_PENALTY,
-					score[index(x, y-1, width)]-GAP_PENALTY,
-				),
-			)
+			score[index(x, y, width)] = max(0,
+				score[index(x-1, y-1, width)]+sub_score,
+				score[index(x-1, y, width)]-GAP_PENALTY,
+				score[index(x, y-1, width)]-GAP_PENALTY)
 		}
 	}
 
@@ -50,9 +46,6 @@ func findLocalAlignment(query, target string) (string, string) {
 	max_index := 0
 	max_score := 0
 
-	width := len(target) + 1
-	// height := len(query) + 1
-
 	for i := 0; i < len(score); i++ {
 		current_score := score[i]
 		if current_score > max_score {
@@ -61,68 +54,42 @@ func findLocalAlignment(query, target string) (string, string) {
 		}
 	}
 
-	var current_score = score[max_index]
-	current_index := max_index
+	width := len(target) + 1
+	x, y := index2coord(max_index, width)
 
-	var query_result bytes.Buffer
-	var target_result bytes.Buffer
+	var queryResult, targetResult strings.Builder
+	traceback(score, query, target, x, y, width, &queryResult, &targetResult)
 
-	x, y := index2coord(current_index, width)
-	x -= 1
-	y -= 1
-
-	for current_score > 0 {
-		// If we move up we skip a value in the target string
-		// If we move left we skip a value in the query string
-		next := score[current_index-1-width]
-		left := score[current_index-1]
-		up := score[current_index-width]
-
-		// fmt.Printf("Visiting index: %d; Coord: %d, %d\n", current_index, x, y)
-
-		if next >= max(left, up) {
-			// fmt.Printf("Indexing string '%s' at index: %d", query, x)
-			query_result.WriteByte(query[y])
-			target_result.WriteByte(target[x])
-			current_index -= width + 1
-			x -= 1
-			y -= 1
-			// TODO: Evaluate what is more important in the case of equivalence
-		} else if left > up {
-			// query_result.WriteByte(query[x])
-			query_result.WriteRune('-')
-			current_index -= 1
-			x -= 1
-		} else {
-			target_result.WriteRune('-')
-			current_index -= width
-			y -= 1
-		}
-
-		current_score = score[current_index]
-	}
-
-	fmt.Printf("Remaining x: %d, y: %d\n", x, y)
-
-	for i := -1; i < x; i++ {
-		target_result.WriteRune('-')
-	}
-
-	for i := -1; i < y; i++ {
-		query_result.WriteRune('-')
-	}
-
-	return string_rev(query_result.String()), string_rev(target_result.String())
+	return queryResult.String(), targetResult.String()
 }
 
-func string_rev(inp string) string {
-	runes := []rune(inp)
-
-	for i, j := 0, len(runes)-1; i < j; i, j = i+1, j-1 {
-		runes[i], runes[j] = runes[j], runes[i]
+func traceback(matrix []int, query, target string, x, y, width int, queryResult, targetResult *strings.Builder) {
+	if x == 0 || y == 0 {
+		return
 	}
 
-	return string(runes)
+	matchScore := MATCH_SCORE
+	if query[x-1] != target[y-1] {
+		matchScore = -MISMATCH_PENALTY
+	}
+
+	// TODO: Evaluate what is more important in the case of multiple paths
+	score := matrix[index(y, x, width)]
+	if score == 0 {
+		return
+	} else if score == matrix[index(y-1, x-1, width)]+matchScore {
+		traceback(matrix, query, target, x-1, y-1, width, queryResult, targetResult)
+		queryResult.WriteByte(query[x-1])
+		targetResult.WriteByte(target[y-1])
+	} else if score == matrix[index(y, x-1, width)]-GAP_PENALTY {
+		traceback(matrix, query, target, x-1, y, width, queryResult, targetResult)
+		queryResult.WriteByte(query[x-1])
+		targetResult.WriteRune('-')
+	} else {
+		traceback(matrix, query, target, x, y-1, width, queryResult, targetResult)
+		queryResult.WriteRune('-')
+		targetResult.WriteByte(target[y-1])
+	}
 }
 
 func index(x, y, width int) int {
@@ -130,5 +97,5 @@ func index(x, y, width int) int {
 }
 
 func index2coord(index, width int) (int, int) {
-	return index % width, index / width
+	return index / width, index % width
 }
