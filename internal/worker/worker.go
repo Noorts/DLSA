@@ -16,4 +16,5 @@ type WorkerInterface interface {
 	ExecuteWork(*WorkPackage) []WorkResult
 
 	//TODO: Heartbeat (pulses)
+	Heartbeat() error
 }
