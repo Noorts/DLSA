@@ -12,7 +12,7 @@ import (
 // The worker also has a work package, which contains the queries and targets
 // The worker also contains it's specs (CPU, RAM, etc.)
 
-type WorkerImpl struct {
+type Worker struct {
 	specs    *MachineSpecs // Machine specs of the worker
 	workerId *string       // Unique ID of the worker
 	// workPackage *WorkPackage  // Work package of the worker, can be null
@@ -29,12 +29,12 @@ const (
 )
 
 // TODO: Decide what happens if the specs arent't returned return nil for now
-func InitWorker(client *RestClient) (*WorkerImpl, error) {
+func InitWorker(client *RestClient) (*Worker, error) {
 	machineSpecs, err := GetMachineSpecs()
 	if err != nil {
 		return nil, err
 	}
-	return &WorkerImpl{
+	return &Worker{
 		specs:  machineSpecs,
 		client: client,
 		status: Waiting,
@@ -43,7 +43,7 @@ func InitWorker(client *RestClient) (*WorkerImpl, error) {
 
 // Function to register the worker with the master, returns the worker ID if successful
 // TODO: Decide what happens if the worker is already registered ()
-func (w *WorkerImpl) RegisterWorker() (*string, error) {
+func (w *Worker) RegisterWorker() (*string, error) {
 	// Logic to register the worker, call the register endpoint
 	workerId, err := w.client.RegisterWorker(w.specs)
 	if err != nil {
@@ -55,7 +55,7 @@ func (w *WorkerImpl) RegisterWorker() (*string, error) {
 }
 
 // Function to request work from the master, returns the work package if successful
-func (w *WorkerImpl) GetWork() (*WorkPackage, error) {
+func (w *Worker) GetWork() (*WorkPackage, error) {
 	// Logic to fetch a task from the master, call the work endpoint
 	if w.workerId == nil {
 		//some error message
@@ -77,11 +77,11 @@ func (w *WorkerImpl) GetWork() (*WorkPackage, error) {
 // For now we just execute the work sequentially and send the result back for every seq,tar pair
 // TODO: This seems kinda hacky for now idk should think about this
 // TODO: Parallelization work
-func (w *WorkerImpl) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
+func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 	w.status = Working
 	results := make([]WorkResult, len(work.Queries))
 	for ind, comb := range work.Queries {
-		//indexing here is a bit weird, should tell master to use a map
+
 		targetSeq, ok1 := work.Sequences[comb.Target]
 		querySeq, ok2 := work.Sequences[comb.Query]
 
@@ -122,7 +122,7 @@ func (w *WorkerImpl) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 	return results, nil
 }
 
-func (w *WorkerImpl) heartbeatRoutine() {
+func (w *Worker) heartbeatRoutine() {
 	for w.status != Dead {
 		time.Sleep(2 * time.Second)
 		for w.client.SendHeartbeat(*w.workerId) != nil {

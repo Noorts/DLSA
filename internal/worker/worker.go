@@ -1,10 +1,10 @@
 package worker
 
 // Worker interface
-type Worker interface {
+type WorkerInterface interface {
 
 	//Initializes the worker with machine specs
-	InitWorker(*RestClient) (*WorkerImpl, error)
+	InitWorker(*RestClient) (*Worker, error)
 
 	//Registers the worker with the master
 	RegisterWorker() (*int, error)
