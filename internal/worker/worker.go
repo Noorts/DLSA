@@ -15,6 +15,6 @@ type WorkerInterface interface {
 	//Executes the work package
 	ExecuteWork(*WorkPackage) []WorkResult
 
-	//TODO: Heartbeat (pulses)
+	//Sends a heartbeat to the master
 	Heartbeat() error
 }
