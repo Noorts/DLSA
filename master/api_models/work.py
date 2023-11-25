@@ -3,7 +3,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from .job import TargetQueryCombination, Alignment, SequenceId, Sequence, JobResultCombination
+from .job import TargetQueryCombination, SequenceId, Sequence, JobResultCombination
 
 WorkerStatus = Literal["IDLE", "WORKING", "DEAD"]
 

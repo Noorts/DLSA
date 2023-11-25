@@ -8,8 +8,6 @@ from master.api_models import (
     JobStatus,
     JobResult,
     JobResultCombination,
-    TargetQueryCombination,
-    Alignment,
 )
 from master.job_queue.job_queue import JobQueue
 from master.settings import SETTINGS
