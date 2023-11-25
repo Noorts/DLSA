@@ -30,3 +30,7 @@ To test the master and worker simultaneously you first have to run an instance o
 To create a job on the master you can use the spawn_job.sh script, the request parameters can be modified to your liking.
 
 `sh spawn_job.sh`
+
+run the app with
+
+`go run cmd/worker/main.go`
