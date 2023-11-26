@@ -159,6 +159,7 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 	fmt.Println("Got work", &workPkg)
+	fmt.Printf(" Got work - Time since epoch (micro): %d\n", time.Now().UnixMicro())
 	return &workPkg, nil
 }
 
@@ -175,6 +176,7 @@ func (c *RestClient) SendResult(result WorkResult, workId string) error {
 
 	req.Header.Set("Content-Type", "application/json")
 
+	fmt.Printf(" Send results - Time since epoch (micro): %d\n", time.Now().UnixMicro())
 	fmt.Println("Sending result to url: " + c.baseURL + "/work/" + workId + "/result")
 	fmt.Println(string(jsonData))
 
