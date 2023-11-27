@@ -28,6 +28,8 @@ const (
 	Dead    Status = 2
 )
 
+const heartbeatIntervalInSeconds = 8
+
 // TODO: Decide what happens if the specs arent't returned return nil for now
 func InitWorker(client *RestClient) (*Worker, error) {
 	machineSpecs, err := GetMachineSpecs()
@@ -124,9 +126,9 @@ func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 
 func (w *Worker) heartbeatRoutine() {
 	for w.status != Dead {
-		time.Sleep(2 * time.Second)
+		time.Sleep(2 * time.Second) // TODO: Extract time to constant.
 		for w.client.SendHeartbeat(*w.workerId) != nil {
-			time.Sleep(8 * time.Second)
+			time.Sleep(heartbeatIntervalInSeconds * time.Second)
 		}
 	}
 }
