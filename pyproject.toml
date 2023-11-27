@@ -1,0 +1,25 @@
+[tool.poetry]
+name = "dlsa"
+version = "0.1.0"
+description = ""
+authors = ["Niclas Haderer <niclas.haderer.dev@gmail.com>"]
+readme = "README.md"
+packages = [{ include = "master" }]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+fastapi = "^0.104.1"
+uvicorn = "^0.24.0.post1"
+black = { extras = ["d"], version = "^23.11.0" }
+pydantic-settings = "^2.1.0"
+pytest = "^7.4.3"
+httpx = "^0.25.2"
+coverage = "^7.3.2"
+
+[tool.black]
+line-length = 120
+target-version = ['py310']
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

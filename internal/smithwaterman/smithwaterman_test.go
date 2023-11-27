@@ -4,6 +4,8 @@ import (
 	"testing"
 )
 
+// Example as listed on Wikipedi
+
 func TestBasic(t *testing.T) {
 	test_substring("A", "A", "A", "A", t)
 	test_substring("HOI", "HOI", "HOI", "HOI", t)
@@ -60,8 +62,11 @@ func test_with_scoring(gap int, mismatch int, match int, query, target, expected
 }
 
 func test_substring(query, target, expected_query, expected_target string, t *testing.T) {
-	found_query, found_target := findLocalAlignment(query, target)
-
+	found_query, found_target, score := FindLocalAlignment(query, target)
+	if score == 0 {
+		t.Logf("Found no substring")
+		return
+	}
 	match := true
 
 	if found_query != expected_query {

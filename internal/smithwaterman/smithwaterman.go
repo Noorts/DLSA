@@ -40,7 +40,7 @@ func findStringScore(query string, target string) []int {
 	return score
 }
 
-func findLocalAlignment(query, target string) (string, string) {
+func FindLocalAlignment(query, target string) (string, string, int) {
 	score := findStringScore(query, target)
 
 	max_index := 0
@@ -60,7 +60,7 @@ func findLocalAlignment(query, target string) (string, string) {
 	var queryResult, targetResult strings.Builder
 	traceback(score, query, target, x, y, width, &queryResult, &targetResult)
 
-	return queryResult.String(), targetResult.String()
+	return queryResult.String(), targetResult.String(), max_score
 }
 
 func traceback(matrix []int, query, target string, x, y, width int, queryResult, targetResult *strings.Builder) {
