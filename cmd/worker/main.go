@@ -4,13 +4,26 @@ import (
 	"dlsa/internal/worker"
 	"log"
 	"time"
+	"os"
+	"regexp"
 )
 
-func main() {
+const ipv4WithPortRegex = `^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$` // Note: does not include `localhost`.
+const protocolPrefix = "http://" // TODO: Can we use HTTPS?
+const defaultMasterNodeAddress = "0.0.0.0:8000" // Default address and port of the master node.
 
-	//TODO: URL of master node
-	baseURL := "http://0.0.0.0:8000"
-	client := worker.InitRestClient(baseURL)
+func main() {
+	masterNodeAddress := defaultMasterNodeAddress
+
+	// To supply the master node address via the CLI run: `go run cmd/worker/main.go -- 192.168.0.1:8000`.
+	if len(os.Args) == 3 && regexp.MustCompile(ipv4WithPortRegex).MatchString(os.Args[2]) {
+		masterNodeAddress = os.Args[2]
+		log.Printf("The address of the master node was passed as a CLI argument. %v", protocolPrefix + masterNodeAddress)
+		} else {
+		log.Printf("The address of the master node was not passed. Falling back to default. %v", protocolPrefix + masterNodeAddress)
+	}
+
+	client := worker.InitRestClient(protocolPrefix + masterNodeAddress)
 
 	// Create a new worker instance with the machine specs, the worker ID is null
 	w, err := worker.InitWorker(client)
