@@ -1,6 +1,14 @@
 from uuid import UUID
 
-from master.api_models import JobRequest, WorkResult, Alignment, TargetQueryCombination, JobResultCombination
+from master.api_models import (
+    JobRequest,
+    WorkResult,
+    Alignment,
+    TargetQueryCombination,
+    JobResultCombination,
+    WorkResultCombination,
+    JobResult,
+)
 
 JOB_REQUEST = JobRequest(
     sequences={
@@ -28,21 +36,21 @@ JOB_REQUEST = JobRequest(
     ],
 )
 
-JOB_RESULT_COMPLETE = WorkResult(
+WORK_RESULT_COMPLETE = WorkResult(
     alignments=[
-        JobResultCombination(
+        WorkResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
             alignment=Alignment(alignment="ABCD", length=4, score=4),
         ),
-        JobResultCombination(
+        WorkResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
             alignment=Alignment(alignment="ABCD", length=4, score=4),
         ),
-        JobResultCombination(
+        WorkResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
@@ -51,15 +59,15 @@ JOB_RESULT_COMPLETE = WorkResult(
     ]
 )
 
-JOB_RESULT_PART_1 = WorkResult(
+WORK_RESULT_PART_1 = WorkResult(
     alignments=[
-        JobResultCombination(
+        WorkResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
             alignment=Alignment(alignment="ABCD", length=4, score=4),
         ),
-        JobResultCombination(
+        WorkResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
@@ -68,9 +76,9 @@ JOB_RESULT_PART_1 = WorkResult(
     ]
 )
 
-JOB_RESULT_PART_2 = WorkResult(
+WORK_RESULT_PART_2 = WorkResult(
     alignments=[
-        JobResultCombination(
+        WorkResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
@@ -78,3 +86,42 @@ JOB_RESULT_PART_2 = WorkResult(
         ),
     ]
 )
+WORK_RESULT_PART_2_DIFFERENT_ALIGNMENT = WorkResult(
+    alignments=[
+        WorkResultCombination(
+            combination=TargetQueryCombination(
+                target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
+            alignment=Alignment(alignment="ABC", length=3, score=3),
+        ),
+    ]
+)
+
+JOB_RESULT_COMPLETE = JobResult(
+    alignments=[
+        JobResultCombination(
+            combination=TargetQueryCombination(
+                target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
+            alignments=[Alignment(alignment="ABCD", length=4, score=4)],
+        ),
+        JobResultCombination(
+            combination=TargetQueryCombination(
+                target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
+            alignments=[Alignment(alignment="ABCD", length=4, score=4)],
+        ),
+        JobResultCombination(
+            combination=TargetQueryCombination(
+                target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
+            alignments=[Alignment(alignment="ABCD", length=4, score=4)],
+        ),
+    ]
+)
+
+_tmp = JOB_RESULT_COMPLETE.model_dump(mode="json")
+_tmp["alignments"][-1]["alignments"].append(
+    WORK_RESULT_PART_2_DIFFERENT_ALIGNMENT.model_dump(mode="json")["alignments"][0]["alignment"]
+)
+JOB_RESULT_COMPLETE_WITH_DIFFERENT_ALIGNMENT = JobResult(**_tmp)

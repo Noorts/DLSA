@@ -34,31 +34,30 @@ class WorkPackageCollector(Cleaner, Singleton):
         completed_sequences = work_package.package.job.completed_sequences
 
         for res in result.alignments:
-            completed_sequences[res.combination] = res.alignment
-            # Remove the sequence from the in progress list
-            work_package.package.job.sequences_in_progress.remove(res.combination)
+            if res.combination not in completed_sequences:
+                completed_sequences[res.combination] = []
+
+            completed_sequences[res.combination].append(res.alignment)
+            # Remove the sequence from the in progress list if it is in there
+            if res.combination in work_package.package.job.sequences_in_progress:
+                work_package.package.job.sequences_in_progress.remove(res.combination)
 
     def get_new_work_package(self, worker_id: WorkerId) -> None | WorkPackage:
         worker = self._worker_collector.get_worker_by_id(worker_id.id)
         scheduled_package = self._work_scheduler.schedule_work_for(worker)
 
         if not scheduled_package:
-            print('No work package available')
+            print("No work package available")
             return None
 
         self._work_packages.append(scheduled_package)
 
         return WorkPackage(
-        id=scheduled_package.package.id,
-        job_id=scheduled_package.package.job.id,
-        queries=[
-            {"target": query.target, "query": query.query}
-            for query in scheduled_package.package.queries
-        ],
-        sequences={
-            str(uuid): sequence for uuid, sequence in scheduled_package.package.sequences.items()
-        },
-    )
+            id=scheduled_package.package.id,
+            job_id=scheduled_package.package.job.id,
+            queries=[{"target": query.target, "query": query.query} for query in scheduled_package.package.queries],
+            sequences={str(uuid): sequence for uuid, sequence in scheduled_package.package.sequences.items()},
+        )
 
     def execute_clean(self) -> None:
         for package in self._work_packages:

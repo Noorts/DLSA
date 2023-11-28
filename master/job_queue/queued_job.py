@@ -7,7 +7,7 @@ from master.api_models import JobRequest, TargetQueryCombination, JobState, Alig
 @dataclass
 class QueuedJob:
     request: JobRequest
-    completed_sequences: dict[TargetQueryCombination, Alignment]
+    completed_sequences: dict[TargetQueryCombination, list[Alignment]]
     sequences_in_progress: list[TargetQueryCombination]
     id: UUID
 

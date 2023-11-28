@@ -41,7 +41,7 @@ class Alignment(BaseModel):
 
 class JobResultCombination(BaseModel):
     combination: TargetQueryCombination
-    alignment: Alignment
+    alignments: list[Alignment]
 
 
 # the result returned to the client, ordered by length

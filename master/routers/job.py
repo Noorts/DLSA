@@ -42,9 +42,9 @@ def get_job(job_id: UUID) -> JobResult:
         alignments=[
             JobResultCombination(
                 combination=combination,
-                alignment=alignment,
+                alignments=alignments,
             )
-            for combination, alignment in job.completed_sequences.items()
+            for combination, alignments in job.completed_sequences.items()
         ]
     )
 
