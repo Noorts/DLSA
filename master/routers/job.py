@@ -1,13 +1,14 @@
+from typing import Annotated, Any
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, UploadFile, File
 
 from master.api_models import (
     JobRequest,
     JobId,
     JobStatus,
     JobResult,
-    JobResultCombination,
+    JobResultCombination, MultipartJobRequest,
 )
 from master.job_queue.job_queue import JobQueue
 from master.settings import SETTINGS
@@ -19,7 +20,24 @@ _job_queue = JobQueue()
 # submit a job to the job job_queue, returns a job id (for client)
 @job_router.post("/job/format/json")
 def submit_job(body: JobRequest) -> JobId:
+    body.assert_required_sequences()
     job = _job_queue.add_job_to_queue(body)
+    return JobId(id=job.id)
+
+
+# submit a job to the job job_queue, returns a job id (for client)
+@job_router.post("/job/format/multipart")
+def submit_job(body: MultipartJobRequest, sequences: Annotated[list[UploadFile], File()]) -> Any:
+    file_dict = {}
+    for sequence in sequences:
+        try:
+            sequence_uuid = UUID(sequence.filename)
+        except ValueError:
+            raise HTTPException(status_code=400, detail=f"Invalid UUID in filename: {sequence.filename}")
+        file_dict[sequence_uuid] = sequence.file.read().decode("utf-8")
+
+    job_request = JobRequest(queries=body.queries, sequences=file_dict).assert_required_sequences()
+    job = _job_queue.add_job_to_queue(job_request)
     return JobId(id=job.id)
 
 

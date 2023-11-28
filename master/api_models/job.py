@@ -1,7 +1,10 @@
+from __future__ import annotations
+import json
 from typing import Literal, Annotated
 from uuid import UUID
 
-from pydantic import BaseModel
+from fastapi import HTTPException
+from pydantic import BaseModel, model_validator
 from pydantic import Field
 
 Sequence = str
@@ -17,9 +20,30 @@ class TargetQueryCombination(BaseModel):
         return hash((self.target, self.query))
 
 
-class JobRequest(BaseModel):
-    sequences: dict[SequenceId, Sequence]
+# noinspection PyNestedDecorators
+class MultipartJobRequest(BaseModel):
     queries: list[TargetQueryCombination]
+
+    @model_validator(mode='before')
+    @classmethod
+    def validate_to_json(cls, value):
+        if isinstance(value, str):
+            return cls(**json.loads(value))
+        return value
+
+
+# noinspection PyNestedDecorators
+class JobRequest(MultipartJobRequest, BaseModel):
+    sequences: dict[SequenceId, Sequence]
+
+    def assert_required_sequences(self) -> JobRequest:
+        for combi in self.queries:
+            if combi.target not in self.sequences:
+                raise HTTPException(400, f"Missing sequence for target {combi.target}")
+            if combi.query not in self.sequences:
+                raise HTTPException(400, f"Missing sequence for query {combi.query}")
+
+        return self
 
 
 class JobId(BaseModel):
