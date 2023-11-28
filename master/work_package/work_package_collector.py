@@ -44,7 +44,10 @@ class WorkPackageCollector(Cleaner, Singleton):
                 work_package.package.job.sequences_in_progress.remove(res.combination)
 
     def get_new_work_package(self, worker_id: WorkerId) -> None | WorkPackage:
-        package, scheduled_package = self.get_new_raw_work_package(worker_id)
+        new = self.get_new_raw_work_package(worker_id)
+        if not new:
+            return None
+        package, scheduled_package = new
         return WorkPackage(
             **package.model_dump(),
             sequences={str(uuid): sequence for uuid, sequence in scheduled_package.package.sequences.items()},
