@@ -122,12 +122,12 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", c.baseURL+"/work", bytes.NewBuffer(jsonData))
+	req, err := http.NewRequest("POST", c.baseURL+"/work/", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
 	}
 
-	fmt.Printf("Requesting work from %s\n", c.baseURL+"/work")
+	fmt.Printf("Requesting work from %s\n", c.baseURL+"/work/")
 
 	req.Header.Set("Content-Type", "application/json")
 
