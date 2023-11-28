@@ -64,7 +64,7 @@ def test_get_work_for_worker(f_client: TestClient, f_job: JobId, f_worker_node: 
 
 
 def test_work_package_gets_returned(
-    f_client: TestClient, f_job: JobId, f_worker_node: tuple[WorkerId, StoppableThread], f_work_package: WorkPackage
+        f_client: TestClient, f_job: JobId, f_worker_node: tuple[WorkerId, StoppableThread], f_work_package: WorkPackage
 ):
     # Check if there is work available -> should be none
     response = f_client.post("/work/", json=f_worker_node[0].model_dump(mode="json"))
@@ -93,7 +93,7 @@ def test_work_package_gets_returned(
 
 
 def test_work_package_returned_successfully_and_completely(
-    f_client: TestClient, f_job: JobId, f_worker_node: tuple[WorkerId, StoppableThread], f_work_package: WorkPackage
+        f_client: TestClient, f_job: JobId, f_worker_node: tuple[WorkerId, StoppableThread], f_work_package: WorkPackage
 ):
     # Return some arbitrary result
     response = f_client.post(f"/work/{f_work_package.id}/result", json=WORK_RESULT_COMPLETE.model_dump(mode="json"))
@@ -111,7 +111,7 @@ def test_work_package_returned_successfully_and_completely(
 
 
 def test_work_two_different_alignments_for_work_package_returned(
-    f_client: TestClient, f_job: JobId, f_worker_node: tuple[WorkerId, StoppableThread], f_work_package: WorkPackage
+        f_client: TestClient, f_job: JobId, f_worker_node: tuple[WorkerId, StoppableThread], f_work_package: WorkPackage
 ):
     response = f_client.post(f"/work/{f_work_package.id}/result", json=WORK_RESULT_PART_1.model_dump(mode="json"))
     assert response.status_code == 200
@@ -134,7 +134,7 @@ def test_work_two_different_alignments_for_work_package_returned(
 
 
 def test_work_package_partially_returned_and_picked_up_by_other_worker(
-    f_client: TestClient, f_job: JobId, f_worker_node: tuple[WorkerId, StoppableThread], f_work_package: WorkPackage
+        f_client: TestClient, f_job: JobId, f_worker_node: tuple[WorkerId, StoppableThread], f_work_package: WorkPackage
 ):
     # Return a partial result
     response = f_client.post(f"/work/{f_work_package.id}/result", json=WORK_RESULT_PART_1.model_dump(mode="json"))
