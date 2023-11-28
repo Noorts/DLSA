@@ -20,11 +20,14 @@ class WorkerResources(BaseModel):
     gpu_resources: int
 
 
-class WorkPackage(BaseModel):
+class RawWorkPackage(BaseModel):
     # work package id
     id: UUID
     job_id: UUID
     queries: list[TargetQueryCombination]
+
+
+class WorkPackage(RawWorkPackage, BaseModel):
     sequences: dict[SequenceId, Sequence]
 
 

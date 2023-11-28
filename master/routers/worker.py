@@ -1,8 +1,8 @@
 from uuid import UUID
 
-from fastapi import APIRouter
+from fastapi import APIRouter, HTTPException
 
-from master.api_models import WorkerResources, WorkerId, WorkPackage, WorkResult
+from master.api_models import WorkerResources, WorkerId, WorkPackage, WorkResult, RawWorkPackage
 from master.job_queue.job_queue import JobQueue
 from master.work_package.work_package_collector import WorkPackageCollector
 from master.worker.worker_collector import WorkerCollector
@@ -43,6 +43,20 @@ def worker_pulse(worker_id: WorkerId) -> None:
 @worker_router.post("/work/")
 def get_work_for_worker(worker_id: WorkerId) -> WorkPackage | None:
     return _work_collector.get_new_work_package(worker_id)
+
+
+# request work returns a piece of work (for worker, called in an interval while not working)
+@worker_router.post("/work/raw")
+def get_raw_work_for_worker(worker_id: WorkerId) -> RawWorkPackage | None:
+    return _work_collector.get_new_work_package(worker_id)
+
+
+@worker_router.get("/work/{work_id}/sequence/{sequence_id}")
+def get_sequence_for_work(work_id: UUID, sequence_id: UUID) -> str:
+    work_package = _work_collector.get_package_by_id(work_id)
+    if sequence_id not in work_package.package.sequences:
+        raise HTTPException(status_code=404, detail="Sequence not found")
+    return work_package.package.sequences[sequence_id]
 
 
 # if a worker is done, it sends its results using this endpoint, can be multiple times for one work_id

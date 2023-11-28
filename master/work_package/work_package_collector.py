@@ -1,8 +1,9 @@
+from typing import Tuple
 from uuid import UUID
 
 from fastapi import HTTPException
 
-from master.api_models import WorkResult, WorkerId, WorkPackage
+from master.api_models import WorkResult, WorkerId, WorkPackage, RawWorkPackage
 from master.settings import SETTINGS
 from master.utils.cleaner import Cleaner
 from master.utils.singleton import Singleton
@@ -43,6 +44,13 @@ class WorkPackageCollector(Cleaner, Singleton):
                 work_package.package.job.sequences_in_progress.remove(res.combination)
 
     def get_new_work_package(self, worker_id: WorkerId) -> None | WorkPackage:
+        package, scheduled_package = self.get_new_raw_work_package(worker_id)
+        return WorkPackage(
+            **package.model_dump(),
+            sequences={str(uuid): sequence for uuid, sequence in scheduled_package.package.sequences.items()},
+        )
+
+    def get_new_raw_work_package(self, worker_id: WorkerId) -> None | Tuple[RawWorkPackage, ScheduledWorkPackage]:
         worker = self._worker_collector.get_worker_by_id(worker_id.id)
         scheduled_package = self._work_scheduler.schedule_work_for(worker)
 
@@ -52,12 +60,11 @@ class WorkPackageCollector(Cleaner, Singleton):
 
         self._work_packages.append(scheduled_package)
 
-        return WorkPackage(
+        return RawWorkPackage(
             id=scheduled_package.package.id,
             job_id=scheduled_package.package.job.id,
             queries=[{"target": query.target, "query": query.query} for query in scheduled_package.package.queries],
-            sequences={str(uuid): sequence for uuid, sequence in scheduled_package.package.sequences.items()},
-        )
+        ), scheduled_package
 
     def execute_clean(self) -> None:
         for package in self._work_packages:
