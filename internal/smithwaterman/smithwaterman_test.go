@@ -1,6 +1,8 @@
 package smithwaterman
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 )
 
@@ -100,5 +102,44 @@ func test_substring(query, target, expected_query, expected_target string, t *te
 		t.Logf("Correctly found the substring for query: %s and target %s", query, target)
 	} else {
 		t.Errorf("Did not find the substring for query: %s and target %s", query, target)
+
+		printMatrix(findStringScore(query, target), target, query)
+		t.FailNow()
 	}
+}
+
+func printMatrix(matrix []int, query, target string) *string {
+	width := len(query) + 1
+	height := len(target) + 1
+
+	if len(matrix) != width*height {
+		ret := "Matrix is not the same size as the provided width * height"
+		return &ret
+	}
+
+	var output strings.Builder
+
+	output.WriteString("       ")
+
+	for x := 0; x < width-1; x++ {
+		output.WriteString(fmt.Sprintf(" %c  ", query[x]))
+	}
+
+	output.WriteRune('\n')
+
+	for y := 0; y < height; y++ {
+		if y > 0 {
+			output.WriteString(fmt.Sprintf(" %c", target[y-1]))
+		} else {
+			output.WriteString("  ")
+		}
+		for x := 0; x < width; x++ {
+			output.WriteString(fmt.Sprintf("%3d ", matrix[index(x, y, width)]))
+		}
+		output.WriteRune('\n')
+	}
+
+	fmt.Println(output.String())
+
+	return nil
 }
