@@ -53,6 +53,11 @@ func TestAdvanced(t *testing.T) {
 	test_with_scoring(1, 1, 2, "AAGTCGTAAAAGTGCACGT", "TAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", t)
 }
 
+func TestParallel(t *testing.T) {
+	test_with_scoring(1, 1, 2, "TACGGGCCCGCTAC", "zzzzzzzzzzzzzzzzzzzzzzTAGCCCTATCGGTCAzzzzzzzzzzzzzzzzzzzz", "TACGGGCCCGCTA-C", "TA---G-CC-CTATC", t)
+	test_with_scoring(1, 1, 2, "AAGTCGTAAAAGTGCACGT", "TAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", t)
+}
+
 func test_with_scoring(gap int, mismatch int, match int, query, target, expected_query, expected_target string, t *testing.T) {
 	if gap < 0 || mismatch < 0 || match < 0 {
 		t.Log("Normally these should be all positive")
