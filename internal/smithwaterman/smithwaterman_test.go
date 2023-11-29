@@ -4,7 +4,17 @@ import (
 	"testing"
 )
 
-// Example as listed on Wikipedi
+func TestIndex(t *testing.T) {
+	width := 7
+	for i := 0; i < 10000; i++ {
+		x, y := index2coord(i, width)
+		i_new := index(x, y, width)
+
+		if i_new != i {
+			t.Fatalf("Failed index %d", i)
+		}
+	}
+}
 
 func TestBasic(t *testing.T) {
 	test_substring("A", "A", "A", "A", t)
