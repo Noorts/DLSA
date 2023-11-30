@@ -1,0 +1,12 @@
+>sequenceID-001
+Aligment: -4d
+Length: 3
+Score: 6
+>sequenceID-002
+Aligment: GAGTG
+Length: 5
+Score: 7
+>sequenceID-003
+Aligment: GCT
+Length: 3
+Score: 6

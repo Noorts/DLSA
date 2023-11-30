@@ -4,6 +4,7 @@ import requests
 import uuid
 import io
 import time
+import os
 
 descr_map = {
 }
@@ -94,14 +95,33 @@ def main():
         print('Polling for results...')
         response = requests.get(f'{args.server_url}/job/{job_id}/result')
         print(f'Server response: HTTP {response.status_code} - {response.text}')
-        try:
-            while response.json()['detail'] == 'Job not done yet':
-              print('Job not done yet')
-              time.sleep(3)
-              response = requests.get(f'{args.server_url}/job/{job_id}/result')
-        except:
-            print('Job done')
-            print(response.json())
+        while response.status_code == 404:
+              if response.json()['detail'] == 'Job not done yet':
+                print('Job not done yet')
+                time.sleep(2)
+                response = requests.get(f'{args.server_url}/job/{job_id}/result')
+
+        print('Job done')
+        print(response.json())
+        for result in response.json()['alignments']:
+            query = descr_map[result['combination']['query']]
+            target = descr_map[result['combination']['target']]
+            results_dir = './results'
+            os.makedirs(results_dir, exist_ok=True)  # This will create the directory if it does not exist
+
+            file_path = os.path.join(results_dir, f'{query}.txt')  # Construct the file path
+
+            if os.path.exists(file_path):
+                mode = 'a'  # Append if the file exists
+            else:
+                mode = 'w'  # Create a new file if it does not
+            print('result')
+            print(result)
+            with open(file_path, mode) as file:
+                file.write(f'>{target}\n')
+                file.write(f'Aligment: {result["alignments"][0]["alignment"]}\n')
+                file.write(f'Length: {result["alignments"][0]["length"]}\n')
+                file.write(f'Score: {result["alignments"][0]["score"]}\n')
 
 
 if __name__ == '__main__':
