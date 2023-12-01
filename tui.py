@@ -76,13 +76,18 @@ def main():
     parser.add_argument('--query', type=str, required=True, help='Path to query FASTA file')
     parser.add_argument('--database', type=str, required=True, help='Path to database FASTA file')
     parser.add_argument('--server-url', type=str, required=True, help='Server URL to send data to')
+    parser.add_argument('--output-path', type=str, required=False, help='Path to output file', default='results/')
+    parser.add_argument('--match-score', type=str, required=False, help='Match score', default=2)
+    parser.add_argument('--mismatch-penalty', type=str, required=False, help='Mismatch penalty', default=1)
+    parser.add_argument('--gap-penalty', type=str, required=False, help='Gap score', default=1)
 
     args = parser.parse_args()
 
     sequences_query = parse_fasta(args.query)
     sequences_database = parse_fasta(args.database)
-    
-    # Send the data to the server
+  
+
+    #TODO: Send the scores and penalties to the server
     response = send_to_server(sequences_query,sequences_database, f'{args.server_url}/job/format/multipart')
 
     print(f'Server response: HTTP {response.status_code} - {response.text}')
