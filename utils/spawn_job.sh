@@ -1,5 +1,12 @@
+#!/bin/bash
+
+if [ "$#" -ne 1 ]; then
+    echo "Usage: $0 <master node ip_address (0.0.0.0)>"
+    exit 1
+fi
+
 curl -X 'POST' \
-  'http://0.0.0.0:8000/job/format/json' \
+  "http://$1:8000/job/format/json" \
   -H 'accept: application/json' \
   -H 'Content-Type: application/json' \
   -d '{
