@@ -30,37 +30,37 @@ func findStringScore(query string, target string) []int {
 				sub_score = -MISMATCH_PENALTY
 			}
 
-			score[index(x, y, width)] = max(0,
-				score[index(x-1, y-1, width)]+sub_score,
-				score[index(x-1, y, width)]-GAP_PENALTY,
-				score[index(x, y-1, width)]-GAP_PENALTY)
+			score[coord2index(x, y, width)] = max(0,
+				score[coord2index(x-1, y-1, width)]+sub_score,
+				score[coord2index(x-1, y, width)]-GAP_PENALTY,
+				score[coord2index(x, y-1, width)]-GAP_PENALTY)
 		}
 	}
 
 	return score
 }
 
-func FindLocalAlignment(query, target string) (string, string, int) {
-	score := findStringScore(query, target)
+func FindLocalAlignment(query, target string, topAmount int) []AlignmentResult {
+	scoreMatrix := findStringScore(query, target)
 
-	max_index := 0
-	max_score := 0
-
-	for i := 0; i < len(score); i++ {
-		current_score := score[i]
-		if current_score > max_score {
-			max_score = current_score
-			max_index = i
+	maxScores := CreateScoreHeap(topAmount)
+	for index, score := range scoreMatrix {
+		if score > maxScores.LowestScore() {
+			maxScores.Push(index, score)
 		}
 	}
 
+	var result []AlignmentResult
+
 	width := len(target) + 1
-	x, y := index2coord(max_index, width)
+	for _, score := range maxScores.AllScores() {
+		x, y := index2coord(score.index, width)
+		var queryResult, targetResult strings.Builder
+		traceback(scoreMatrix, query, target, x, y, width, &queryResult, &targetResult)
+		result = append(result, AlignmentResult{score.score, queryResult.String(), targetResult.String()})
+	}
 
-	var queryResult, targetResult strings.Builder
-	traceback(score, query, target, x, y, width, &queryResult, &targetResult)
-
-	return queryResult.String(), targetResult.String(), max_score
+	return result
 }
 
 func traceback(matrix []int, query, target string, x, y, width int, queryResult, targetResult *strings.Builder) {
@@ -74,14 +74,14 @@ func traceback(matrix []int, query, target string, x, y, width int, queryResult,
 	}
 
 	// TODO: Evaluate what is more important in the case of multiple paths
-	score := matrix[index(y, x, width)]
+	score := matrix[coord2index(y, x, width)]
 	if score == 0 {
 		return
-	} else if score == matrix[index(y-1, x-1, width)]+matchScore {
+	} else if score == matrix[coord2index(y-1, x-1, width)]+matchScore {
 		traceback(matrix, query, target, x-1, y-1, width, queryResult, targetResult)
 		queryResult.WriteByte(query[x-1])
 		targetResult.WriteByte(target[y-1])
-	} else if score == matrix[index(y, x-1, width)]-GAP_PENALTY {
+	} else if score == matrix[coord2index(y, x-1, width)]-GAP_PENALTY {
 		traceback(matrix, query, target, x-1, y, width, queryResult, targetResult)
 		queryResult.WriteByte(query[x-1])
 		targetResult.WriteRune('-')
@@ -92,7 +92,7 @@ func traceback(matrix []int, query, target string, x, y, width int, queryResult,
 	}
 }
 
-func index(x, y, width int) int {
+func coord2index(x, y, width int) int {
 	return x + y*width
 }
 

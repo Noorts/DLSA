@@ -93,13 +93,13 @@ func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 			continue
 		}
 
-		qRes, _, score := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq))
+		alignmentResult := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq), 1)[0]
 
 		alignment := AlignmentDetail{
 			Alignment: Alignment{
-				AlignmentString: qRes,
-				Score:           score,
-				Length:          len(qRes),
+				AlignmentString: alignmentResult.Query,
+				Score:           alignmentResult.Score,
+				Length:          len(alignmentResult.Query),
 			},
 			TargetQueryCombination: TargetQueryCombination{
 				Query:  comb.Query,

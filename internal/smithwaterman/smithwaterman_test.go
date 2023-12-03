@@ -35,7 +35,7 @@ func TestMismatch(t *testing.T) {
 
 func TestMultipleOptions(t *testing.T) {
 	test_with_scoring(1, 1, 2, "AA", "AATAA", "AA", "AA", t)
-	test_with_scoring(1, 1, 2, "ATTA", "ATAA", "ATTA", "AT-A", t)
+	test_with_scoring(1, 1, 2, "ATTA", "ATAA", "ATTA", "A-TA", t)
 }
 
 func TestAdvanced(t *testing.T) {
@@ -62,22 +62,22 @@ func test_with_scoring(gap int, mismatch int, match int, query, target, expected
 }
 
 func test_substring(query, target, expected_query, expected_target string, t *testing.T) {
-	found_query, found_target, score := FindLocalAlignment(query, target)
-	if score == 0 {
+	result := FindLocalAlignment(query, target, 1)[0]
+	if result.Score == 0 {
 		t.Logf("Found no substring")
 		return
 	}
 	match := true
 
-	if found_query != expected_query {
+	if result.Query != expected_query {
 		t.Errorf("Did not find correct substring")
-		t.Logf("Query\nFound: %s\nExpected: %s", found_query, expected_query)
+		t.Logf("Query\nFound: %s\nExpected: %s", result.Query, expected_query)
 		match = false
 	}
 
-	if found_query != expected_query {
+	if result.Target != expected_target {
 		t.Errorf("Did not find correct substring")
-		t.Logf("Target\nFound: %s\nExpected: %s", found_target, expected_target)
+		t.Logf("Target\nFound: %s\nExpected: %s", result.Target, expected_target)
 		match = false
 	}
 
