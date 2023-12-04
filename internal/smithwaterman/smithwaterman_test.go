@@ -2,6 +2,7 @@ package smithwaterman
 
 import (
 	"fmt"
+	"runtime"
 	"strings"
 	"testing"
 )
@@ -47,7 +48,7 @@ func TestMismatch(t *testing.T) {
 
 func TestMultipleOptions(t *testing.T) {
 	test_with_scoring(1, 1, 2, "AA", "AATAA", "AA", "AA", t)
-	test_with_scoring(1, 1, 2, "ATTA", "ATAA", "ATTA", "AT-A", t)
+	test_with_scoring(1, 1, 2, "ATTA", "ATAA", "ATTA", "A-TA", t)
 }
 
 func TestAdvanced(t *testing.T) {
@@ -92,7 +93,7 @@ func test_substring(query, target, expected_query, expected_target string, t *te
 		match = false
 	}
 
-	if found_query != expected_query {
+	if found_target != expected_target {
 		t.Errorf("Did not find correct substring")
 		t.Logf("Target\nFound: %s\nExpected: %s", found_target, expected_target)
 		match = false
@@ -142,4 +143,65 @@ func printMatrix(matrix []int, query, target string) *string {
 	fmt.Println(output.String())
 
 	return nil
+}
+
+const NumBenchmarks = 5
+
+func benchmarkSequential(query, target string, b *testing.B) {
+	size := len(query) * len(target)
+	var _ []int
+
+	for i := 0; i < NumBenchmarks; i++ {
+		b.StartTimer()
+		_ = sequentialFindStringScore(query, target)
+		b.StopTimer()
+	}
+
+	mcups := float64(size) / (b.Elapsed().Seconds() / NumBenchmarks) / 1_000_000
+	b.Logf("Sequential for size %d: %.03f MCUPS\n", size, mcups)
+}
+
+func benchmarkParallel(query, target string, NUMPROC int, b *testing.B) {
+	size := len(query) * len(target)
+	var _ []int
+	runtime.GOMAXPROCS(NUMPROC)
+
+	for i := 0; i < NumBenchmarks; i++ {
+		b.StartTimer()
+		_ = parallelFindStringScore(query, target, NUMPROC)
+		b.StopTimer()
+	}
+
+	mcups := float64(size) / (b.Elapsed().Seconds() / NumBenchmarks) / 1_000_000
+	b.Logf("Parallel for size %d with %d procs: %.03f MCUPS\n", size, NUMPROC, mcups)
+}
+
+func BenchmarkMatrix10k(b *testing.B) {
+	query := strings.Repeat("A", 330)
+	target := strings.Repeat("T", 10000)
+	benchmarkSequential(query, target, b)
+
+	benchmarkParallel(query, target, 2, b)
+	benchmarkParallel(query, target, 3, b)
+	benchmarkParallel(query, target, 4, b)
+}
+
+func BenchmarkMatrix100k(b *testing.B) {
+	query := strings.Repeat("A", 330)
+	target := strings.Repeat("T", 10000)
+	benchmarkSequential(query, target, b)
+
+	benchmarkParallel(query, target, 2, b)
+	benchmarkParallel(query, target, 3, b)
+	benchmarkParallel(query, target, 4, b)
+}
+
+func BenchmarkMatrix1m(b *testing.B) {
+	query := strings.Repeat("A", 330)
+	target := strings.Repeat("T", 10000)
+	benchmarkSequential(query, target, b)
+
+	benchmarkParallel(query, target, 2, b)
+	benchmarkParallel(query, target, 3, b)
+	benchmarkParallel(query, target, 4, b)
 }

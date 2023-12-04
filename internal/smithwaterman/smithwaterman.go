@@ -2,9 +2,8 @@ package smithwaterman
 
 import (
 	"strings"
-    "runtime"
-    "sync"
-    "sync/atomic"
+	"sync"
+	"sync/atomic"
 )
 
 var GAP_PENALTY = 1
@@ -17,10 +16,10 @@ var MISMATCH_PENALTY = 1
  *	 - Single gap penalty
  */
 func sequentialFindStringScore(query string, target string) []int {
-	score := make([]int, (len(query)+1)*(len(target)+1))
-
 	height := len(target) + 1
 	width := len(query) + 1
+
+	score := make([]int, width*height)
 
 	for y := 1; y < height; y++ {
 		for x := 1; x < width; x++ {
@@ -38,65 +37,16 @@ func sequentialFindStringScore(query string, target string) []int {
 	}
 
 	return score
-
 }
 
-func compute(wg *sync.WaitGroup, score *[]int, query, target string, threadNum, threadCount int, computed *uint64) {
-
-    width := len(query) + 1
-    height := len(target) + 1
-
-    threadCountu := uint64(threadCount)
-
-    left_bounary := (width - 1) * threadNum / threadCount + 1
-    right_boundary := (width - 1) * (threadNum + 1) / threadCount + 1
-
-	// ly is the y coordinate of the left column
-	// This structure is x independent. So all x can be solved in parallel as
-	// long as ly is the same
-    var i uint64 = 0
-
-	for ly := width; ly < height; ly++ {
-		for x := left_bounary; x < right_boundary; x++ {
-			// We shadow y with the column dependent y coordinate that is
-			// actually used by the SW-algorithm
-			y := ly - (x - 1)
-
-			sub_score := MATCH_SCORE
-
-			if query[x-1] != target[y-1] {
-				sub_score = -MISMATCH_PENALTY
-			}
-
-			(*score)[index(x, y, width)] = max(0,
-				(*score)[index(x-1, y-1, width)]+sub_score,
-				(*score)[index(x-1, y, width)]-GAP_PENALTY,
-				(*score)[index(x, y-1, width)]-GAP_PENALTY,
-			)
-		}
-        atomic.AddUint64(computed, 1)
-        i++
-        goal := i * threadCountu
-        for(*computed < goal) {}
-	}
-
-    wg.Done()
-}
-
-func findStringScore(query string, target string) []int {
-	score := make([]int, (len(query)+1)*(len(target)+1))
-
+func parallelFindStringScore(query, target string, NUMPROC int) []int {
 	height := len(target) + 1
 	width := len(query) + 1
 
-	// return sequentialFindStringScore(query, target)
-	// Has no parallel computation in this implementation
-	if width >= height {
-		return sequentialFindStringScore(query, target)
-	}
+	score := make([]int, width*height)
 
 	// First we compute the upper left triangle
-    for y := 1; y < width; y++ {
+	for y := 1; y < width; y++ {
 		for x := 1; x <= y; x++ {
 			sub_score := MATCH_SCORE
 
@@ -112,18 +62,15 @@ func findStringScore(query string, target string) []int {
 		}
 	}
 
+	var computed uint64 = 0
+	var wg sync.WaitGroup
 
-    var computed uint64 = 0
-    var wg sync.WaitGroup
+	for i := 0; i < NUMPROC; i++ {
+		wg.Add(1)
+		go compute(&wg, &score, query, target, i, NUMPROC, &computed)
+	}
 
-    NUMPROC := 2
-    runtime.GOMAXPROCS(NUMPROC+1)
-    for i := 0; i < NUMPROC; i++ {
-        wg.Add(1)
-        go compute(&wg, &score, query, target, i, NUMPROC, &computed)
-    }
-
-    wg.Wait()
+	wg.Wait()
 
 	// TODO: Actually compute the lower right triangle without recomputation
 	// Right now we compute the last `width` rows this is easier to implement,
@@ -146,6 +93,59 @@ func findStringScore(query string, target string) []int {
 	}
 
 	return score
+}
+
+func compute(wg *sync.WaitGroup, score *[]int, query, target string, threadNum, threadCount int, computed *uint64) {
+
+	width := len(query) + 1
+	height := len(target) + 1
+
+	threadCountu := uint64(threadCount)
+
+	left_bounary := (width-1)*threadNum/threadCount + 1
+	right_boundary := (width-1)*(threadNum+1)/threadCount + 1
+
+	// ly is the y coordinate of the left column
+	// This structure is x independent. So all x can be solved in parallel as
+	// long as ly is the same
+	var i uint64 = 0
+
+	for ly := width; ly < height; ly++ {
+		for x := left_bounary; x < right_boundary; x++ {
+			// We shadow y with the column dependent y coordinate that is
+			// actually used by the SW-algorithm
+			y := ly - (x - 1)
+
+			sub_score := MATCH_SCORE
+
+			if query[x-1] != target[y-1] {
+				sub_score = -MISMATCH_PENALTY
+			}
+
+			(*score)[index(x, y, width)] = max(0,
+				(*score)[index(x-1, y-1, width)]+sub_score,
+				(*score)[index(x-1, y, width)]-GAP_PENALTY,
+				(*score)[index(x, y-1, width)]-GAP_PENALTY,
+			)
+		}
+		atomic.AddUint64(computed, 1)
+		i++
+		goal := i * threadCountu
+		for *computed < goal {
+		}
+	}
+
+	wg.Done()
+}
+
+func findStringScore(query string, target string) []int {
+	// return sequentialFindStringScore(query, target)
+	// Has no parallel computation in this implementation
+	if len(query) >= len(target) {
+		return sequentialFindStringScore(query, target)
+	}
+
+	return parallelFindStringScore(query, target, 2)
 }
 
 func FindLocalAlignment(query, target string) (string, string, int) {
