@@ -1,3 +1,4 @@
+import logging
 from uuid import UUID, uuid4
 
 from fastapi import HTTPException
@@ -5,6 +6,8 @@ from fastapi import HTTPException
 from master.api_models import JobRequest
 from master.job_queue.queued_job import QueuedJob
 from master.utils.singleton import Singleton
+
+logger = logging.getLogger(__name__)
 
 
 class JobNotFoundException(HTTPException):
@@ -19,6 +22,7 @@ class JobQueue(Singleton):
 
     def add_job_to_queue(self, request: JobRequest) -> QueuedJob:
         job_id = uuid4()
+        logger.info(f"Adding job {job_id} to queue. Job has {len(request.queries)} queries")
         self._jobs[job_id] = QueuedJob(
             request=request,
             completed_sequences={},
@@ -50,5 +54,6 @@ class JobQueue(Singleton):
         return job
 
     def delete_job_by_id(self, job_id: UUID):
+        logger.info(f"Deleting job {job_id} from queue")
         self.get_job_by_id(job_id)
         del self._jobs[job_id]

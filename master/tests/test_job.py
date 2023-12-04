@@ -1,5 +1,3 @@
-import json
-
 from fastapi.testclient import TestClient
 
 from master.api_models import JobId, JobStatus
