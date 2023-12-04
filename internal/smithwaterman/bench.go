@@ -22,7 +22,7 @@ func run_once(n_q, n_t int) (time.Duration, float32) {
 	return elapsed, cups
 }
 
-func Benchmark(threshold time.Duration, q_steps int) float32 {
+func Benchmark(threshold time.Duration, q_steps, t_steps int) float32 {
 	var n_q int = 1 << 8
 	var n_t int = 1 << 14
 
@@ -36,15 +36,20 @@ func Benchmark(threshold time.Duration, q_steps int) float32 {
 		n_t *= 2
 	}
 
-	n_t /= 1 << q_steps
+	// The -2 is because the shifts in the next loops are 0-based
+	n_t /= 1 << (q_steps + t_steps - 2)
 
 	var sum float32 = 0
 
-	for i := 0; i <= q_steps; i++ {
-		_, cups := run_once(n_q, n_t)
-		sum += cups
-		n_q *= 2
+	for i_t := 0; i_t < t_steps; i_t++ {
+		for i_q := 0; i_q < q_steps; i_q++ {
+			_, cups := run_once(n_q<<i_q, n_t<<i_t)
+			sum += cups
+		}
 	}
 
-	return sum / float32(q_steps)
+	mean := sum / float32(q_steps*t_steps)
+
+	return mean
+
 }
