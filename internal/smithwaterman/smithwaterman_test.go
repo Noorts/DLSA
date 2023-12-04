@@ -145,7 +145,7 @@ func printMatrix(matrix []int, query, target string) *string {
 	return nil
 }
 
-const NumBenchmarks = 5
+const NumBenchmarks = 10
 
 func benchmarkSequential(query, target string, b *testing.B) {
 	size := len(query) * len(target)
@@ -176,6 +176,16 @@ func benchmarkParallel(query, target string, NUMPROC int, b *testing.B) {
 	b.Logf("Parallel for size %d with %d procs: %.03f MCUPS\n", size, NUMPROC, mcups)
 }
 
+func BenchmarkMatrix1k(b *testing.B) {
+	query := strings.Repeat("A", 330)
+	target := strings.Repeat("T", 1000)
+	benchmarkSequential(query, target, b)
+
+	benchmarkParallel(query, target, 2, b)
+	benchmarkParallel(query, target, 3, b)
+	benchmarkParallel(query, target, 4, b)
+}
+
 func BenchmarkMatrix10k(b *testing.B) {
 	query := strings.Repeat("A", 330)
 	target := strings.Repeat("T", 10000)
@@ -188,17 +198,7 @@ func BenchmarkMatrix10k(b *testing.B) {
 
 func BenchmarkMatrix100k(b *testing.B) {
 	query := strings.Repeat("A", 330)
-	target := strings.Repeat("T", 10000)
-	benchmarkSequential(query, target, b)
-
-	benchmarkParallel(query, target, 2, b)
-	benchmarkParallel(query, target, 3, b)
-	benchmarkParallel(query, target, 4, b)
-}
-
-func BenchmarkMatrix1m(b *testing.B) {
-	query := strings.Repeat("A", 330)
-	target := strings.Repeat("T", 10000)
+	target := strings.Repeat("T", 100000)
 	benchmarkSequential(query, target, b)
 
 	benchmarkParallel(query, target, 2, b)
