@@ -63,11 +63,17 @@ class WorkPackageCollector(Cleaner, Singleton):
 
         self._work_packages.append(scheduled_package)
 
-        return RawWorkPackage(
-            id=scheduled_package.package.id,
-            job_id=scheduled_package.package.job.id,
-            queries=[{"target": query.target, "query": query.query} for query in scheduled_package.package.queries],
-        ), scheduled_package
+        return (
+            RawWorkPackage(
+                id=scheduled_package.package.id,
+                job_id=scheduled_package.package.job.id,
+                queries=[{"target": query.target, "query": query.query} for query in scheduled_package.package.queries],
+                match_score=scheduled_package.package.match_score,
+                mismatch_penalty=scheduled_package.package.mismatch_penalty,
+                gap_penalty=scheduled_package.package.gap_penalty,
+            ),
+            scheduled_package,
+        )
 
     def execute_clean(self) -> None:
         for package in self._work_packages:

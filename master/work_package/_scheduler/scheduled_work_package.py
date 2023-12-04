@@ -13,6 +13,9 @@ class InternalWorkPackage:
     job: QueuedJob
     sequences: dict[SequenceId, Sequence]
     queries: list[TargetQueryCombination]
+    match_score: int
+    mismatch_penalty: int
+    gap_penalty: int
 
 
 @dataclass

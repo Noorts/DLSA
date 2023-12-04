@@ -8,7 +8,8 @@ from master.api_models import (
     JobId,
     JobStatus,
     JobResult,
-    JobResultCombination, MultipartJobRequest,
+    JobResultCombination,
+    MultipartJobRequest,
 )
 from master.job_queue.job_queue import JobQueue
 from master.settings import SETTINGS
@@ -36,7 +37,7 @@ def submit_job(body: MultipartJobRequest, sequences: Annotated[list[UploadFile],
             raise HTTPException(status_code=400, detail=f"Invalid UUID in filename: {sequence.filename}")
         file_dict[sequence_uuid] = sequence.file.read().decode("utf-8")
 
-    job_request = JobRequest(queries=body.queries, sequences=file_dict).assert_required_sequences()
+    job_request = JobRequest(sequences=file_dict, **body.model_dump(mode="json")).assert_required_sequences()
     job = _job_queue.add_job_to_queue(job_request)
     return JobId(id=job.id)
 

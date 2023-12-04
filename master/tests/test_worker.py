@@ -18,7 +18,10 @@ from master.utils.interval import StoppableThread
 
 def test_register_worker(f_client: TestClient):
     response = f_client.post(
-        "/worker/register", json=WorkerResources(ram_mb=100, cpu_resources=1, gpu_resources=0).model_dump(mode="json")
+        "/worker/register",
+        json=WorkerResources(ram_mb=100, cpu_resources=1, gpu_resources=0, benchmark_result=100).model_dump(
+            mode="json"
+        ),
     )
     assert response.status_code == 200
     worker_id = WorkerId(**response.json())
@@ -61,6 +64,9 @@ def test_get_work_for_worker(f_client: TestClient, f_job: JobId, f_worker_node: 
             UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "ABCD",
             UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "ABCD",
         },
+        match_score=1,
+        mismatch_penalty=-1,
+        gap_penalty=-1,
     )
 
 
@@ -81,7 +87,10 @@ def test_work_package_gets_returned(
     # Check if there is work available -> there should be work available again
     # However, we first need to register the worker again
     response = f_client.post(
-        "/worker/register", json=WorkerResources(ram_mb=100, cpu_resources=1, gpu_resources=0).model_dump(mode="json")
+        "/worker/register",
+        json=WorkerResources(ram_mb=100, cpu_resources=1, gpu_resources=0, benchmark_result=100).model_dump(
+            mode="json"
+        ),
     )
 
     # Request work from the master
@@ -151,11 +160,14 @@ def test_work_package_partially_returned_and_picked_up_by_other_worker(
     f_worker_node[1].stop()
 
     # Wait for the worker to be removed from the worker list
-    sleep(SETTINGS.worker_cleaning_interval * 2 + SETTINGS.work_package_cleaning_interval * 2)
+    sleep(SETTINGS.worker_cleaning_interval * 2.5 + SETTINGS.work_package_cleaning_interval * 2.5)
 
     # Register a new worker
     response = f_client.post(
-        "/worker/register", json=WorkerResources(ram_mb=100, cpu_resources=1, gpu_resources=0).model_dump(mode="json")
+        "/worker/register",
+        json=WorkerResources(ram_mb=100, cpu_resources=1, gpu_resources=0, benchmark_result=100).model_dump(
+            mode="json"
+        ),
     )
     assert response.status_code == 200
 

@@ -1,23 +1,8 @@
-from typing import Literal
 from uuid import UUID
 
 from pydantic import BaseModel
 
 from .job import TargetQueryCombination, SequenceId, Sequence, Alignment
-
-WorkerStatus = Literal["IDLE", "WORKING", "DEAD"]
-
-
-class WorkerId(BaseModel):
-    id: UUID
-
-
-class WorkerResources(BaseModel):
-    ram_mb: int
-    # determined using benchmarking/cpu_cores, ...
-    cpu_resources: int
-    # determined using benchmarking/gpu_cores, ...
-    gpu_resources: int
 
 
 class RawWorkPackage(BaseModel):
@@ -25,6 +10,9 @@ class RawWorkPackage(BaseModel):
     id: UUID
     job_id: UUID
     queries: list[TargetQueryCombination]
+    match_score: int
+    mismatch_penalty: int
+    gap_penalty: int
 
 
 class WorkPackage(RawWorkPackage, BaseModel):

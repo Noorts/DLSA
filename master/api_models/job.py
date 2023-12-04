@@ -23,8 +23,11 @@ class TargetQueryCombination(BaseModel):
 # noinspection PyNestedDecorators
 class MultipartJobRequest(BaseModel):
     queries: list[TargetQueryCombination]
+    match_score: int
+    mismatch_penalty: int
+    gap_penalty: int
 
-    @model_validator(mode='before')
+    @model_validator(mode="before")
     @classmethod
     def validate_to_json(cls, value):
         if isinstance(value, str):
