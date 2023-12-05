@@ -23,7 +23,7 @@ func run_once(n_q, n_t int) (time.Duration, float32) {
 }
 
 func Benchmark(threshold time.Duration, q_steps, t_steps int) float32 {
-	var n_q int = 1 << 8
+	var n_q int = 1 << 14
 	var n_t int = 1 << 14
 
 	for true {
