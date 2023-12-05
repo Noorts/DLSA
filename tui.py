@@ -28,7 +28,7 @@ def parse_fasta(fasta_file_path):
 
 
 
-def send_to_server(query_files, target_files, server_url):
+def send_to_server(query_files, target_files, server_url, match_score, mismatch_penalty, gap_penalty):
     content = {
         'queries': [],
     }
@@ -38,7 +38,10 @@ def send_to_server(query_files, target_files, server_url):
                'query': q_name,
                 'target': t_name,
             })
-      
+    
+    content['match_score'] = match_score
+    content['mismatch_penalty'] = mismatch_penalty
+    content['gap_penalty'] = gap_penalty
     
     body_content = json.dumps(content)
     combined_sequences = query_files + target_files
@@ -88,7 +91,7 @@ def main():
   
 
     #TODO: Send the scores and penalties to the server
-    response = send_to_server(sequences_query,sequences_database, f'{args.server_url}/job/format/multipart')
+    response = send_to_server(sequences_query,sequences_database, f'{args.server_url}/job/format/multipart', args.match_score, args.mismatch_penalty, args.gap_penalty)
 
     print(f'Server response: HTTP {response.status_code} - {response.text}')
 
