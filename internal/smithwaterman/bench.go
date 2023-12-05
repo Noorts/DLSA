@@ -6,11 +6,15 @@ import (
 )
 
 func run_once(n_q, n_t int) (time.Duration, float32) {
+	const MATCH_SCORE = 1
+	const GAP_PENALTY = 2
+	const MISMATCH_PENALTY = 1
+
 	query := strings.Repeat("A", n_q)
 	target := strings.Repeat("T", n_t)
 
 	start := time.Now()
-	findStringScore(query, target)
+	findStringScore(query, target, MATCH_SCORE, GAP_PENALTY, MISMATCH_PENALTY)
 	end := time.Now()
 
 	elapsed := end.Sub(start)

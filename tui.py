@@ -133,6 +133,8 @@ def main():
         # print('Job done')
         # print(response.json())
         computation_time = time.time() - job_start
+        
+        #TODO: Sort the results by score???
 
         response = requests.get(f'{args.server_url}/job/{job_id}/result')
         for result in response.json()['alignments']:

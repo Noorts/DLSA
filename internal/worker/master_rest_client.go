@@ -24,9 +24,13 @@ type Alignment struct {
 }
 
 type WorkPackage struct {
-	ID        *string                 `json:"id"`
-	Queries   []QueryTargetType       `json:"queries"`
-	Sequences map[SequenceId]Sequence `json:"sequences"`
+	ID              *string                 `json:"id"`
+	JobID           *string                 `json:"job_id"`
+	Queries         []QueryTargetType       `json:"queries"`
+	Sequences       map[SequenceId]Sequence `json:"sequences"`
+	MatchScore      int                     `json:"match_score"`
+	MismatchPenalty int                     `json:"mismatch_penalty"`
+	GapPenalty      int                     `json:"gap_penalty"`
 }
 
 type MachineSpecsRequest struct {
@@ -48,6 +52,7 @@ type MachineSpecsRequest struct {
 type WorkRequest struct {
 	WorkerId string `json:"id"`
 }
+
 type Heartbeat struct {
 	WorkerId string `json:"id"`
 }
@@ -79,7 +84,6 @@ func InitRestClient(baseURL string) *RestClient {
 }
 
 func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
-	//TODO: Machine specs vaildation
 	specsReq := MachineSpecsRequest{
 		Ram:       800,
 		Cpu:       1,
