@@ -181,6 +181,7 @@ func BenchmarkMatrix1k(b *testing.B) {
 	target := strings.Repeat("T", 1000)
 	benchmarkSequential(query, target, b)
 
+	benchmarkParallel(query, target, 1, b)
 	benchmarkParallel(query, target, 2, b)
 	benchmarkParallel(query, target, 3, b)
 	benchmarkParallel(query, target, 4, b)
@@ -191,9 +192,20 @@ func BenchmarkMatrix10k(b *testing.B) {
 	target := strings.Repeat("T", 10000)
 	benchmarkSequential(query, target, b)
 
+	benchmarkParallel(query, target, 1, b)
 	benchmarkParallel(query, target, 2, b)
 	benchmarkParallel(query, target, 3, b)
 	benchmarkParallel(query, target, 4, b)
+}
+
+func BenchmarkMatrix100kweak(b *testing.B) {
+	N := 50
+	target := strings.Repeat("T", 100000)
+
+	for i := 1; i <= 4; i++ {
+		query := strings.Repeat("A", N*i)
+		benchmarkParallel(query, target, i, b)
+	}
 }
 
 func BenchmarkMatrix100k(b *testing.B) {
@@ -201,6 +213,7 @@ func BenchmarkMatrix100k(b *testing.B) {
 	target := strings.Repeat("T", 100000)
 	benchmarkSequential(query, target, b)
 
+	benchmarkParallel(query, target, 1, b)
 	benchmarkParallel(query, target, 2, b)
 	benchmarkParallel(query, target, 3, b)
 	benchmarkParallel(query, target, 4, b)

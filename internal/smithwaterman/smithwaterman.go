@@ -3,7 +3,6 @@ package smithwaterman
 import (
 	"strings"
 	"sync"
-	"sync/atomic"
 )
 
 var GAP_PENALTY = 1
@@ -62,12 +61,12 @@ func parallelFindStringScore(query, target string, NUMPROC int) []int {
 		}
 	}
 
-	var computed uint64 = 0
+	var computed []uint64 = make([]uint64, NUMPROC)
 	var wg sync.WaitGroup
 
 	for i := 0; i < NUMPROC; i++ {
 		wg.Add(1)
-		go compute(&wg, &score, query, target, i, NUMPROC, &computed)
+		go compute(&wg, &score, query, target, i, NUMPROC, computed)
 	}
 
 	wg.Wait()
@@ -95,12 +94,10 @@ func parallelFindStringScore(query, target string, NUMPROC int) []int {
 	return score
 }
 
-func compute(wg *sync.WaitGroup, score *[]int, query, target string, threadNum, threadCount int, computed *uint64) {
+func compute(wg *sync.WaitGroup, score *[]int, query, target string, threadNum, threadCount int, computed []uint64) {
 
 	width := len(query) + 1
 	height := len(target) + 1
-
-	threadCountu := uint64(threadCount)
 
 	left_bounary := (width-1)*threadNum/threadCount + 1
 	right_boundary := (width-1)*(threadNum+1)/threadCount + 1
@@ -128,11 +125,23 @@ func compute(wg *sync.WaitGroup, score *[]int, query, target string, threadNum, 
 				(*score)[index(x, y-1, width)]-GAP_PENALTY,
 			)
 		}
-		atomic.AddUint64(computed, 1)
+
+		// Synchronization barrier
+		computed[threadNum]++
 		i++
-		goal := i * threadCountu
-		for *computed < goal {
+
+		// Check if all other threads are up to date
+		for j := 0; j < threadCount; j++ {
+			for computed[j] < i {
+			}
 		}
+
+		// This does not work, but I would argue that it should.
+		// Check if the previous thread (where we hava a data dependency)
+		// is up to date
+		// if threadNum > 1 {
+		//     for computed[threadNum - 1] < i {}
+		// }
 	}
 
 	wg.Done()
