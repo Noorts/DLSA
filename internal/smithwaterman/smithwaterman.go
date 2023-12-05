@@ -45,8 +45,8 @@ func parallelFindStringScore(query, target string, NUMPROC int) []int {
 	score := make([]int, width*height)
 
 	// First we compute the upper left triangle
-	for y := 1; y < width; y++ {
-		for x := 1; x <= y; x++ {
+	for y := 1; y < width-1; y++ {
+		for x := 1; x <= width-y-1; x++ {
 			sub_score := MATCH_SCORE
 
 			if query[x-1] != target[y-1] {
@@ -71,12 +71,10 @@ func parallelFindStringScore(query, target string, NUMPROC int) []int {
 
 	wg.Wait()
 
-	// TODO: Actually compute the lower right triangle without recomputation
-	// Right now we compute the last `width` rows this is easier to implement,
-	// but computes 2x to many values
-	for y := height - width; y < height; y++ {
+	// Compute lower right triangle
+	for y := height - width + 2; y < height; y++ {
 		// for x := height - width + y < x++ {
-		for x := 1; x < width; x++ {
+		for x := height - y + 1; x < width; x++ {
 			sub_score := MATCH_SCORE
 
 			if query[x-1] != target[y-1] {
@@ -107,7 +105,7 @@ func compute(wg *sync.WaitGroup, score *[]int, query, target string, threadNum, 
 	// long as ly is the same
 	var i uint64 = 0
 
-	for ly := width; ly < height; ly++ {
+	for ly := width - 1; ly < height; ly++ {
 		for x := left_bounary; x < right_boundary; x++ {
 			// We shadow y with the column dependent y coordinate that is
 			// actually used by the SW-algorithm
@@ -130,18 +128,12 @@ func compute(wg *sync.WaitGroup, score *[]int, query, target string, threadNum, 
 		computed[threadNum]++
 		i++
 
-		// Check if all other threads are up to date
-		for j := 0; j < threadCount; j++ {
-			for computed[j] < i {
+		// Check if previous thread is up to date
+		// Previous thread is the only data dependency
+		if threadNum > 0 {
+			for computed[threadNum-1] < i {
 			}
 		}
-
-		// This does not work, but I would argue that it should.
-		// Check if the previous thread (where we hava a data dependency)
-		// is up to date
-		// if threadNum > 1 {
-		//     for computed[threadNum - 1] < i {}
-		// }
 	}
 
 	wg.Done()
