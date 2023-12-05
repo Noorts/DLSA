@@ -62,6 +62,7 @@ def send_to_server(query_files, target_files, server_url, match_score, mismatch_
     files = sequence_files 
 
     print(len(files))
+    print(body_content)
 
 
     response = requests.post(server_url, data=multipart_data, files=files)
@@ -78,7 +79,7 @@ def main():
     parser = argparse.ArgumentParser(description='Send FASTA sequences to a server.')
     parser.add_argument('--query', type=str, required=True, help='Path to query FASTA file')
     parser.add_argument('--database', type=str, required=True, help='Path to database FASTA file')
-    parser.add_argument('--server-url', type=str, required=True, help='Server URL to send data to')
+    parser.add_argument('--server-url', type=str, required=False, help='Server URL to send data to', default='http://localhost:8000')
     parser.add_argument('--output-path', type=str, required=False, help='Path to output file', default='results/')
     parser.add_argument('--match-score', type=str, required=False, help='Match score', default=2)
     parser.add_argument('--mismatch-penalty', type=str, required=False, help='Mismatch penalty', default=1)
@@ -95,22 +96,45 @@ def main():
 
     print(f'Server response: HTTP {response.status_code} - {response.text}')
 
+    print (response.status_code)
+
     job_id = response.json()['id']
     print(f'Job ID: {job_id}')
 
     #if response is successful, poll for results
+    curr_time = time.time()
+    job_start = None
+    computation_time = None
     if response.status_code == 200:
         print('Polling for results...')
-        response = requests.get(f'{args.server_url}/job/{job_id}/result')
+        response = requests.get(f'{args.server_url}/job/{job_id}/status')
         print(f'Server response: HTTP {response.status_code} - {response.text}')
-        while response.status_code == 404:
-              if response.json()['detail'] == 'Job not done yet':
-                print('Job not done yet')
+        while response.status_code == 200:
+            if response.json()['state'] == 'IN_QUEUE':
+                print ('Job in queue, waiting for it to start')
                 time.sleep(2)
-                response = requests.get(f'{args.server_url}/job/{job_id}/result')
+                response = requests.get(f'{args.server_url}/job/{job_id}/status')
+                continue
+            elif response.json()['state'] == 'IN_PROGRESS':
+                if job_start is None:
+                    job_start = time.time()
+                total_elapsed_time = time.time() - curr_time
+                print('Job not done yet, total elapsed time: ', int(total_elapsed_time), 'seconds')
+                progress = response.json()['progress']
+                print(f'Progress: {round(progress*100,2)}%')
+                time.sleep(2)
+                response = requests.get(f'{args.server_url}/job/{job_id}/status')
+            else:
+                total_elapsed_time = time.time() - curr_time
+                computation_time = time.time() - job_start
+                print('Job done, total elapsed time: ', int(total_elapsed_time), 'seconds')
+                print('Computation time: ', int(computation_time), 'seconds')
+                break
+        # print('Job done')
+        # print(response.json())
+        computation_time = time.time() - job_start
 
-        print('Job done')
-        print(response.json())
+        response = requests.get(f'{args.server_url}/job/{job_id}/result')
         for result in response.json()['alignments']:
             query = descr_map[result['combination']['query']]
             target = descr_map[result['combination']['target']]
@@ -122,14 +146,15 @@ def main():
             if os.path.exists(file_path):
                 mode = 'a'  # Append if the file exists
             else:
-                mode = 'w'  # Create a new file if it does not
-            print('result')
-            print(result)
+                mode = 'w'  # Create a new file if it does no
+            
+            # print(result)
             with open(file_path, mode) as file:
                 file.write(f'>{target}\n')
                 file.write(f'Aligment: {result["alignments"][0]["alignment"]}\n')
                 file.write(f'Length: {result["alignments"][0]["length"]}\n')
                 file.write(f'Score: {result["alignments"][0]["score"]}\n')
+        print('result can be found in: results/')
 
 
 if __name__ == '__main__':
