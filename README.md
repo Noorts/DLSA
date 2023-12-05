@@ -6,6 +6,8 @@ Distributed Local Sequence Alignment
 
 ### Setup
 
+Also check out the [DAS5](DAS5.md) setup instructions.
+
 Python dependencies get managed by [Poetry](https://python-poetry.org/).
 See https://python-poetry.org/docs/#installation for installation instructions.
 
