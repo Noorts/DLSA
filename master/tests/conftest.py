@@ -33,7 +33,10 @@ def f_client() -> TestClient:
 @pytest.fixture()
 def f_worker_node(f_client: TestClient) -> tuple[WorkerId, StoppableThread]:
     response = f_client.post(
-        "/worker/register", json=WorkerResources(ram_mb=100, cpu_resources=1, gpu_resources=0).model_dump(mode="json")
+        "/worker/register",
+        json=WorkerResources(ram_mb=100, cpu_resources=1, gpu_resources=0, benchmark_result=100).model_dump(
+            mode="json"
+        ),
     )
     assert response.status_code == 200
     worker_id = WorkerId(**response.json())

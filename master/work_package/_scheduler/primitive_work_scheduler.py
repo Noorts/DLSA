@@ -22,6 +22,9 @@ class PrimitiveWorkPackageScheduler(WorkPackageScheduler):
                 # Target
                 **{sequence.target: job.request.sequences[sequence.target] for sequence in queries},
             },
+            match_score=job.request.match_score,
+            mismatch_penalty=job.request.mismatch_penalty,
+            gap_penalty=job.request.gap_penalty,
         )
 
         job.sequences_in_progress += package.queries

@@ -11,6 +11,9 @@ from master.api_models import (
 )
 
 JOB_REQUEST = JobRequest(
+    match_score=1,
+    mismatch_penalty=-1,
+    gap_penalty=-1,
     sequences={
         UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "ABCD",
         UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "ABCD",

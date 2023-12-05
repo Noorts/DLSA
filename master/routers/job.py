@@ -1,3 +1,4 @@
+import logging
 from typing import Annotated, Any
 from uuid import UUID
 
@@ -8,11 +9,13 @@ from master.api_models import (
     JobId,
     JobStatus,
     JobResult,
-    JobResultCombination, MultipartJobRequest,
+    JobResultCombination,
+    MultipartJobRequest,
 )
 from master.job_queue.job_queue import JobQueue
 from master.settings import SETTINGS
 
+logger = logging.getLogger(__name__)
 job_router = APIRouter(tags=["external"])
 _job_queue = JobQueue()
 
@@ -20,6 +23,7 @@ _job_queue = JobQueue()
 # submit a job to the job job_queue, returns a job id (for client)
 @job_router.post("/job/format/json")
 def submit_job(body: JobRequest) -> JobId:
+    logger.info("Incoming job request with json data")
     body.assert_required_sequences()
     job = _job_queue.add_job_to_queue(body)
     return JobId(id=job.id)
@@ -27,7 +31,8 @@ def submit_job(body: JobRequest) -> JobId:
 
 # submit a job to the job job_queue, returns a job id (for client)
 @job_router.post("/job/format/multipart")
-def submit_job(body: MultipartJobRequest, sequences: Annotated[list[UploadFile], File()]) -> Any:
+def submit_multipart_job(body: MultipartJobRequest, sequences: Annotated[list[UploadFile], File()]) -> Any:
+    logger.info("Incoming job request with multipart data")
     file_dict = {}
     for sequence in sequences:
         try:
@@ -36,7 +41,7 @@ def submit_job(body: MultipartJobRequest, sequences: Annotated[list[UploadFile],
             raise HTTPException(status_code=400, detail=f"Invalid UUID in filename: {sequence.filename}")
         file_dict[sequence_uuid] = sequence.file.read().decode("utf-8")
 
-    job_request = JobRequest(queries=body.queries, sequences=file_dict).assert_required_sequences()
+    job_request = JobRequest(sequences=file_dict, **body.model_dump(mode="json")).assert_required_sequences()
     job = _job_queue.add_job_to_queue(job_request)
     return JobId(id=job.id)
 
@@ -44,6 +49,7 @@ def submit_job(body: MultipartJobRequest, sequences: Annotated[list[UploadFile],
 # returns the state of a job (for a client)
 @job_router.get("/job/{job_id}/status")
 def get_job(job_id: UUID) -> JobStatus:
+    logger.info(f"Getting status of job {job_id}")
     job = _job_queue.get_job_by_id(job_id)
     return JobStatus(state=job.state, progress=job.percentage_done)
 
@@ -51,6 +57,7 @@ def get_job(job_id: UUID) -> JobStatus:
 # returns the state of a job (for a client)
 @job_router.get("/job/{job_id}/result")
 def get_job(job_id: UUID) -> JobResult:
+    logger.info(f"Getting result of job {job_id}")
     job = _job_queue.get_job_by_id(job_id)
 
     if job.state != "DONE":
@@ -74,6 +81,7 @@ def delete_job(job_id: UUID):
     Job deletion might have unwanted side effects, as workers might still be working on the job and work packages are
     not cleaned up.
     """
+    logger.info(f"Deleting job {job_id}")
     if not SETTINGS.enable_job_deletion:
         raise HTTPException(status_code=403, detail="Job deletion is disabled")
 

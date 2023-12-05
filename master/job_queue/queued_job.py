@@ -10,6 +10,9 @@ class QueuedJob:
     completed_sequences: dict[TargetQueryCombination, list[Alignment]]
     sequences_in_progress: list[TargetQueryCombination]
     id: UUID
+    match_score: int
+    mismatch_penalty: int
+    gap_penalty: int
 
     @property
     def state(self) -> JobState:

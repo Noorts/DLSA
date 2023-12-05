@@ -1,3 +1,4 @@
+import logging
 from uuid import uuid4, UUID
 
 from fastapi import HTTPException
@@ -8,6 +9,8 @@ from master.utils.cleaner import Cleaner
 from master.utils.singleton import Singleton
 from master.utils.time import current_sec
 from .worker import Worker
+
+logger = logging.getLogger(__name__)
 
 
 class WorkerNotFoundException(HTTPException):
@@ -26,6 +29,7 @@ class WorkerCollector(Cleaner, Singleton):
 
     def register(self, resources: WorkerResources) -> UUID:
         worker_id = uuid4()
+        logger.info(f"Registering worker {worker_id} with resources {resources}")
         self._workers[worker_id] = Worker(
             worker_id=worker_id, resources=resources, last_seen_alive=current_sec(), status="IDLE"
         )
@@ -39,6 +43,7 @@ class WorkerCollector(Cleaner, Singleton):
         return worker
 
     def add_life_pulse(self, worker_id: UUID) -> None:
+        logger.debug(f"Adding life pulse for worker {worker_id}")
         worker = self.get_worker_by_id(worker_id)
         worker.last_seen_alive = current_sec()
 
@@ -56,5 +61,6 @@ class WorkerCollector(Cleaner, Singleton):
     def execute_clean(self) -> None:
         for worker in [*self._workers.values()]:
             if not self.is_alive(worker):
+                logger.info(f"Removing dead worker {worker.worker_id}")
                 self._workers[worker.worker_id].status = "DEAD"
                 del self._workers[worker.worker_id]
