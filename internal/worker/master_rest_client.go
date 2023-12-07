@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -34,18 +35,6 @@ type WorkPackage struct {
 }
 
 type MachineSpecsRequest struct {
-	//For now only cpu resources
-
-	// Cores       uint `json:"cores"`
-	// Cpus        uint `json:"cpus"`
-	// Threads     uint `json:"threads"`
-	// MemorySpeed uint `json:"memory_speed"`
-	// MemorySize  uint `json:"memory_size"`
-	// GPU         bool `json:"gpu_resources"`
-
-	Ram       uint    `json:"ram_mb"`
-	Cpu       uint    `json:"cpu_resources"`
-	Gpu       uint    `json:"gpu_resources"`
 	Benchmark float32 `json:"benchmark_result"`
 }
 
@@ -85,14 +74,10 @@ func InitRestClient(baseURL string) *RestClient {
 
 func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
 	specsReq := MachineSpecsRequest{
-		Ram:       800,
-		Cpu:       1,
-		Gpu:       specs.gpu,
 		Benchmark: specs.benchmark,
 	}
 	jsonData, err := json.Marshal(specsReq)
-	fmt.Println("Registering worker")
-	fmt.Println(string(jsonData))
+	log.Println("Registering worker")
 	req, err := http.NewRequest("POST", c.baseURL+"/worker/register", bytes.NewBuffer(jsonData))
 	if err != nil {
 		fmt.Println("Error creating request", err)
@@ -113,14 +98,12 @@ func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
 		fmt.Println("Error decoding response", err)
 		return nil, err
 	}
-	fmt.Println("Registered worker")
-	fmt.Println(workReq)
+	log.Println("Registered worker")
 	//TODO: Maybe we should return the workReq
 	return &workReq.WorkerId, nil
 }
 
 func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
-	fmt.Println("Requesting work")
 	workReq := WorkRequest{WorkerId: workerId}
 	jsonData, err := json.Marshal(workReq)
 
@@ -133,13 +116,10 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
-	fmt.Printf("Requesting work from %s\n", c.baseURL+"/work/")
-
 	req.Header.Set("Content-Type", "application/json")
-
 	resp, err := c.client.Do(req)
 	if err != nil {
-		fmt.Println("Error sending request", err)
+		log.Println("Could not retrieve work", err)
 		return nil, err
 	}
 
@@ -169,30 +149,28 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		fmt.Printf("Error decoding response: %s", err)
 		return nil, err
 	}
-	fmt.Println("Got work", &workPkg)
-	fmt.Printf("Got work - Time since epoch (micro): %d\n", time.Now().UnixMicro())
 	return &workPkg, nil
 }
 
-func (c *RestClient) SendResult(result WorkResult, workId string) error {
+func (c *RestClient) SendResult(result WorkResult, workId string) {
 	jsonData, err := json.Marshal(result)
 	if err != nil {
-		return err
+		log.Println("Error marshalling result", err)
+		return
 	}
 
 	req, err := http.NewRequest("POST", c.baseURL+"/work/"+workId+"/result", bytes.NewBuffer(jsonData))
 	if err != nil {
-		return err
+		log.Println("Error creating request", err)
+		return
 	}
 
 	req.Header.Set("Content-Type", "application/json")
 
-	fmt.Printf(" Send results - Time since epoch (micro): %d\n", time.Now().UnixMicro())
-	fmt.Println("Sending result to url: " + c.baseURL + "/work/" + workId + "/result")
-
 	resp, err := c.client.Do(req)
 	if err != nil {
-		return err
+		log.Println("Error sending result", err)
+		return
 	}
 
 	//Assuming the response has a body
@@ -200,10 +178,10 @@ func (c *RestClient) SendResult(result WorkResult, workId string) error {
 
 	// Did not get a 200 OK response
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status: %s", resp.Status)
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("Error sending result: %s", body)
+		return
 	}
-
-	return nil
 }
 
 func (c *RestClient) SendHeartbeat(workerId string) error {

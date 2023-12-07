@@ -1,4 +1,5 @@
 import logging
+import math
 from uuid import uuid4
 
 from master.worker.worker import Worker
@@ -33,13 +34,12 @@ class ProportionalWorkScheduler(WorkPackageScheduler):
 
         # Calculate the number of queries that should be assigned to the current worker
         # (at least one query should be assigned)
-        amount_of_sequences = int(proportional_processing_power * len(queries))
+        amount_of_sequences = math.ceil(proportional_processing_power * len(queries))
         amount_of_sequences = max(amount_of_sequences, 1)
+        amount_of_sequences = min(amount_of_sequences, len(queries))
 
         # Assign the queries to the current worker
         queries = queries[:amount_of_sequences]
-
-        assert len(queries) > 0
 
         package = InternalWorkPackage(
             id=uuid4(),
