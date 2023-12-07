@@ -46,7 +46,7 @@ def worker_pulse(worker_id: WorkerId) -> None:
 # request work returns a piece of work (for worker, called in an interval while not working)
 @worker_router.post("/work/")
 def get_work_for_worker(worker_id: WorkerId) -> WorkPackage | None:
-    logger.info("Processing work request")
+    logger.info("Processing request for new work")
     return _work_collector.get_new_work_package(worker_id)
 
 

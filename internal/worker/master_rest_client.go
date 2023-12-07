@@ -157,6 +157,11 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
+	// check if the body is a byte array of null
+	if string(body) == "null" {
+		return nil, nil
+	}
+
 	// Decode the response
 	var workPkg WorkPackage
 	err = json.Unmarshal(body, &workPkg)
@@ -165,7 +170,7 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 	fmt.Println("Got work", &workPkg)
-	fmt.Printf(" Got work - Time since epoch (micro): %d\n", time.Now().UnixMicro())
+	fmt.Printf("Got work - Time since epoch (micro): %d\n", time.Now().UnixMicro())
 	return &workPkg, nil
 }
 
@@ -184,7 +189,6 @@ func (c *RestClient) SendResult(result WorkResult, workId string) error {
 
 	fmt.Printf(" Send results - Time since epoch (micro): %d\n", time.Now().UnixMicro())
 	fmt.Println("Sending result to url: " + c.baseURL + "/work/" + workId + "/result")
-	fmt.Println(string(jsonData))
 
 	resp, err := c.client.Do(req)
 	if err != nil {
@@ -208,8 +212,10 @@ func (c *RestClient) SendHeartbeat(workerId string) error {
 	if err != nil {
 		return err
 	}
-	fmt.Println("Sending heartbeat to url: " + c.baseURL + "/worker/pulse")
-	fmt.Println(string(jsonData))
+
+	// TODO kill the worker if the heartbeat fails (404)
+	// fmt.Println("Sending heartbeat to url: " + c.baseURL + "/worker/pulse")
+	// fmt.Println(string(jsonData))
 	resp, err := c.client.Post(c.baseURL+"/worker/pulse", "application/json", bytes.NewReader(jsonData))
 	resp.Body.Close()
 	return err

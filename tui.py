@@ -1,26 +1,27 @@
 import argparse
-import json
-import requests
-import uuid
 import io
-import time
+import json
 import os
 import sys 
+import time
+import uuid
 
-descr_map = {
-}
+import requests
+
+descr_map = {}
+
 
 def parse_fasta(fasta_file_path):
-    with open(fasta_file_path, 'r') as file:
+    with open(fasta_file_path, "r") as file:
         fasta_data = file.read()
 
     sequences = []
-    entries = fasta_data.split('>')[1:]
+    entries = fasta_data.split(">")[1:]
 
     for entry in entries:
-        lines = entry.strip().split('\n')
-        seq_id = lines[0].split()[0]  
-        seq_data = ''.join(lines[1:])
+        lines = entry.strip().split("\n")
+        seq_id = lines[0].split()[0]
+        seq_data = "".join(lines[1:])
         id_ = str(uuid.uuid4())
         descr_map[id_] = seq_id
         sequences.append((id_, seq_data))
@@ -28,47 +29,44 @@ def parse_fasta(fasta_file_path):
     return sequences
 
 
-
 def send_to_server(query_files, target_files, server_url, match_score, mismatch_penalty, gap_penalty):
     content = {
-        'queries': [],
+        "queries": [],
     }
-    for q_name,q_seq in query_files:
-        for t_name,t_seq in target_files:
-            content['queries'].append({
-               'query': q_name,
-                'target': t_name,
-            })
-    
-    content['match_score'] = match_score
-    content['mismatch_penalty'] = mismatch_penalty
-    content['gap_penalty'] = gap_penalty
-    
+    for q_name, q_seq in query_files:
+        for t_name, t_seq in target_files:
+            content["queries"].append(
+                {
+                    "query": q_name,
+                    "target": t_name,
+                }
+            )
+
+    content["match_score"] = match_score
+    content["mismatch_penalty"] = mismatch_penalty
+    content["gap_penalty"] = gap_penalty
+
     body_content = json.dumps(content)
     combined_sequences = query_files + target_files
 
     sequences = query_files + target_files
     sequence_files = []
     for seq_name, seq_content in sequences:
-
-        seq_file = io.BytesIO(str.encode(f'>{seq_name}\n{seq_content}\n'))
+        seq_file = io.BytesIO(str.encode(f">{seq_name}\n{seq_content}\n"))
 
         seq_file_name = f"{seq_name}"
-        sequence_files.append(('sequences', (seq_file_name, seq_file, 'application/octet-stream')))
-
+        sequence_files.append(("sequences", (seq_file_name, seq_file, "application/octet-stream")))
 
     multipart_data = {
-        'body': body_content,  
+        "body": body_content,
     }
     files = sequence_files 
 
     # print(len(files))
     # print(body_content)
 
-
     response = requests.post(server_url, data=multipart_data, files=files)
 
-    
     for _, (_, file_obj, _) in sequence_files:
         file_obj.close()
 
@@ -89,24 +87,32 @@ def update_progress(progress):
     sys.stdout.flush()
 
 def main():
-    parser = argparse.ArgumentParser(description='Send FASTA sequences to a server.')
-    parser.add_argument('--query', type=str, required=True, help='Path to query FASTA file')
-    parser.add_argument('--database', type=str, required=True, help='Path to database FASTA file')
-    parser.add_argument('--server-url', type=str, required=False, help='Server URL to send data to', default='http://localhost:8000')
-    parser.add_argument('--output-path', type=str, required=False, help='Path to output file', default='results/')
-    parser.add_argument('--match-score', type=str, required=False, help='Match score', default=2)
-    parser.add_argument('--mismatch-penalty', type=str, required=False, help='Mismatch penalty', default=1)
-    parser.add_argument('--gap-penalty', type=str, required=False, help='Gap penalty', default=1)
-    parser.add_argument('--top-k', type=int, required=False, help='Top k query matches', default=None)
+    parser = argparse.ArgumentParser(description="Send FASTA sequences to a server.")
+    parser.add_argument("--query", type=str, required=True, help="Path to query FASTA file")
+    parser.add_argument("--database", type=str, required=True, help="Path to database FASTA file")
+    parser.add_argument(
+        "--server-url", type=str, required=False, help="Server URL to send data to", default="http://localhost:8000"
+    )
+    parser.add_argument("--output-path", type=str, required=False, help="Path to output file", default="results/")
+    parser.add_argument("--match-score", type=str, required=False, help="Match score", default=2)
+    parser.add_argument("--mismatch-penalty", type=str, required=False, help="Mismatch penalty", default=1)
+    parser.add_argument("--gap-penalty", type=str, required=False, help="Gap penalty", default=1)
+    parser.add_argument("--top-k", type=int, required=False, help="Top k query matches", default=None)
 
     args = parser.parse_args()
 
     sequences_query = parse_fasta(args.query)
     sequences_database = parse_fasta(args.database)
-  
 
-    #TODO: Send the scores and penalties to the server
-    response = send_to_server(sequences_query,sequences_database, f'{args.server_url}/job/format/multipart', args.match_score, args.mismatch_penalty, args.gap_penalty)
+    # TODO: Send the scores and penalties to the server
+    response = send_to_server(
+        sequences_query,
+        sequences_database,
+        f"{args.server_url}/job/format/multipart",
+        args.match_score,
+        args.mismatch_penalty,
+        args.gap_penalty,
+    )
 
     # print(f'Server response: HTTP {response.status_code} - {response.text}')
 
@@ -128,16 +134,16 @@ def main():
                 sys.stdout.write('Job in queue, waiting for it to start\r')
                 sys.stdout.flush()
                 time.sleep(2)
-                response = requests.get(f'{args.server_url}/job/{job_id}/status')
+                response = requests.get(f"{args.server_url}/job/{job_id}/status")
                 continue
-            elif response.json()['state'] == 'IN_PROGRESS':
+            elif response.json()["state"] == "IN_PROGRESS":
                 if job_start is None:
                     job_start = time.time()
                 total_elapsed_time = time.time() - job_start
                 progress = response.json()['progress']
                 update_progress(progress)
                 time.sleep(2)
-                response = requests.get(f'{args.server_url}/job/{job_id}/status')
+                response = requests.get(f"{args.server_url}/job/{job_id}/status")
             else:
                 # time.sleep(1)
                 update_progress(1.0)
@@ -146,17 +152,13 @@ def main():
                 print('\nJob done, total elapsed time: ', int(total_elapsed_time), 'seconds')
                 print('Computation time: ', int(computation_time), 'seconds')
                 break
-        # print('Job done')
-        # print(response.json())
-        computation_time = time.time() - job_start
-
-        #TODO: Sort the results by score???
+        # TODO: Sort the results by score???
         top_k_map = {}
 
-        response = requests.get(f'{args.server_url}/job/{job_id}/result')
-        for result in response.json()['alignments']:
-            query = descr_map[result['combination']['query']]
-            target = descr_map[result['combination']['target']]
+        response = requests.get(f"{args.server_url}/job/{job_id}/result")
+        for result in response.json()["alignments"]:
+            query = descr_map[result["combination"]["query"]]
+            target = descr_map[result["combination"]["target"]]
             score = result["alignments"][0]["score"]
             length = result["alignments"][0]["length"]
             alignment = result["alignments"][0]["alignment"]
@@ -165,7 +167,7 @@ def main():
                 top_k_map[query].append((target, score, length, alignment))
             else:
                 top_k_map[query].append((target, score, length, alignment))
-        
+
         top_k_map = {k: sorted(v, key=lambda x: x[1], reverse=True) for k, v in top_k_map.items()}
         if args.top_k is not None:
             print(f'Showing top-{args.top_k} results')
@@ -173,26 +175,25 @@ def main():
 
 
         for query, results in top_k_map.items():
-            results_dir = './results'
-            os.makedirs(results_dir, exist_ok=True)  
+            results_dir = "./results"
+            os.makedirs(results_dir, exist_ok=True)
 
-            file_path = os.path.join(results_dir, f'{query}.txt')  
+            file_path = os.path.join(results_dir, f"{query}.txt")
             if os.path.exists(file_path):
-                mode = 'a'  
+                mode = "a"
             else:
-                mode = 'w' 
+                mode = "w"
 
             with open(file_path, mode) as file:
                 for target, score, length, alignment in results:
-                    file.write(f'>{target}\n')
-                    file.write(f'Aligment: {alignment}\n')
-                    file.write(f'Length: {length}\n')  
-                    file.write(f'Score: {score}\n')
-                    file.write('\n')  
-            
-        print('result can be found in: results/')
+                    file.write(f">{target}\n")
+                    file.write(f"Aligment: {alignment}\n")
+                    file.write(f"Length: {length}\n")
+                    file.write(f"Score: {score}\n")
+                    file.write("\n")
+
+        print("result can be found in: results/")
 
 
-
-if __name__ == '__main__':
+if __name__ == "__main__":
     main()

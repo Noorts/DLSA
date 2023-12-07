@@ -65,6 +65,12 @@ func main() {
 				continue
 			}
 
+			if work == nil {
+				log.Printf("No work available")
+				time.Sleep(retryDelayGetWorkInSeconds * time.Second)
+				continue
+			}
+
 			_, err = w.ExecuteWork(work)
 
 			if err != nil {
