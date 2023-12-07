@@ -49,6 +49,6 @@ class WorkPackageScheduler(ABC):
     def abort_work_package(self, work_package: ScheduledWorkPackage) -> None:
         job = work_package.package.job
 
-        for in_progress_sequence in job.sequences_in_progress:
+        for in_progress_sequence in [*job.sequences_in_progress]:
             if in_progress_sequence in work_package.package.queries:
                 job.sequences_in_progress.remove(in_progress_sequence)

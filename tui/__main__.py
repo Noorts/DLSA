@@ -2,7 +2,7 @@ import argparse
 import io
 import json
 import os
-import sys 
+import sys
 import time
 import uuid
 
@@ -47,7 +47,6 @@ def send_to_server(query_files, target_files, server_url, match_score, mismatch_
     content["gap_penalty"] = gap_penalty
 
     body_content = json.dumps(content)
-    combined_sequences = query_files + target_files
 
     sequences = query_files + target_files
     sequence_files = []
@@ -60,7 +59,7 @@ def send_to_server(query_files, target_files, server_url, match_score, mismatch_
     multipart_data = {
         "body": body_content,
     }
-    files = sequence_files 
+    files = sequence_files
 
     # print(len(files))
     # print(body_content)
@@ -72,6 +71,7 @@ def send_to_server(query_files, target_files, server_url, match_score, mismatch_
 
     return response
 
+
 def update_progress(progress):
     bar_length = 50  # Modify this to change the length of the progress bar
     if progress >= 1:
@@ -80,11 +80,12 @@ def update_progress(progress):
     block = int(round(bar_length * progress))
     progress_text = "{:.2f}%".format(progress * 100)
     # Ensure the progress text is always the same length
-    progress_text = progress_text.ljust(7, ' ')
+    progress_text = progress_text.ljust(7, " ")
 
     text = "\rProgress: [{0}] {1}".format("#" * block + "-" * (bar_length - block), progress_text)
     sys.stdout.write(text)
     sys.stdout.flush()
+
 
 def main():
     parser = argparse.ArgumentParser(description="Send FASTA sequences to a server.")
@@ -118,20 +119,19 @@ def main():
 
     # print (response.status_code)
 
-    job_id = response.json()['id']
+    job_id = response.json()["id"]
     # print(f'Job ID: {job_id}')
 
-    #if response is successful, poll for results
+    # if response is successful, poll for results
     curr_time = time.time()
     job_start = None
-    computation_time = None
     if response.status_code == 200:
         # print('Polling for results...')
-        response = requests.get(f'{args.server_url}/job/{job_id}/status')
-        print(f'Job Successfully submitted, job ID: {job_id}')
+        response = requests.get(f"{args.server_url}/job/{job_id}/status")
+        print(f"Job Successfully submitted, job ID: {job_id}")
         while response.status_code == 200:
-            if response.json()['state'] == 'IN_QUEUE':
-                sys.stdout.write('Job in queue, waiting for it to start\r')
+            if response.json()["state"] == "IN_QUEUE":
+                sys.stdout.write("Job in queue, waiting for it to start\r")
                 sys.stdout.flush()
                 time.sleep(2)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
@@ -139,8 +139,7 @@ def main():
             elif response.json()["state"] == "IN_PROGRESS":
                 if job_start is None:
                     job_start = time.time()
-                total_elapsed_time = time.time() - job_start
-                progress = response.json()['progress']
+                progress = response.json()["progress"]
                 update_progress(progress)
                 time.sleep(2)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
@@ -149,8 +148,8 @@ def main():
                 update_progress(1.0)
                 total_elapsed_time = time.time() - curr_time
                 computation_time = time.time() - job_start
-                print('\nJob done, total elapsed time: ', int(total_elapsed_time), 'seconds')
-                print('Computation time: ', int(computation_time), 'seconds')
+                print("\nJob done, total elapsed time: ", int(total_elapsed_time), "seconds")
+                print("Computation time: ", int(computation_time), "seconds")
                 break
         # TODO: Sort the results by score???
         top_k_map = {}
@@ -170,12 +169,11 @@ def main():
 
         top_k_map = {k: sorted(v, key=lambda x: x[1], reverse=True) for k, v in top_k_map.items()}
         if args.top_k is not None:
-            print(f'Showing top-{args.top_k} results')
-            top_k_map = {k: v[:args.top_k] for k, v in top_k_map.items()}
-
+            print(f"Showing top-{args.top_k} results")
+            top_k_map = {k: v[: args.top_k] for k, v in top_k_map.items()}
 
         for query, results in top_k_map.items():
-            results_dir = "./results"
+            results_dir = "../results"
             os.makedirs(results_dir, exist_ok=True)
 
             file_path = os.path.join(results_dir, f"{query}.txt")
@@ -187,7 +185,7 @@ def main():
             with open(file_path, mode) as file:
                 for target, score, length, alignment in results:
                     file.write(f">{target}\n")
-                    file.write(f"Aligment: {alignment}\n")
+                    file.write(f"Alignment: {alignment}\n")
                     file.write(f"Length: {length}\n")
                     file.write(f"Score: {score}\n")
                     file.write("\n")
