@@ -2,7 +2,7 @@ from typing import Literal
 
 from pydantic_settings import BaseSettings
 
-SchedulerType = Literal["primitive"]
+SchedulerType = Literal["primitive", "proportional", "time"]
 
 
 class _Settings(BaseSettings):

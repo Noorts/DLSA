@@ -19,6 +19,8 @@ class WorkPackageScheduler(ABC):
     @staticmethod
     def create() -> WorkPackageScheduler:
         from .primitive_work_scheduler import PrimitiveWorkPackageScheduler
+        from .proportional_work_scheduler import ProportionalWorkScheduler
+        from .time_work_scheduler import TimeWorkScheduler
 
         # Return the already created _scheduler if it exists
         if WorkPackageScheduler._created_scheduler:
@@ -30,6 +32,10 @@ class WorkPackageScheduler(ABC):
         match SETTINGS.scheduler_type:
             case "primitive":
                 WorkPackageScheduler._created_scheduler = PrimitiveWorkPackageScheduler(worker_collector, job_queue)
+            case "proportional":
+                WorkPackageScheduler._created_scheduler = ProportionalWorkScheduler(worker_collector, job_queue)
+            case "time":
+                WorkPackageScheduler._created_scheduler = TimeWorkScheduler(worker_collector, job_queue)
             case _:
                 raise NotImplementedError()
 

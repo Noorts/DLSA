@@ -21,7 +21,7 @@ class TimeWorkScheduler(WorkPackageScheduler):
         if not unfinished_jobs:
             return None
 
-        job, queries = get_best_match_for(
+        job, queries = _get_best_match_for(
             unfinished_jobs, worker.resources.benchmark_result, SETTINGS.work_package_time_split_in_seconds
         )
 
@@ -87,7 +87,7 @@ def _calculate_score_of(
     return dp[seconds_of_work], result
 
 
-def get_best_match_for(unfinished_jobs: list[QueuedJob], performance: int, seconds_of_work: int) -> WorkForWorker:
+def _get_best_match_for(unfinished_jobs: list[QueuedJob], performance: int, seconds_of_work: int) -> WorkForWorker:
     """
     We try to do the following thing: Create a package of Queries that is as close as possible to the seconds_of_work
     :param unfinished_jobs: All jobs that have unfinished sequences
