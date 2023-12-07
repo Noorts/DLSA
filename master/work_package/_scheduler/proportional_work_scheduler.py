@@ -39,8 +39,6 @@ class ProportionalWorkScheduler(WorkPackageScheduler):
         # Assign the queries to the current worker
         queries = queries[:amount_of_sequences]
 
-        assert len(queries) > 0
-
         package = InternalWorkPackage(
             id=uuid4(),
             job=job,
