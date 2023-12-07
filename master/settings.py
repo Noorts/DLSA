@@ -1,6 +1,9 @@
+import logging
 from typing import Literal
 
 from pydantic_settings import BaseSettings
+
+logger = logging.getLogger(__name__)
 
 SchedulerType = Literal["primitive", "proportional", "time"]
 
@@ -15,3 +18,5 @@ class _Settings(BaseSettings):
 
 
 SETTINGS = _Settings()
+
+logger.info(f"Settings: {SETTINGS.model_dump(mode='json')}")
