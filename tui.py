@@ -5,6 +5,7 @@ import uuid
 import io
 import time
 import os
+import sys 
 
 descr_map = {
 }
@@ -61,8 +62,8 @@ def send_to_server(query_files, target_files, server_url, match_score, mismatch_
     }
     files = sequence_files 
 
-    print(len(files))
-    print(body_content)
+    # print(len(files))
+    # print(body_content)
 
 
     response = requests.post(server_url, data=multipart_data, files=files)
@@ -73,7 +74,19 @@ def send_to_server(query_files, target_files, server_url, match_score, mismatch_
 
     return response
 
+def update_progress(progress):
+    bar_length = 50  # Modify this to change the length of the progress bar
+    if progress >= 1:
+        progress = 1
 
+    block = int(round(bar_length * progress))
+    progress_text = "{:.2f}%".format(progress * 100)
+    # Ensure the progress text is always the same length
+    progress_text = progress_text.ljust(7, ' ')
+
+    text = "\rProgress: [{0}] {1}".format("#" * block + "-" * (bar_length - block), progress_text)
+    sys.stdout.write(text)
+    sys.stdout.flush()
 
 def main():
     parser = argparse.ArgumentParser(description='Send FASTA sequences to a server.')
@@ -95,40 +108,42 @@ def main():
     #TODO: Send the scores and penalties to the server
     response = send_to_server(sequences_query,sequences_database, f'{args.server_url}/job/format/multipart', args.match_score, args.mismatch_penalty, args.gap_penalty)
 
-    print(f'Server response: HTTP {response.status_code} - {response.text}')
+    # print(f'Server response: HTTP {response.status_code} - {response.text}')
 
-    print (response.status_code)
+    # print (response.status_code)
 
     job_id = response.json()['id']
-    print(f'Job ID: {job_id}')
+    # print(f'Job ID: {job_id}')
 
     #if response is successful, poll for results
     curr_time = time.time()
     job_start = None
     computation_time = None
     if response.status_code == 200:
-        print('Polling for results...')
+        # print('Polling for results...')
         response = requests.get(f'{args.server_url}/job/{job_id}/status')
-        print(f'Server response: HTTP {response.status_code} - {response.text}')
+        print(f'Job Successfully submitted, job ID: {job_id}')
         while response.status_code == 200:
             if response.json()['state'] == 'IN_QUEUE':
-                print ('Job in queue, waiting for it to start')
+                sys.stdout.write('Job in queue, waiting for it to start\r')
+                sys.stdout.flush()
                 time.sleep(2)
                 response = requests.get(f'{args.server_url}/job/{job_id}/status')
                 continue
             elif response.json()['state'] == 'IN_PROGRESS':
                 if job_start is None:
                     job_start = time.time()
-                total_elapsed_time = time.time() - curr_time
-                print('Job not done yet, total elapsed time: ', int(total_elapsed_time), 'seconds')
+                total_elapsed_time = time.time() - job_start
                 progress = response.json()['progress']
-                print(f'Progress: {round(progress*100,2)}%')
+                update_progress(progress)
                 time.sleep(2)
                 response = requests.get(f'{args.server_url}/job/{job_id}/status')
             else:
+                # time.sleep(1)
+                update_progress(1.0)
                 total_elapsed_time = time.time() - curr_time
                 computation_time = time.time() - job_start
-                print('Job done, total elapsed time: ', int(total_elapsed_time), 'seconds')
+                print('\nJob done, total elapsed time: ', int(total_elapsed_time), 'seconds')
                 print('Computation time: ', int(computation_time), 'seconds')
                 break
         # print('Job done')
@@ -153,7 +168,7 @@ def main():
         
         top_k_map = {k: sorted(v, key=lambda x: x[1], reverse=True) for k, v in top_k_map.items()}
         if args.top_k is not None:
-            print(f'Only showing {args.top_k} results')
+            print(f'Showing top-{args.top_k} results')
             top_k_map = {k: v[:args.top_k] for k, v in top_k_map.items()}
 
 
