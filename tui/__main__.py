@@ -144,7 +144,9 @@ def main():
                 time.sleep(2)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
             else:
-                # time.sleep(1)
+                if job_start is None:
+                    job_start = time.time()
+                    total_elapsed_time = time.time() - job_start
                 update_progress(1.0)
                 total_elapsed_time = time.time() - curr_time
                 computation_time = time.time() - job_start
