@@ -133,7 +133,7 @@ def main():
             if response.json()["state"] == "IN_QUEUE":
                 sys.stdout.write("Job in queue, waiting for it to start\r")
                 sys.stdout.flush()
-                time.sleep(2)
+                time.sleep(1)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
                 continue
             elif response.json()["state"] == "IN_PROGRESS":
@@ -141,7 +141,7 @@ def main():
                     job_start = time.time()
                 progress = response.json()["progress"]
                 update_progress(progress)
-                time.sleep(2)
+                time.sleep(1)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
             else:
                 if job_start is None:
@@ -175,7 +175,10 @@ def main():
             top_k_map = {k: v[: args.top_k] for k, v in top_k_map.items()}
 
         for query, results in top_k_map.items():
-            results_dir = "./results"
+            if args.output_path is not None:
+                results_dir = args.output_path
+            else:
+                results_dir = "../results"
             os.makedirs(results_dir, exist_ok=True)
 
             file_path = os.path.join(results_dir, f"{query}.txt")
@@ -192,7 +195,7 @@ def main():
                     file.write(f"Score: {score}\n")
                     file.write("\n")
 
-        print("result can be found in: results/")
+        print(f"Result can be found in: {results_dir}")
 
 
 if __name__ == "__main__":
