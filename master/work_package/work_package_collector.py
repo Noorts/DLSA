@@ -62,7 +62,6 @@ class WorkPackageCollector(Cleaner, Singleton):
         scheduled_package = self._work_scheduler.schedule_work_for(worker)
 
         if not scheduled_package:
-            logger.info(f"No work package available for worker {worker_id}")
             return None
 
         self._work_packages.append(scheduled_package)
