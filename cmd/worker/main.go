@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"regexp"
+	"runtime"
 	"time"
 )
 
@@ -27,7 +28,12 @@ func main() {
 
 	log.Printf("Benchmarking worker...")
 	benchmark := smithwaterman.Benchmark(time.Duration(1e7), 4, 2)
-	log.Printf("Benchmarking done. Result: %v", benchmark)
+
+	runtime.GC()
+
+	if benchmark != 0 {
+		log.Printf("Benchmark: %v", benchmark)
+	}
 
 	client := worker.InitRestClient(protocolPrefix + masterNodeAddress)
 
