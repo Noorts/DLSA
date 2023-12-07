@@ -98,8 +98,6 @@ func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
 		fmt.Println("Error decoding response", err)
 		return nil, err
 	}
-	log.Println("Registered worker")
-	//TODO: Maybe we should return the workReq
 	return &workReq.WorkerId, nil
 }
 
