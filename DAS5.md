@@ -87,8 +87,7 @@ go version # should now print `go version go1.21.4 linux/amd64`.
 With the setup complete, run the following commands to start and test the system (see the `utils` directory).
 
 ```sh
-cd utils
-./start_master.sh # run the master
-./start_worker.sh <number_of_workers> <ip_address_of_master> # run a number of workers
-./spawn_small_job.sh <ip_address_of_master> # spawn a job
+./utils/start_master.sh # run the master
+./utils/start_worker.sh <number_of_workers> <ip_address_of_master> # run a number of workers
+./utils/spawn_small_job.sh <ip_address_of_master> # spawn a job
 ```
