@@ -40,7 +40,7 @@ class TimeWorkScheduler(WorkPackageScheduler):
             gap_penalty=job.request.gap_penalty,
         )
 
-        job.sequences_in_progress += package.queries
+        job.sequences_in_progress.update(package.queries)
         return ScheduledWorkPackage(
             package=package,
             worker=worker,

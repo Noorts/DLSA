@@ -31,7 +31,6 @@ def register_worker(resources: WorkerResources) -> WorkerId:
     8. worker exits
     9. master notices that the worker is gone (no update for n seconds)...
     """
-    logger.info(f"Registering worker")
     worker_id = _worker_collector.register(resources)
     return WorkerId(id=worker_id)
 
@@ -46,8 +45,8 @@ def worker_pulse(worker_id: WorkerId) -> None:
 # request work returns a piece of work (for worker, called in an interval while not working)
 @worker_router.post("/work/")
 def get_work_for_worker(worker_id: WorkerId) -> WorkPackage | None:
-    logger.info("Processing request for new work")
-    return _work_collector.get_new_work_package(worker_id)
+    package = _work_collector.get_new_work_package(worker_id)
+    return package
 
 
 # request work returns a piece of work (for worker, called in an interval while not working)
@@ -62,7 +61,6 @@ def get_raw_work_for_worker(worker_id: WorkerId) -> RawWorkPackage | None:
 
 @worker_router.get("/work/{work_id}/sequence/{sequence_id}")
 def get_sequence_for_work(work_id: UUID, sequence_id: UUID) -> str:
-    logger.info("Processing sequence request")
     work_package = _work_collector.get_package_by_id(work_id)
     if sequence_id not in work_package.package.sequences:
         raise HTTPException(status_code=404, detail="Sequence not found")
@@ -73,5 +71,4 @@ def get_sequence_for_work(work_id: UUID, sequence_id: UUID) -> str:
 # to allow incremental result sharing
 @worker_router.post("/work/{work_id}/result")
 def work_result(result: WorkResult, work_id: UUID) -> None:
-    logger.info("Processing work result")
     _work_collector.update_work_result(work_id, result)

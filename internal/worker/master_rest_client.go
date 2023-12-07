@@ -77,16 +77,8 @@ func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
 		Benchmark: specs.benchmark,
 	}
 	jsonData, err := json.Marshal(specsReq)
-	log.Println("Registering worker")
-	req, err := http.NewRequest("POST", c.baseURL+"/worker/register", bytes.NewBuffer(jsonData))
-	if err != nil {
-		fmt.Println("Error creating request", err)
-		return nil, err
-	}
 
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
+	resp, err := c.client.Post(c.baseURL+"/worker/register", "application/json", bytes.NewReader(jsonData))
 	if err != nil {
 		return nil, err
 	}
@@ -109,15 +101,8 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", c.baseURL+"/work/", bytes.NewBuffer(jsonData))
+	resp, err := c.client.Post(c.baseURL+"/work/", "application/json", bytes.NewReader(jsonData))
 	if err != nil {
-		return nil, err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-	resp, err := c.client.Do(req)
-	if err != nil {
-		log.Println("Could not retrieve work", err)
 		return nil, err
 	}
 
@@ -157,15 +142,7 @@ func (c *RestClient) SendResult(result WorkResult, workId string) {
 		return
 	}
 
-	req, err := http.NewRequest("POST", c.baseURL+"/work/"+workId+"/result", bytes.NewBuffer(jsonData))
-	if err != nil {
-		log.Println("Error creating request", err)
-		return
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
+	resp, err := c.client.Post(c.baseURL+"/work/"+workId+"/result", "application/json", bytes.NewReader(jsonData))
 	if err != nil {
 		log.Println("Error sending result", err)
 		return
@@ -182,17 +159,18 @@ func (c *RestClient) SendResult(result WorkResult, workId string) {
 	}
 }
 
-func (c *RestClient) SendHeartbeat(workerId string) error {
+func (c *RestClient) SendHeartbeat(workerId string) {
 	heartbeat := Heartbeat{WorkerId: workerId}
-	jsonData, err := json.Marshal(heartbeat)
-	if err != nil {
-		return err
-	}
+	jsonData, _ := json.Marshal(heartbeat)
 
-	// TODO kill the worker if the heartbeat fails (404)
-	// fmt.Println("Sending heartbeat to url: " + c.baseURL + "/worker/pulse")
-	// fmt.Println(string(jsonData))
 	resp, err := c.client.Post(c.baseURL+"/worker/pulse", "application/json", bytes.NewReader(jsonData))
-	resp.Body.Close()
-	return err
+	if err != nil {
+		log.Printf("Error sending heartbeat: %v\n", err)
+		log.Fatalf("Shutting down...")
+	}
+	// If the status code is 404, the worker is not registered anymore -> kill the worker
+	if resp.StatusCode == http.StatusNotFound {
+		log.Fatalf("Worker %s is not registered anymore. Shutting down...", workerId)
+	}
+	_ = resp.Body.Close()
 }

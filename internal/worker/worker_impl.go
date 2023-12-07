@@ -63,7 +63,7 @@ func (w *Worker) ExecuteWork(work *WorkPackage) {
 	w.status = Working
 
 	// A list of results that are then sent batched to the master
-	bufferSize := 10
+	bufferSize := 100
 	workResultBuffer := WorkResult{Alignments: make([]AlignmentDetail, 0)}
 
 	for idx, comb := range work.Queries {
@@ -105,8 +105,6 @@ func (w *Worker) ExecuteWork(work *WorkPackage) {
 func (w *Worker) heartbeatRoutine() {
 	for w.status != Dead {
 		time.Sleep(heartbeatIntervalInSeconds * time.Second)
-		if w.client.SendHeartbeat(*w.workerId) != nil {
-			log.Fatalf("Error sending heartbeat. Shutting down...")
-		}
+		w.client.SendHeartbeat(*w.workerId)
 	}
 }

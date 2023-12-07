@@ -41,7 +41,7 @@ job = QueuedJob(
         ],
     ),
     completed_sequences={},
-    sequences_in_progress=[],
+    sequences_in_progress=set(),
     id=uuid4(),
     match_score=1,
     mismatch_penalty=2,

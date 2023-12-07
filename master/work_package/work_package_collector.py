@@ -58,7 +58,6 @@ class WorkPackageCollector(Cleaner, Singleton):
         )
 
     def get_new_raw_work_package(self, worker_id: WorkerId) -> None | Tuple[RawWorkPackage, ScheduledWorkPackage]:
-        logger.info(f"Getting new work package for worker {worker_id}")
         worker = self._worker_collector.get_worker_by_id(worker_id.id)
         scheduled_package = self._work_scheduler.schedule_work_for(worker)
 
@@ -76,7 +75,7 @@ class WorkPackageCollector(Cleaner, Singleton):
             mismatch_penalty=scheduled_package.package.mismatch_penalty,
             gap_penalty=scheduled_package.package.gap_penalty,
         )
-        logger.info(f"Returning work package {package.id} to worker {worker_id} with {len(package.queries)} queries")
+        logger.info(f"Created work package {package.id} to worker {worker_id} with {len(package.queries)} queries")
         return package, scheduled_package
 
     def execute_clean(self) -> None:

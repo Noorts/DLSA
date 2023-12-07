@@ -26,7 +26,7 @@ class JobQueue(Singleton):
         self._jobs[job_id] = QueuedJob(
             request=request,
             completed_sequences={},
-            sequences_in_progress=[],
+            sequences_in_progress=set(),
             id=job_id,
             match_score=request.match_score,
             mismatch_penalty=request.mismatch_penalty,
@@ -41,9 +41,7 @@ class JobQueue(Singleton):
         jobs: list[QueuedJob] = []
 
         for job in self._jobs.values():
-            if not job.done() and len(job.sequences_in_progress) + len(job.completed_sequences) < len(
-                job.request.queries
-            ):
+            if not job.done() and job.missing_sequences():
                 jobs.append(job)
         return jobs
 
