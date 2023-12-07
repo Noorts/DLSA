@@ -40,6 +40,7 @@ func main() {
 	}
 
 	//if we registered successfully, we request work
+	log.Printf("Worker registered. Waiting for work...")
 	for {
 		work, err := w.GetWork()
 
@@ -51,13 +52,14 @@ func main() {
 
 		// If there is no work available, we wait for a bit and try again
 		if work == nil {
-			log.Printf("No work available")
 			time.Sleep(retryDelayGetWorkInSeconds * time.Second)
 			continue
 		}
 
 		log.Printf("Got work. Start calculating alignments...")
+		log.Printf("Calculating %d queries", len(work.Queries))
 		w.ExecuteWork(work)
 		log.Printf("Done calculating alignments.")
+		log.Printf("Waiting for work...")
 	}
 }

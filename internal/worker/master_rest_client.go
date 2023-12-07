@@ -111,7 +111,6 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
-	log.Printf("Requesting work from %s\n", c.baseURL+"/work/")
 	req, err := http.NewRequest("POST", c.baseURL+"/work/", bytes.NewBuffer(jsonData))
 	if err != nil {
 		return nil, err
