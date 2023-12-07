@@ -175,7 +175,7 @@ def main():
             top_k_map = {k: v[: args.top_k] for k, v in top_k_map.items()}
 
         for query, results in top_k_map.items():
-            results_dir = "../results"
+            results_dir = "./results"
             os.makedirs(results_dir, exist_ok=True)
 
             file_path = os.path.join(results_dir, f"{query}.txt")
