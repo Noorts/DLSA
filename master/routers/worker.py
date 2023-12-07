@@ -38,7 +38,6 @@ def register_worker(resources: WorkerResources) -> WorkerId:
 # called in an interval no matter the state
 @worker_router.post("/worker/pulse")
 def worker_pulse(worker_id: WorkerId) -> None:
-    logger.debug("Processing worker pulse")
     _worker_collector.add_life_pulse(worker_id.id)
 
 
@@ -52,7 +51,6 @@ def get_work_for_worker(worker_id: WorkerId) -> WorkPackage | None:
 # request work returns a piece of work (for worker, called in an interval while not working)
 @worker_router.post("/work/raw")
 def get_raw_work_for_worker(worker_id: WorkerId) -> RawWorkPackage | None:
-    logger.info("Processing raw work request")
     package = _work_collector.get_new_raw_work_package(worker_id)
     if not package:
         return None

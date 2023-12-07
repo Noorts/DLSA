@@ -34,7 +34,6 @@ class WorkPackageCollector(Cleaner, Singleton):
         raise WorkPackageNotFoundException(work_package_id)
 
     def update_work_result(self, work_id: UUID, result: WorkResult) -> None:
-        logger.info(f"Updating work package {work_id} with partial result from worker {work_id}")
         work_package = self.get_package_by_id(work_id)
         completed_sequences = work_package.package.job.completed_sequences
 
@@ -46,6 +45,10 @@ class WorkPackageCollector(Cleaner, Singleton):
             # Remove the sequence from the in progress list if it is in there
             if res.combination in work_package.package.job.sequences_in_progress:
                 work_package.package.job.sequences_in_progress.remove(res.combination)
+
+        # See if the job is done
+        if work_package.package.job.done():
+            logger.info(f"Work package {work_package.package.id} is done")
 
     def get_new_work_package(self, worker_id: WorkerId) -> None | WorkPackage:
         new = self.get_new_raw_work_package(worker_id)
