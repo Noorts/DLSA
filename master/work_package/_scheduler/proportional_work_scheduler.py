@@ -10,6 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 class ProportionalWorkScheduler(WorkPackageScheduler):
+    MIN_SEQUENCES_PER_WORKER = 20
+
     def schedule_work_for(self, worker: Worker) -> None | ScheduledWorkPackage:
         unfinished_jobs = self._job_queue.jobs_with_unassigned_sequences()
         if not unfinished_jobs:
@@ -35,7 +37,7 @@ class ProportionalWorkScheduler(WorkPackageScheduler):
         # Calculate the number of queries that should be assigned to the current worker
         # (at least one query should be assigned)
         amount_of_sequences = math.ceil(proportional_processing_power * len(queries))
-        amount_of_sequences = max(amount_of_sequences, 1)
+        amount_of_sequences = max(amount_of_sequences, ProportionalWorkScheduler.MIN_SEQUENCES_PER_WORKER)
         amount_of_sequences = min(amount_of_sequences, len(queries))
 
         # Assign the queries to the current worker

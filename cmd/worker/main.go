@@ -28,8 +28,6 @@ func main() {
 
 	log.Printf("Benchmarking worker...")
 	benchmark := smithwaterman.Benchmark(time.Duration(1e7), 4, 2)
-	runtime.GC()
-
 	client := worker.InitRestClient(protocolPrefix + masterNodeAddress)
 
 	// Create a new worker instance with the machine specs, the worker ID is null
@@ -43,6 +41,7 @@ func main() {
 	//if we registered successfully, we request work
 	log.Printf("Worker registered. Waiting for work...")
 	for {
+		runtime.GC()
 		work, err := w.GetWork()
 
 		if err != nil {
