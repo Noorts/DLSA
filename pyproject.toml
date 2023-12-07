@@ -16,6 +16,7 @@ pytest = "^7.4.3"
 httpx = "^0.25.2"
 coverage = "^7.3.2"
 python-multipart = "^0.0.6"
+requests = "^2.31.0"
 
 [tool.black]
 line-length = 120
