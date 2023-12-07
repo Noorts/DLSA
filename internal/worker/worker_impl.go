@@ -31,8 +31,8 @@ const (
 const heartbeatIntervalInSeconds = 8
 
 // TODO: Decide what happens if the specs arent't returned return nil for now
-func InitWorker(client *RestClient) (*Worker, error) {
-	machineSpecs, err := GetMachineSpecs()
+func InitWorker(client *RestClient, benchmark float32) (*Worker, error) {
+	machineSpecs, err := GetMachineSpecs(benchmark)
 	if err != nil {
 		return nil, err
 	}
@@ -93,7 +93,7 @@ func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 			continue
 		}
 
-		qRes, _, score := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq))
+		qRes, _, score := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq), work.MatchScore, work.MismatchPenalty, work.GapPenalty)
 
 		alignment := AlignmentDetail{
 			Alignment: Alignment{

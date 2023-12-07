@@ -11,15 +11,16 @@ import (
 
 // Maybe we should define some sort of score?
 type MachineSpecs struct {
-	cores        uint // Number of cores
-	cpus         uint // Number of CPUs
-	threads      uint // Number of threads
-	memory_speed uint // Memory speed in MHz
-	memory_size  uint // Amount of RAM in MB
-	gpu          uint // 0 if no GPU, 1 if GPU
+	cores        uint    // Number of cores
+	cpus         uint    // Number of CPUs
+	threads      uint    // Number of threads
+	memory_speed uint    // Memory speed in MHz
+	memory_size  uint    // Amount of RAM in MB
+	gpu          uint    // 0 if no GPU, 1 if GPU
+	benchmark    float32 // Benchmark to run
 }
 
-func GetMachineSpecs() (*MachineSpecs, error) {
+func GetMachineSpecs(benchmark float32) (*MachineSpecs, error) {
 	var si sysinfo.SysInfo
 	gpu := checkGPU() //Not sure about this tbh
 	si.GetSysInfo()
@@ -30,6 +31,7 @@ func GetMachineSpecs() (*MachineSpecs, error) {
 		memory_speed: si.Memory.Speed,
 		memory_size:  si.Memory.Size,
 		gpu:          gpu,
+		benchmark:    benchmark,
 	}
 	return &specs, nil
 

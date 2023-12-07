@@ -24,9 +24,13 @@ type Alignment struct {
 }
 
 type WorkPackage struct {
-	ID        *string                 `json:"id"`
-	Queries   []QueryTargetType       `json:"queries"`
-	Sequences map[SequenceId]Sequence `json:"sequences"`
+	ID              *string                 `json:"id"`
+	JobID           *string                 `json:"job_id"`
+	Queries         []QueryTargetType       `json:"queries"`
+	Sequences       map[SequenceId]Sequence `json:"sequences"`
+	MatchScore      int                     `json:"match_score"`
+	MismatchPenalty int                     `json:"mismatch_penalty"`
+	GapPenalty      int                     `json:"gap_penalty"`
 }
 
 type MachineSpecsRequest struct {
@@ -39,14 +43,16 @@ type MachineSpecsRequest struct {
 	// MemorySize  uint `json:"memory_size"`
 	// GPU         bool `json:"gpu_resources"`
 
-	Ram uint `json:"ram_mb"`
-	Cpu uint `json:"cpu_resources"`
-	Gpu uint `json:"gpu_resources"`
+	Ram       uint    `json:"ram_mb"`
+	Cpu       uint    `json:"cpu_resources"`
+	Gpu       uint    `json:"gpu_resources"`
+	Benchmark float32 `json:"benchmark_result"`
 }
 
 type WorkRequest struct {
 	WorkerId string `json:"id"`
 }
+
 type Heartbeat struct {
 	WorkerId string `json:"id"`
 }
@@ -78,11 +84,11 @@ func InitRestClient(baseURL string) *RestClient {
 }
 
 func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
-	//TODO: Machine specs vaildation
 	specsReq := MachineSpecsRequest{
-		Ram: 800,
-		Cpu: 1,
-		Gpu: specs.gpu,
+		Ram:       800,
+		Cpu:       1,
+		Gpu:       specs.gpu,
+		Benchmark: specs.benchmark,
 	}
 	jsonData, err := json.Marshal(specsReq)
 	fmt.Println("Registering worker")
