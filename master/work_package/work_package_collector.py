@@ -46,6 +46,11 @@ class WorkPackageCollector(Cleaner, Singleton):
             if res.combination in work_package.package.job.sequences_in_progress:
                 work_package.package.job.sequences_in_progress.remove(res.combination)
 
+        # Check if the work package is done
+        if work_package.done():
+            logger.info(f"Work package {work_package.package.id} is done")
+            work_package.worker.status = "IDLE"
+
         # See if the job is done
         if work_package.package.job.done():
             logger.info(f"Work package {work_package.package.id} is done")
@@ -78,6 +83,7 @@ class WorkPackageCollector(Cleaner, Singleton):
             gap_penalty=scheduled_package.package.gap_penalty,
         )
         logger.info(f"Created work package {package.id} to worker {worker_id} with {len(package.queries)} queries")
+        worker.status = "WORKING"
         return package, scheduled_package
 
     def execute_clean(self) -> None:

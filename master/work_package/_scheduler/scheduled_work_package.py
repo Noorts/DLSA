@@ -34,3 +34,6 @@ class ScheduledWorkPackage:
                 completed_sequences += 1
 
         return completed_sequences / sequence_length
+
+    def done(self) -> bool:
+        return self.percentage_done == 1
