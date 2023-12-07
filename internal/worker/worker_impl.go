@@ -82,7 +82,7 @@ func (w *Worker) GetWork() (*WorkPackage, error) {
 func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 	w.status = Working
 	results := make([]WorkResult, len(work.Queries))
-	for ind, comb := range work.Queries {
+	for index, comb := range work.Queries {
 
 		targetSeq, ok1 := work.Sequences[comb.Target]
 		querySeq, ok2 := work.Sequences[comb.Query]
@@ -90,7 +90,6 @@ func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 		// Check if both sequences are in the work package
 		if !ok1 || !ok2 {
 			log.Fatalf("Target and query not found in work package")
-			continue
 		}
 
 		qRes, _, score := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq), work.MatchScore, work.MismatchPenalty, work.GapPenalty)
@@ -111,14 +110,14 @@ func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 			Alignments: []AlignmentDetail{alignment},
 		}
 
-		log.Printf("Result: %v", result)
-		err := w.client.SendResult(result, *work.ID)
-		if err != nil {
-			//TODO: Should we just log the error and continue?
-			log.Printf("Error sending result: %v", err)
-			continue
-		}
-		results[ind] = result
+		go func() {
+			err := w.client.SendResult(result, *work.ID)
+			if err != nil {
+				log.Printf("Error sending result: %v", err)
+			}
+		}()
+
+		results[index] = result
 	}
 	w.status = Waiting
 	return results, nil
