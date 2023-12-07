@@ -32,7 +32,9 @@ class ProportionalWorkScheduler(WorkPackageScheduler):
 
         # Calculate the processing power of the current worker compared to all other workers
         worker_processing_power = worker.resources.benchmark_result
-        proportional_processing_power = worker_processing_power / total_processing_power
+        # Just in case something went wrong and the worker itself is not in the list of available workers
+        # (should not happen), but better safe than sorry
+        proportional_processing_power = worker_processing_power / max(total_processing_power, worker_processing_power)
 
         # Calculate the number of queries that should be assigned to the current worker
         # (at least one query should be assigned)
