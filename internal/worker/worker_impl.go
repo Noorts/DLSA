@@ -2,7 +2,6 @@ package worker
 
 import (
 	"dlsa/internal/smithwaterman"
-	"fmt"
 	"log"
 	"time"
 )
@@ -58,21 +57,7 @@ func (w *Worker) RegisterWorker() (*string, error) {
 
 // Function to request work from the master, returns the work package if successful
 func (w *Worker) GetWork() (*WorkPackage, error) {
-	// Logic to fetch a task from the master, call the work endpoint
-	if w.workerId == nil {
-		//some error message
-	}
-	work, err := w.client.RequestWork(*w.workerId)
-
-	if err != nil {
-		return nil, err
-	}
-	if work.ID == nil {
-		return nil, fmt.Errorf("No work available")
-	}
-	log.Printf("Got work: %+v", work)
-
-	return work, nil
+	return w.client.RequestWork(*w.workerId)
 }
 
 // Function to execute the work package, returns the work result for every pair if successful
