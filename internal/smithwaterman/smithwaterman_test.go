@@ -150,6 +150,7 @@ const NumBenchmarks = 10
 func benchmarkSequential(query, target string, b *testing.B) {
 	size := len(query) * len(target)
 	var _ []int
+	b.ResetTimer()
 
 	for i := 0; i < NumBenchmarks; i++ {
 		b.StartTimer()
@@ -165,6 +166,7 @@ func benchmarkParallel(query, target string, NUMPROC int, b *testing.B) {
 	size := len(query) * len(target)
 	var _ []int
 	runtime.GOMAXPROCS(NUMPROC)
+	b.ResetTimer()
 
 	for i := 0; i < NumBenchmarks; i++ {
 		b.StartTimer()
