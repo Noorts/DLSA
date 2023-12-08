@@ -38,8 +38,10 @@ func main() {
 		return
 	}
 
+	mcpus := float64(benchmark) / 1e6
 	//if we registered successfully, we request work
-	log.Printf("Worker registered. Waiting for work...")
+	log.Printf("Worker registered (%.0f MCUPS). Waiting for work...", mcpus)
+
 	for {
 		runtime.GC()
 		work, err := w.GetWork()
