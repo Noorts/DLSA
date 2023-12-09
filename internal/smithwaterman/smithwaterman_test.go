@@ -5,6 +5,9 @@ import (
 )
 
 // Example as listed on Wikipedi
+func TestTest(t *testing.T) {
+    test_func();
+}
 
 func TestBasic(t *testing.T) {
 	test_substring("A", "A", "A", "A", t)
@@ -41,6 +44,7 @@ func TestMultipleOptions(t *testing.T) {
 func TestAdvanced(t *testing.T) {
 	test_with_scoring(1, 1, 2, "TACGGGCCCGCTAC", "TAGCCCTATCGGTCA", "TACGGGCCCGCTA-C", "TA---G-CC-CTATC", t)
 	test_with_scoring(1, 1, 2, "AAGTCGTAAAAGTGCACGT", "TAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", t)
+	test_with_scoring(1, 1, 2, "AAGTCGTAAAAGTGCACGT", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzTAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", t)
 }
 
 func test_with_scoring(gap int, mismatch int, match int, query, target, expected_query, expected_target string, t *testing.T) {
