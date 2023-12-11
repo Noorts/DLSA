@@ -13,21 +13,30 @@ type GoResult struct {
 	Query  string
 	Target string
 	Score  int
-	Length int
 }
 
-//TODO: Some kind of logic to determine whether to use low mem, simd, or just sequential
+func cCharPtrToString(cStr *C.char) string {
+	return C.GoString(cStr)
+}
 
+func ConvertResultToGoResult(cResult *C.struct_Result) GoResult {
+	query := cCharPtrToString(cResult.query_ptr)
+	target := cCharPtrToString(cResult.target_ptr)
+
+	return GoResult{
+		Query:  query,
+		Target: target,
+	}
+}
+
+// TODO: Some kind of logic to determine whether to use low mem, simd, or just sequential
 func FindRustAlignmentParallel(query, target string) GoResult {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 
-	//TODO: How many threads? Maybe doesn't matter, probably won't be using this
 	threads := C.ulong(4)
 	cResult_ref := C.find_alignment_parallel(queryC, targetC, threads)
-
-	result := convertCResultToResult(*cResult_ref)
-	goResult := convertResultToGoResult(result)
+	goResult := convertResultToGoResult(cResult_ref)
 
 	defer FreeAlignmentResult(cResult_ref)
 
@@ -39,27 +48,22 @@ func FindRustAlignmentSequential(query, target string) GoResult {
 	targetC := C.CString(target)
 
 	cResult_ref := C.find_alignment_sequential_straight(queryC, targetC)
-	result := convertCResultToResult(*cResult_ref)
-	goResult := convertResultToGoResult(result)
+
+	goResult := convertResultToGoResult(cResult_ref)
 
 	defer FreeAlignmentResult(cResult_ref)
 
 	return goResult
 }
 
-// TODO: Test if this works on Mac M1
 func FindRustAlignmentSimd(query, target string) GoResult {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 
-	cResult_ref := C.find_alignment_simd(queryC, targetC)
-	result := convertCResultToResult(*cResult_ref)
-	goResult := convertResultToGoResult(result)
+	cResult := C.find_alignment_simd(queryC, targetC)
+	defer FreeAlignmentResult(cResult)
 
-	defer FreeAlignmentResult(cResult_ref)
-
-	return goResult
-
+	return convertResultToGoResult(cResult)
 }
 
 func cCharPtrToGoString(cStr *C.char) string {
@@ -67,19 +71,11 @@ func cCharPtrToGoString(cStr *C.char) string {
 }
 
 // TODO: Length and score
-func convertResultToGoResult(result Result) GoResult {
+func convertResultToGoResult(cResult *C.struct_Result) GoResult {
 	return GoResult{
-		Query:  cCharPtrToGoString(result.QueryPtr),
-		Target: cCharPtrToGoString(result.TargetPtr),
+		Query:  cCharPtrToGoString(cResult.query_ptr),
+		Target: cCharPtrToGoString(cResult.target_ptr),
 		Score:  0,
-		Length: 0,
-	}
-}
-
-func convertCResultToResult(cResult C.struct_Result) Result {
-	return Result{
-		QueryPtr:  cResult.query_ptr,
-		TargetPtr: cResult.target_ptr,
 	}
 }
 

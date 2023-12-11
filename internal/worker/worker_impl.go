@@ -78,6 +78,8 @@ func (w *Worker) ExecuteWork(work *WorkPackage) {
 		qRes := rustRes.Query
 		score := rustRes.Score
 
+		// qRes, _, score := smithwaterman.FindLocalAlignment(string(querySeq), string(targetSeq), work.MatchScore, work.MismatchPenalty, work.GapPenalty)
+
 		alignment := AlignmentDetail{
 			Alignment: Alignment{
 				AlignmentString: qRes,
