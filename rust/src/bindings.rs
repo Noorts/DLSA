@@ -11,9 +11,9 @@ pub struct AlignmentResult {
 }
 
 const SCORES : AlignmentScores = AlignmentScores {
-    gap: -2,
-    r#match: 3,
-    miss: -3,
+    gap: -1,
+    r#match: 2,
+    miss: -1,
 };
 
 #[no_mangle]
@@ -58,7 +58,7 @@ pub extern "C" fn find_alignment_parallel(
     let query: &[char] = unsafe { std::mem::transmute(CStr::from_ptr(query_ptr).to_bytes()) };
     let target: &[char] = unsafe { std::mem::transmute(CStr::from_ptr(target_ptr).to_bytes()) };
 
-    let (query_res, target_res) = crate::find_alignment_parallel(query, target, threads);
+    let (query_res, target_res) = crate::find_alignment_parallel(query, target, threads, SCORES);
 
     let query_res_ref: &[char] = query_res.as_ref();
     let target_res_ref: &[char] = target_res.as_ref();
