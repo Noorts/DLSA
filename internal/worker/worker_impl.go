@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"dlsa/internal/smithwaterman"
 	"fmt"
 	"log"
 	"time"
@@ -93,7 +92,10 @@ func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 			continue
 		}
 
-		qRes, _, score := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq))
+		// qRes, _, score := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq))
+		rustRes := FindRustAlignmentSequential(string(targetSeq), string(querySeq))
+		qRes := rustRes.Query
+		score := rustRes.Score
 
 		alignment := AlignmentDetail{
 			Alignment: Alignment{

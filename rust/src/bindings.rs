@@ -107,6 +107,7 @@ pub extern "C" fn find_alignment_simd(
     }
 }
 
+
 // #[no_mangle]
 // pub extern "C" fn find_alignment_sequential(
 //     query_ptr: *const c_char,
@@ -164,5 +165,28 @@ pub extern "C" fn find_alignment_sequential_straight(
     AlignmentResult {
         query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
         target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
+    }
+}
+
+
+//functions to free the memory allocated by the rust code
+#[no_mangle]
+pub extern "C" fn free_alignment_result(alignment_result: AlignmentResult) {
+    unsafe {
+        if !alignment_result.query.is_null() {
+            let _ = CString::from_raw(alignment_result.query);
+        }
+        if !alignment_result.target.is_null() {
+            let _ = CString::from_raw(alignment_result.target);
+        }
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn free_c_string(c_str_ptr: *mut c_char) {
+    unsafe {
+        if !c_str_ptr.is_null() {
+            let _ = CString::from_raw(c_str_ptr);
+        }
     }
 }
