@@ -1,6 +1,6 @@
 package worker
 
-// #cgo LDFLAGS: ./../../rust/target/release/libsw.a -ldl
+// #cgo LDFLAGS: ./rust/target/release/libsw.a -ldl
 // #include "./../../rust/header/sw.h"
 import "C"
 
@@ -38,7 +38,7 @@ func FindRustAlignmentSequential(query, target string) GoResult {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 
-	cResult := C.find_alignment_sequential(queryC, targetC)
+	cResult := C.find_alignment_sequential_straight(queryC, targetC)
 	result := convertCResultToResult(cResult)
 	goResult := convertResultToGoResult(result)
 

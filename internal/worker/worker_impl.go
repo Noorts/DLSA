@@ -93,7 +93,7 @@ func (w *Worker) ExecuteWork(work *WorkPackage) ([]WorkResult, error) {
 		}
 
 		// qRes, _, score := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq))
-		rustRes := FindRustAlignmentSequential(string(targetSeq), string(querySeq))
+		rustRes := FindRustAlignmentSimd(string(targetSeq), string(querySeq))
 		qRes := rustRes.Query
 		score := rustRes.Score
 
