@@ -457,6 +457,94 @@ mod tests {
                  "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", scores);
     }*/
 
+    #[test]
+    fn test_find_alignment_simd_lowmem() {
+        let scores = AlignmentScores {
+            gap: -1,
+            r#match: 2,
+            miss: -1,
+        };
+        // Basic
+        alignment_tester(find_alignment_simd_lowmem::<LANES>, "a", "a", "a", "a", scores);
+        alignment_tester(find_alignment_simd_lowmem::<LANES>, "hoi", "hoi", "hoi", "hoi", scores);
+        alignment_tester(find_alignment_simd_lowmem::<LANES>, "ho", "hoi", "ho", "ho", scores);
+
+        // Long cases
+        {
+            // Long target
+            let query = "abc";
+            let target = std::iter::repeat('z')
+                .take(1000)
+                .chain("abc".chars())
+                .chain(std::iter::repeat('z').take(1000))
+                .collect::<String>();
+            alignment_tester(find_alignment_simd_lowmem::<LANES>, query, &target, "abc", "abc", scores);
+        }
+
+        {
+            // Both long
+            let query = std::iter::repeat('x')
+                .take(1000)
+                .chain("abc".chars())
+                .chain(std::iter::repeat('x').take(500))
+                .collect::<String>();
+            let target = std::iter::repeat('z')
+                .take(2000)
+                .chain("abc".chars())
+                .chain(std::iter::repeat('z').take(1000))
+                .collect::<String>();
+
+            alignment_tester(find_alignment_simd_lowmem::<LANES>, &query, &target, "abc", "abc", scores);
+        }
+
+        {
+            // Both long
+            let query = std::iter::repeat('x')
+                .take(1000)
+                .chain("abc".chars())
+                .chain(std::iter::repeat('x').take(500))
+                .collect::<String>();
+            let target = std::iter::repeat('z')
+                .take(2000)
+                .chain("ac".chars())
+                .chain(std::iter::repeat('z').take(1000))
+                .collect::<String>();
+
+            alignment_tester(find_alignment_simd_lowmem::<LANES>, &query, &target, "abc", "a-c", scores);
+        }
+
+        // No match
+
+        // Gap
+        {
+            let scores = AlignmentScores {
+                gap: -2,
+                r#match: 3,
+                miss: -3,
+            };
+            alignment_tester(find_alignment_simd_lowmem::<LANES>, "Hoi", "HHii", "Hoi", "H-i", scores);
+        }
+
+        // Mismatch
+        alignment_tester(find_alignment_simd_lowmem::<LANES>,
+            "TACGGGCCCGCTAC",
+            "TAGCCCTATCGGTCA",
+            "TACGGGCCCGCTA-C",
+            "TA---G-CC-CTATC",
+            scores,
+        );
+        alignment_tester(find_alignment_simd_lowmem::<LANES>,
+            "AAGTCGTAAAAGTGCACGT",
+            "TAAGCCGTTAAGTGCGCGTG",
+            "AAGTCGTAAAAGTGCACGT",
+            "AAGCCGT-TAAGTGCGCGT",
+            scores,
+        );
+        alignment_tester(find_alignment_simd_lowmem::<LANES>, "AAGTCGTAAAAGTGCACGT",
+                 "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzTAAGCCGTTAAGTGCGCGTG",
+                 "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", scores);
+    }
+
     use test::Bencher;
 
     #[bench]
