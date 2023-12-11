@@ -8,9 +8,7 @@ use std::{
 
 use crate::utils::{self, index};
 
-use std::simd::prelude::SimdPartialEq;
-use std::simd::SimdInt;
-use std::simd::SimdOrd;
+use std::simd::prelude::{SimdPartialEq, SimdOrd, SimdInt};
 
 #[derive(Copy, Clone)]
 pub struct AlignmentScores {
