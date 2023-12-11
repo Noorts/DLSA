@@ -1,7 +1,7 @@
 package smithwaterman
 
 /*
-#cgo LDFLAGS: ./../../rust/target/release/libsw.a -ldl
+#cgo LDFLAGS: ./rust/target/release/libsw.a -ldl
 #include "./../../rust/header/sw.h"
 */
 import "C"
@@ -17,10 +17,10 @@ import (
 // var MISMATCH_PENALTY = 1
 
 func test_func() {
-    res := C.find_alignment_simd(C.CString("Hoi"), C.CString("HHii"));
+	res := C.find_alignment_simd(C.CString("Hoi"), C.CString("HHii"))
 
-    fmt.Printf("Go: %s\n", C.GoString(res.query_ptr))
-    fmt.Printf("Go: %s\n", C.GoString(res.target_ptr))
+	fmt.Printf("Go: %s\n", C.GoString(res.query_ptr))
+	fmt.Printf("Go: %s\n", C.GoString(res.target_ptr))
 }
 
 func findStringScore(query string, target string, matchScore int, gapPen int, mismatchPen int) []int {

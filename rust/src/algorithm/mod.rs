@@ -332,7 +332,7 @@ pub fn traceback(
         return;
     }
 
-    println!("{x} {y}");
+    // println!("{x} {y}");
     let match_score = if query[x - 1] == target[y - x - 1] {
         scores.r#match
     } else {

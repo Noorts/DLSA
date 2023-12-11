@@ -89,14 +89,14 @@ pub extern "C" fn find_alignment_simd(
         .chars()
         .collect();
 
-    println!("Searching for alignment: Q: {query:?}; T: {target:?}");
+    // println!("Searching for alignment: Q: {query:?}; T: {target:?}");
 
     let (query_res, target_res) = crate::find_alignment_simd::<LANES>(&query, &target, SCORES);
 
     let query_res_ref: &[char] = query_res.as_ref();
     let target_res_ref: &[char] = target_res.as_ref();
 
-    println!("Found alignment Q: {query_res:?}; T: {target_res:?}");
+    // println!("Found alignment Q: {query_res:?}; T: {target_res:?}");
 
     let q_res: String = query_res_ref.into_iter().collect();
     let t_res: String = target_res_ref.into_iter().collect();
