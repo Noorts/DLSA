@@ -79,7 +79,7 @@ pub extern "C" fn find_alignment_parallel(
 pub extern "C" fn find_alignment_simd(
     query_ptr: *const c_char,
     target_ptr: *const c_char,
-) -> AlignmentResult {
+) -> *mut AlignmentResult {
     let query: &[u8] = unsafe { CStr::from_ptr(query_ptr).to_bytes() };
     let target: &[u8] = unsafe { CStr::from_ptr(target_ptr).to_bytes() };
 
@@ -101,12 +101,13 @@ pub extern "C" fn find_alignment_simd(
     let q_res: String = query_res_ref.into_iter().collect();
     let t_res: String = target_res_ref.into_iter().collect();
 
-    AlignmentResult {
+    let res = Box::new(AlignmentResult {
         query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
         target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
-    }
-}
+    });
 
+    Box::into_raw(res)
+}
 
 // #[no_mangle]
 // pub extern "C" fn find_alignment_sequential(
@@ -168,17 +169,14 @@ pub extern "C" fn find_alignment_sequential_straight(
     }
 }
 
-
 //functions to free the memory allocated by the rust code
 #[no_mangle]
-pub extern "C" fn free_alignment_result(alignment_result: AlignmentResult) {
+pub extern "C" fn free_alignment_result(alignment_result_ptr: *mut AlignmentResult) {
     unsafe {
-        if !alignment_result.query.is_null() {
-            let _ = CString::from_raw(alignment_result.query);
+        if alignment_result_ptr.is_null() {
+            return;
         }
-        if !alignment_result.target.is_null() {
-            let _ = CString::from_raw(alignment_result.target);
-        }
+        let _ = Box::from_raw(alignment_result_ptr);
     }
 }
 

@@ -1,7 +1,6 @@
 package worker
 
 import (
-	"dlsa/internal/smithwaterman"
 	"log"
 	"time"
 )
@@ -75,10 +74,9 @@ func (w *Worker) ExecuteWork(work *WorkPackage) {
 			log.Fatalf("Target and query not found in work package")
 		}
 
-		qRes, _, score := smithwaterman.FindLocalAlignment(string(targetSeq), string(querySeq), work.MatchScore, work.MismatchPenalty, work.GapPenalty)
-		// rustRes := FindRustAlignmentSimd(string(targetSeq), string(querySeq))
-		// qRes := rustRes.Query
-		// score := rustRes.Score
+		rustRes := FindRustAlignmentSimd(string(querySeq), string(targetSeq))
+		qRes := rustRes.Query
+		score := rustRes.Score
 
 		alignment := AlignmentDetail{
 			Alignment: Alignment{

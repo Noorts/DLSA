@@ -24,12 +24,12 @@ func FindRustAlignmentParallel(query, target string) GoResult {
 
 	//TODO: How many threads? Maybe doesn't matter, probably won't be using this
 	threads := C.ulong(4)
-	cResult := C.find_alignment_parallel(queryC, targetC, threads)
+	cResult_ref := C.find_alignment_parallel(queryC, targetC, threads)
 
-	result := convertCResultToResult(cResult)
+	result := convertCResultToResult(*cResult_ref)
 	goResult := convertResultToGoResult(result)
 
-	defer FreeAlignmentResult(queryC, targetC)
+	defer FreeAlignmentResult(cResult_ref)
 
 	return goResult
 }
@@ -38,11 +38,11 @@ func FindRustAlignmentSequential(query, target string) GoResult {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 
-	cResult := C.find_alignment_sequential_straight(queryC, targetC)
-	result := convertCResultToResult(cResult)
+	cResult_ref := C.find_alignment_sequential_straight(queryC, targetC)
+	result := convertCResultToResult(*cResult_ref)
 	goResult := convertResultToGoResult(result)
 
-	defer FreeAlignmentResult(queryC, targetC)
+	defer FreeAlignmentResult(cResult_ref)
 
 	return goResult
 }
@@ -52,11 +52,11 @@ func FindRustAlignmentSimd(query, target string) GoResult {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 
-	cResult := C.find_alignment_simd(queryC, targetC)
-	result := convertCResultToResult(cResult)
+	cResult_ref := C.find_alignment_simd(queryC, targetC)
+	result := convertCResultToResult(*cResult_ref)
 	goResult := convertResultToGoResult(result)
 
-	defer FreeAlignmentResult(queryC, targetC)
+	defer FreeAlignmentResult(cResult_ref)
 
 	return goResult
 
@@ -84,8 +84,8 @@ func convertCResultToResult(cResult C.struct_Result) Result {
 }
 
 // TODO: This should free the C strings
-func FreeAlignmentResult(query *C.char, target *C.char) {
-	C.free_alignment_result(query, target)
+func FreeAlignmentResult(cResult *C.struct_Result) {
+	C.free_alignment_result(cResult)
 }
 
 // TODO: Ask someone, is this neccassary?
