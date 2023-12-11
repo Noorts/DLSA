@@ -13,15 +13,15 @@ pub mod algorithm;
 pub mod bindings;
 
 const SCORES: AlignmentScores = AlignmentScores {
-    gap: -2,
-    r#match: 3,
-    miss: -3,
+    gap: -1,
+    r#match: 2,
+    miss: -1,
 };
 
 type AlignResult = (Vec<char>, Vec<char>);
 
-pub fn find_alignment_sequential(query: &[char], target: &[char]) -> AlignResult {
-    let data = string_scores_sequential(query, target, SCORES);
+pub fn find_alignment_sequential(query: &[char], target: &[char], scores: AlignmentScores) -> AlignResult {
+    let data = string_scores_sequential(query, target, scores);
     let mut query_result = Vec::with_capacity(query.len());
     let mut target_result = Vec::with_capacity(target.len());
 
@@ -38,7 +38,7 @@ pub fn find_alignment_sequential(query: &[char], target: &[char]) -> AlignResult
             width,
             &mut query_result,
             &mut target_result,
-            SCORES,
+            scores,
         );
     }
 
@@ -68,15 +68,15 @@ pub fn find_alignment_sequential_straight(
             width,
             &mut query_result,
             &mut target_result,
-            SCORES,
+            scores,
         );
     }
 
     (query_result, target_result)
 }
 
-pub fn find_alignment_parallel(query: &[char], target: &[char], threads: usize) -> AlignResult {
-    let data = string_scores_parallel(query, target, SCORES, threads);
+pub fn find_alignment_parallel(query: &[char], target: &[char], threads: usize, scores: AlignmentScores) -> AlignResult {
+    let data = string_scores_parallel(query, target, scores, threads);
     let mut query_result = Vec::with_capacity(query.len());
     let mut target_result = Vec::with_capacity(target.len());
 
@@ -93,7 +93,7 @@ pub fn find_alignment_parallel(query: &[char], target: &[char], threads: usize) 
             width,
             &mut query_result,
             &mut target_result,
-            SCORES,
+            scores,
         );
     }
 
@@ -257,22 +257,117 @@ mod tests {
         assert_eq!(&res.1, t_out);
     }
 
-    // #[test]
-    // fn test_find_alignment_straight() {
-    //     let scores = AlignmentScores {
-    //         gap: -1,
-    //         r#match: 2,
-    //         mis: -1,
-    //     };
-    //     let res = find_alignment_sequential_straight(&['h', 'o', 'i'], &['h', 'o', 'i'], scores);
-    //     assert_eq!(&res.0, &['h', 'o', 'i']);
-    // }
-    //
-    // #[test]
-    // fn test_find_alignment_parallel() {
-    //     let res = find_alignment_parallel(&['h', 'o', 'i'], &['h', 'o', 'i'], 1);
-    //     assert_eq!(&res.0, &['h', 'o', 'i']);
-    // }
+    fn test_basic(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "A", "A", "A", "A", SCORES);
+        alignment_tester(alignment_function, "HOI", "HOI", "HOI", "HOI", SCORES);
+        alignment_tester(alignment_function, "AAAAAAATAAAAAAAA", "CCTCCCCCCCCCCCCC", "T", "T", SCORES);
+    }
+
+    fn test_no_match(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "A", "T", "", "", SCORES);
+        alignment_tester(alignment_function, "AAAA", "TTTT", "", "", SCORES);
+        alignment_tester(alignment_function, "ATATTTATTAAATATATTATATATTAA", "CCCCGCGGGGCGCGCGGCGCGCGCGCGCG", "", "", SCORES);
+    }
+
+    fn test_gap(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "CCAA", "GATA", "A-A", "ATA", SCORES);
+        alignment_tester(alignment_function, "AA", "ATA", "A-A", "ATA", SCORES);
+        alignment_tester(alignment_function, "AA", "ATTA", "A", "A", SCORES);
+        alignment_tester(alignment_function, "AAAAAAAAA", "AAATTAAATTAAA", "AAA--AAA--AAA", "AAATTAAATTAAA", SCORES);
+
+        let scores_alternative = AlignmentScores {
+            gap: -1,
+            r#match : 3,
+            miss : -1,
+        };
+
+        alignment_tester(alignment_function, "AA", "ATTA", "A--A", "ATTA", scores_alternative);
+        alignment_tester(alignment_function, "ATA", "ATTA", "A-TA", "ATTA", scores_alternative);
+    }
+
+    fn test_mismatch(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "ATA", "ACA", "ATA", "ACA", SCORES);
+
+        let scores_alternative = AlignmentScores {
+            gap: -3,
+            r#match : 5,
+            miss : -2,
+        };
+
+        alignment_tester(alignment_function, "ACAC", "ACGCTTTTACC", "ACAC", "ACGC", scores_alternative);
+        alignment_tester(alignment_function, "ACAC", "AGGCTTTTACC", "ACAC", "AC-C", scores_alternative);
+    }
+
+    fn test_multiple_options(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "AA", "AATAA", "AA", "AA", SCORES);
+        alignment_tester(alignment_function, "ATTA", "ATAA", "ATTA", "A-TA", SCORES);
+    }
+
+    fn test_advanced_short(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "TACGGGCCCGCTAC", "TAGCCCTATCGGTCA", "TACGGGCCCGCTA-C", "TA---G-CC-CTATC", SCORES);
+        alignment_tester(alignment_function, "AAGTCGTAAAAGTGCACGT", "TAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", SCORES);
+    }
+
+    fn test_long(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        let query = std::iter::repeat('x')
+            .take(1000)
+            .chain("abc".chars())
+            .chain(std::iter::repeat('x').take(500))
+            .collect::<String>();
+        let target = std::iter::repeat('z')
+            .take(2000)
+            .chain("abc".chars())
+            .chain(std::iter::repeat('z').take(1000))
+            .collect::<String>();
+
+        alignment_tester(alignment_function, &*query, &*target, "abc", "abc", SCORES);
+
+        let target2 = std::iter::repeat('z')
+            .take(2000)
+            .chain("ac".chars())
+            .chain(std::iter::repeat('z').take(1000))
+            .collect::<String>();
+
+        alignment_tester(alignment_function, &*query, &*target2, "abc", "a-c", SCORES);
+    }
+
+    fn test_all(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        test_basic(alignment_function);
+        test_no_match(alignment_function);
+        test_gap(alignment_function);
+        test_mismatch(alignment_function);
+        test_multiple_options(alignment_function);
+        test_advanced_short(alignment_function);
+        test_long(alignment_function);
+    }
+
+    #[test]
+    fn test_all_sequential() {
+        test_all(find_alignment_sequential);
+    }
+
+    #[test]
+    fn test_all_sequential_straight() {
+        test_all(find_alignment_sequential_straight);
+    }
+
+    fn find_alignment_parallel_wrapper<const THREADS: usize>(query: &[char], target: &[char], scores: AlignmentScores) -> AlignResult {
+        return find_alignment_parallel(query, target, THREADS, scores);
+    }
+
+    #[test]
+    fn test_all_parallel() {
+        test_all(find_alignment_parallel_wrapper::<2>);
+        test_all(find_alignment_parallel_wrapper::<3>);
+        test_all(find_alignment_parallel_wrapper::<4>);
+    }
+
+    #[test]
+    fn test_all_simd() {
+        test_all(find_alignment_simd::<LANES>);
+    }
+
+    /*
 
     #[test]
     fn test_find_alignment_simd() {
@@ -360,7 +455,7 @@ mod tests {
         alignment_tester(find_alignment_simd::<LANES>, "AAGTCGTAAAAGTGCACGT",
                  "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzTAAGCCGTTAAGTGCGCGTG",
                  "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", scores);
-    }
+    }*/
 
     use test::Bencher;
 
