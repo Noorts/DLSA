@@ -240,7 +240,8 @@ mod tests {
         }
     }
 
-    fn alignment_tester_simd(
+    fn alignment_tester(
+        alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>),
         q_in: &str,
         t_in: &str,
         q_out: &str,
@@ -251,7 +252,7 @@ mod tests {
         let t_in = &t_in.chars().collect::<Vec<_>>();
         let q_out = &q_out.chars().collect::<Vec<_>>();
         let t_out = &t_out.chars().collect::<Vec<_>>();
-        let res = find_alignment_simd::<LANES>(&q_in, &t_in, scores);
+        let res = alignment_function(&q_in, &t_in, scores);
         assert_eq!(&res.0, q_out);
         assert_eq!(&res.1, t_out);
     }
@@ -281,9 +282,9 @@ mod tests {
             miss: -1,
         };
         // Basic
-        alignment_tester_simd("a", "a", "a", "a", scores);
-        alignment_tester_simd("hoi", "hoi", "hoi", "hoi", scores);
-        alignment_tester_simd("ho", "hoi", "ho", "ho", scores);
+        alignment_tester(find_alignment_simd::<LANES>, "a", "a", "a", "a", scores);
+        alignment_tester(find_alignment_simd::<LANES>, "hoi", "hoi", "hoi", "hoi", scores);
+        alignment_tester(find_alignment_simd::<LANES>, "ho", "hoi", "ho", "ho", scores);
 
         // Long cases
         {
@@ -294,7 +295,7 @@ mod tests {
                 .chain("abc".chars())
                 .chain(std::iter::repeat('z').take(1000))
                 .collect::<String>();
-            alignment_tester_simd(query, &target, "abc", "abc", scores);
+            alignment_tester(find_alignment_simd::<LANES>, query, &target, "abc", "abc", scores);
         }
 
         {
@@ -310,7 +311,7 @@ mod tests {
                 .chain(std::iter::repeat('z').take(1000))
                 .collect::<String>();
 
-            alignment_tester_simd(&query, &target, "abc", "abc", scores);
+            alignment_tester(find_alignment_simd::<LANES>, &query, &target, "abc", "abc", scores);
         }
 
         {
@@ -326,7 +327,7 @@ mod tests {
                 .chain(std::iter::repeat('z').take(1000))
                 .collect::<String>();
 
-            alignment_tester_simd(&query, &target, "abc", "a-c", scores);
+            alignment_tester(find_alignment_simd::<LANES>, &query, &target, "abc", "a-c", scores);
         }
 
         // No match
@@ -338,25 +339,25 @@ mod tests {
                 r#match: 3,
                 miss: -3,
             };
-            alignment_tester_simd("Hoi", "HHii", "Hoi", "H-i", scores);
+            alignment_tester(find_alignment_simd::<LANES>, "Hoi", "HHii", "Hoi", "H-i", scores);
         }
 
         // Mismatch
-        alignment_tester_simd(
+        alignment_tester(find_alignment_simd::<LANES>,
             "TACGGGCCCGCTAC",
             "TAGCCCTATCGGTCA",
             "TACGGGCCCGCTA-C",
             "TA---G-CC-CTATC",
             scores,
         );
-        alignment_tester_simd(
+        alignment_tester(find_alignment_simd::<LANES>,
             "AAGTCGTAAAAGTGCACGT",
             "TAAGCCGTTAAGTGCGCGTG",
             "AAGTCGTAAAAGTGCACGT",
             "AAGCCGT-TAAGTGCGCGT",
             scores,
         );
-        alignment_tester_simd("AAGTCGTAAAAGTGCACGT",
+        alignment_tester(find_alignment_simd::<LANES>, "AAGTCGTAAAAGTGCACGT",
                  "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzTAAGCCGTTAAGTGCGCGTG",
                  "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", scores);
     }
