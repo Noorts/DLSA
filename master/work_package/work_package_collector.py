@@ -34,7 +34,6 @@ class WorkPackageCollector(Cleaner, Singleton):
         raise WorkPackageNotFoundException(work_package_id)
 
     def update_work_result(self, work_id: UUID, result: WorkResult) -> None:
-        logger.info(f"Updating work package {work_id} with partial result from worker {work_id}")
         work_package = self.get_package_by_id(work_id)
         completed_sequences = work_package.package.job.completed_sequences
 
@@ -47,6 +46,15 @@ class WorkPackageCollector(Cleaner, Singleton):
             if res.combination in work_package.package.job.sequences_in_progress:
                 work_package.package.job.sequences_in_progress.remove(res.combination)
 
+        # Check if the work package is done
+        if work_package.done():
+            logger.info(f"Work package {work_package.package.id} is done")
+            work_package.worker.status = "IDLE"
+
+        # See if the job is done
+        if work_package.package.job.done():
+            logger.info(f"Work package {work_package.package.id} is done")
+
     def get_new_work_package(self, worker_id: WorkerId) -> None | WorkPackage:
         new = self.get_new_raw_work_package(worker_id)
         if not new:
@@ -58,12 +66,10 @@ class WorkPackageCollector(Cleaner, Singleton):
         )
 
     def get_new_raw_work_package(self, worker_id: WorkerId) -> None | Tuple[RawWorkPackage, ScheduledWorkPackage]:
-        logger.info(f"Getting new work package for worker {worker_id}")
         worker = self._worker_collector.get_worker_by_id(worker_id.id)
         scheduled_package = self._work_scheduler.schedule_work_for(worker)
 
         if not scheduled_package:
-            logger.info(f"No work package available for worker {worker_id}")
             return None
 
         self._work_packages.append(scheduled_package)
@@ -76,7 +82,8 @@ class WorkPackageCollector(Cleaner, Singleton):
             mismatch_penalty=scheduled_package.package.mismatch_penalty,
             gap_penalty=scheduled_package.package.gap_penalty,
         )
-        logger.info(f"Returning work package {package.id} to worker {worker_id} with {len(package.queries)} queries")
+        logger.info(f"Created work package {package.id} to worker {worker_id} with {len(package.queries)} queries")
+        worker.status = "WORKING"
         return package, scheduled_package
 
     def execute_clean(self) -> None:

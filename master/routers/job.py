@@ -23,7 +23,6 @@ _job_queue = JobQueue()
 # submit a job to the job job_queue, returns a job id (for client)
 @job_router.post("/job/format/json")
 def submit_job(body: JobRequest) -> JobId:
-    logger.info("Incoming job request with json data")
     body.assert_required_sequences()
     job = _job_queue.add_job_to_queue(body)
     return JobId(id=job.id)
@@ -32,7 +31,6 @@ def submit_job(body: JobRequest) -> JobId:
 # submit a job to the job job_queue, returns a job id (for client)
 @job_router.post("/job/format/multipart")
 def submit_multipart_job(body: MultipartJobRequest, sequences: Annotated[list[UploadFile], File()]) -> Any:
-    logger.info("Incoming job request with multipart data")
     file_dict = {}
     for sequence in sequences:
         try:
@@ -49,7 +47,6 @@ def submit_multipart_job(body: MultipartJobRequest, sequences: Annotated[list[Up
 # returns the state of a job (for a client)
 @job_router.get("/job/{job_id}/status")
 def get_job(job_id: UUID) -> JobStatus:
-    logger.info(f"Getting status of job {job_id}")
     job = _job_queue.get_job_by_id(job_id)
     return JobStatus(state=job.state, progress=job.percentage_done)
 
@@ -57,7 +54,6 @@ def get_job(job_id: UUID) -> JobStatus:
 # returns the state of a job (for a client)
 @job_router.get("/job/{job_id}/result")
 def get_job(job_id: UUID) -> JobResult:
-    logger.info(f"Getting result of job {job_id}")
     job = _job_queue.get_job_by_id(job_id)
 
     if job.state != "DONE":

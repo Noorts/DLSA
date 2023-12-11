@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"log"
 	"net/http"
 	"time"
 )
@@ -24,29 +25,23 @@ type Alignment struct {
 }
 
 type WorkPackage struct {
-	ID        *string                 `json:"id"`
-	Queries   []QueryTargetType       `json:"queries"`
-	Sequences map[SequenceId]Sequence `json:"sequences"`
+	ID              *string                 `json:"id"`
+	JobID           *string                 `json:"job_id"`
+	Queries         []QueryTargetType       `json:"queries"`
+	Sequences       map[SequenceId]Sequence `json:"sequences"`
+	MatchScore      int                     `json:"match_score"`
+	MismatchPenalty int                     `json:"mismatch_penalty"`
+	GapPenalty      int                     `json:"gap_penalty"`
 }
 
 type MachineSpecsRequest struct {
-	//For now only cpu resources
-
-	// Cores       uint `json:"cores"`
-	// Cpus        uint `json:"cpus"`
-	// Threads     uint `json:"threads"`
-	// MemorySpeed uint `json:"memory_speed"`
-	// MemorySize  uint `json:"memory_size"`
-	// GPU         bool `json:"gpu_resources"`
-
-	Ram uint `json:"ram_mb"`
-	Cpu uint `json:"cpu_resources"`
-	Gpu uint `json:"gpu_resources"`
+	Benchmark float32 `json:"benchmark_result"`
 }
 
 type WorkRequest struct {
 	WorkerId string `json:"id"`
 }
+
 type Heartbeat struct {
 	WorkerId string `json:"id"`
 }
@@ -78,24 +73,12 @@ func InitRestClient(baseURL string) *RestClient {
 }
 
 func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
-	//TODO: Machine specs vaildation
 	specsReq := MachineSpecsRequest{
-		Ram: 800,
-		Cpu: 1,
-		Gpu: specs.gpu,
+		Benchmark: specs.benchmark,
 	}
 	jsonData, err := json.Marshal(specsReq)
-	fmt.Println("Registering worker")
-	fmt.Println(string(jsonData))
-	req, err := http.NewRequest("POST", c.baseURL+"/worker/register", bytes.NewBuffer(jsonData))
-	if err != nil {
-		fmt.Println("Error creating request", err)
-		return nil, err
-	}
 
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
+	resp, err := c.client.Post(c.baseURL+"/worker/register", "application/json", bytes.NewReader(jsonData))
 	if err != nil {
 		return nil, err
 	}
@@ -107,14 +90,10 @@ func (c *RestClient) RegisterWorker(specs *MachineSpecs) (*string, error) {
 		fmt.Println("Error decoding response", err)
 		return nil, err
 	}
-	fmt.Println("Registered worker")
-	fmt.Println(workReq)
-	//TODO: Maybe we should return the workReq
 	return &workReq.WorkerId, nil
 }
 
 func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
-	fmt.Println("Requesting work")
 	workReq := WorkRequest{WorkerId: workerId}
 	jsonData, err := json.Marshal(workReq)
 
@@ -122,18 +101,8 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
-	req, err := http.NewRequest("POST", c.baseURL+"/work/", bytes.NewBuffer(jsonData))
+	resp, err := c.client.Post(c.baseURL+"/work/", "application/json", bytes.NewReader(jsonData))
 	if err != nil {
-		return nil, err
-	}
-
-	fmt.Printf("Requesting work from %s\n", c.baseURL+"/work/")
-
-	req.Header.Set("Content-Type", "application/json")
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		fmt.Println("Error sending request", err)
 		return nil, err
 	}
 
@@ -151,6 +120,11 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
+	// check if the body is a byte array of null
+	if string(body) == "null" {
+		return nil, nil
+	}
+
 	// Decode the response
 	var workPkg WorkPackage
 	err = json.Unmarshal(body, &workPkg)
@@ -158,31 +132,20 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		fmt.Printf("Error decoding response: %s", err)
 		return nil, err
 	}
-	fmt.Println("Got work", &workPkg)
-	fmt.Printf(" Got work - Time since epoch (micro): %d\n", time.Now().UnixMicro())
 	return &workPkg, nil
 }
 
-func (c *RestClient) SendResult(result WorkResult, workId string) error {
+func (c *RestClient) SendResult(result WorkResult, workId string) {
 	jsonData, err := json.Marshal(result)
 	if err != nil {
-		return err
+		log.Println("Error marshalling result", err)
+		return
 	}
 
-	req, err := http.NewRequest("POST", c.baseURL+"/work/"+workId+"/result", bytes.NewBuffer(jsonData))
+	resp, err := c.client.Post(c.baseURL+"/work/"+workId+"/result", "application/json", bytes.NewReader(jsonData))
 	if err != nil {
-		return err
-	}
-
-	req.Header.Set("Content-Type", "application/json")
-
-	fmt.Printf(" Send results - Time since epoch (micro): %d\n", time.Now().UnixMicro())
-	fmt.Println("Sending result to url: " + c.baseURL + "/work/" + workId + "/result")
-	fmt.Println(string(jsonData))
-
-	resp, err := c.client.Do(req)
-	if err != nil {
-		return err
+		log.Println("Error sending result", err)
+		return
 	}
 
 	//Assuming the response has a body
@@ -190,21 +153,24 @@ func (c *RestClient) SendResult(result WorkResult, workId string) error {
 
 	// Did not get a 200 OK response
 	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("unexpected status: %s", resp.Status)
+		body, _ := io.ReadAll(resp.Body)
+		log.Printf("Error sending result: %s", body)
+		return
 	}
-
-	return nil
 }
 
-func (c *RestClient) SendHeartbeat(workerId string) error {
+func (c *RestClient) SendHeartbeat(workerId string) {
 	heartbeat := Heartbeat{WorkerId: workerId}
-	jsonData, err := json.Marshal(heartbeat)
-	if err != nil {
-		return err
-	}
-	fmt.Println("Sending heartbeat to url: " + c.baseURL + "/worker/pulse")
-	fmt.Println(string(jsonData))
+	jsonData, _ := json.Marshal(heartbeat)
+
 	resp, err := c.client.Post(c.baseURL+"/worker/pulse", "application/json", bytes.NewReader(jsonData))
-	resp.Body.Close()
-	return err
+	if err != nil {
+		log.Printf("Error sending heartbeat: %v\n", err)
+		log.Fatalf("Shutting down...")
+	}
+	// If the status code is 404, the worker is not registered anymore -> kill the worker
+	if resp.StatusCode == http.StatusNotFound {
+		log.Fatalf("Worker %s is not registered anymore. Shutting down...", workerId)
+	}
+	_ = resp.Body.Close()
 }

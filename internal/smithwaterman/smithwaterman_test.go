@@ -6,8 +6,13 @@ import (
 
 // Example as listed on Wikipedi
 func TestTest(t *testing.T) {
-    test_func();
+	test_func()
 }
+
+// Global variables for now only for testing
+var GAP_PENALTY = 1
+var MATCH_SCORE = 2
+var MISMATCH_PENALTY = 1
 
 func TestBasic(t *testing.T) {
 	test_substring("A", "A", "A", "A", t)
@@ -66,7 +71,7 @@ func test_with_scoring(gap int, mismatch int, match int, query, target, expected
 }
 
 func test_substring(query, target, expected_query, expected_target string, t *testing.T) {
-	found_query, found_target, score := FindLocalAlignment(query, target)
+	found_query, found_target, score := FindLocalAlignment(query, target, MATCH_SCORE, GAP_PENALTY, MISMATCH_PENALTY)
 	if score == 0 {
 		t.Logf("Found no substring")
 		return

@@ -62,5 +62,5 @@ class WorkerCollector(Cleaner, Singleton):
         for worker in [*self._workers.values()]:
             if not self.is_alive(worker):
                 logger.info(f"Removing dead worker {worker.worker_id}")
-                self._workers[worker.worker_id].status = "DEAD"
+                worker.status = "DEAD"
                 del self._workers[worker.worker_id]

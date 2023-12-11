@@ -1,8 +1,11 @@
+import logging
 from uuid import uuid4
 
 from master.worker.worker import Worker
 from .scheduled_work_package import ScheduledWorkPackage, InternalWorkPackage
 from .work_scheduler import WorkPackageScheduler
+
+logger = logging.getLogger(__name__)
 
 
 class PrimitiveWorkPackageScheduler(WorkPackageScheduler):
@@ -12,6 +15,11 @@ class PrimitiveWorkPackageScheduler(WorkPackageScheduler):
             return None
         job = unfinished_jobs.pop(0)
         queries = job.missing_sequences()
+
+        if len(queries) == 0:
+            logger.error(f"Job {job.id} has no missing sequences")
+            return None
+
         package = InternalWorkPackage(
             id=uuid4(),
             job=job,
@@ -27,7 +35,7 @@ class PrimitiveWorkPackageScheduler(WorkPackageScheduler):
             gap_penalty=job.request.gap_penalty,
         )
 
-        job.sequences_in_progress += package.queries
+        job.sequences_in_progress.update(package.queries)
 
         return ScheduledWorkPackage(
             package=package,

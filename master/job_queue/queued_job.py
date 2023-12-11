@@ -8,7 +8,7 @@ from master.api_models import JobRequest, TargetQueryCombination, JobState, Alig
 class QueuedJob:
     request: JobRequest
     completed_sequences: dict[TargetQueryCombination, list[Alignment]]
-    sequences_in_progress: list[TargetQueryCombination]
+    sequences_in_progress: set[TargetQueryCombination]
     id: UUID
     match_score: int
     mismatch_penalty: int
@@ -33,7 +33,7 @@ class QueuedJob:
     def missing_sequences(self) -> list[TargetQueryCombination]:
         missing: list[TargetQueryCombination] = []
         for sequence in self.request.queries:
-            if not self.completed_sequences.get(sequence):
+            if sequence not in self.completed_sequences and sequence not in self.sequences_in_progress:
                 missing.append(sequence)
 
         return missing
