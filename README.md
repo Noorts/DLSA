@@ -40,13 +40,14 @@ run the app with
 
 `go run cmd/worker/main.go`
 
-
 ## CLI
 
-The CLI can be used by running 
+The CLI can be used by running
 
 `python3 tui.py [params]`
 
-You can use the generate_synthetic_dataset.py script to generate a query and a database file to use for a test query. 
+You can use the generate_synthetic_dataset.py script to generate a query and a database file to use for a test query.
 
 The result of the computations can be found in results/, where for every query, a file is generated, with the corresponding best result for every target in the database file, with the same id as in the original files.
+
+## Parallel rust simd
