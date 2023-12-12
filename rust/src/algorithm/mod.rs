@@ -158,10 +158,10 @@ where
                 &data[(i - 2 * width - 1)..(i - 2 * width - 1 + LANES)],
             ) + mismatch_vec;
 
-            let r_gaps = r_query_skip.simd_max(r_target_skip);
-            let r_match_mis_floor = r_match_mis.simd_max(zero_splat);
-
-            let max = r_gaps.simd_max(r_match_mis_floor);
+            let max = r_query_skip
+                .simd_max(r_target_skip)
+                .simd_max(r_match_mis)
+                .simd_max(zero_splat);
 
             data[i..(i + LANES)].copy_from_slice(max.as_ref());
 
