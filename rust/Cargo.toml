@@ -10,6 +10,7 @@ crate-type = ["lib", "staticlib"]
 [dependencies]
 argminmax = "0.6.1"
 crossbeam = "0.8.2"
+rand = "0.8.5"
 spin-sync = "0.3.2"
 
 [dev-dependencies]
