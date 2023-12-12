@@ -40,18 +40,18 @@ func ConvertResultToGoResult(cResult *C.struct_Result) GoResult {
 }
 
 // TODO: Some kind of logic to determine whether to use low mem, simd, or just sequential
-func FindRustAlignmentParallel(query, target string) GoResult {
-	queryC := C.CString(query)
-	targetC := C.CString(target)
+// func FindRustAlignmentParallel(query, target string) GoResult {
+// 	queryC := C.CString(query)
+// 	targetC := C.CString(target)
 
-	threads := C.ulong(4)
-	cResult_ref := C.find_alignment_parallel(queryC, targetC, threads)
-	goResult := convertResultToGoResult(cResult_ref)
+// 	threads := C.ulong(4)
+// 	cResult_ref := C.find_alignment_parallel(queryC, targetC, threads)
+// 	goResult := convertResultToGoResult(cResult_ref)
 
-	defer FreeAlignmentResult(cResult_ref)
+// 	defer FreeAlignmentResult(cResult_ref)
 
-	return goResult
-}
+// 	return goResult
+// }
 
 func FindRustAlignmentSequential(query, target string) GoResult {
 	queryC := C.CString(query)
@@ -90,7 +90,7 @@ func convertResultToGoResult(cResult *C.struct_Result) GoResult {
 	return GoResult{
 		Query:  cCharPtrToGoString(cResult.query_ptr),
 		Target: cCharPtrToGoString(cResult.target_ptr),
-		Score:  0,
+		Score:  uint16(cResult.score),
 	}
 }
 
