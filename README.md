@@ -50,4 +50,4 @@ You can use the generate_synthetic_dataset.py script to generate a query and a d
 
 The result of the computations can be found in results/, where for every query, a file is generated, with the corresponding best result for every target in the database file, with the same id as in the original files.
 
-## Parallel go version
+## Sequential go version
