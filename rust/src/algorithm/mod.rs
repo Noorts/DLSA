@@ -11,8 +11,8 @@ use crate::utils::{self, index};
 use std::simd::prelude::{SimdPartialEq, SimdOrd, SimdInt};
 
 #[derive(Copy, Clone)]
-#[no_mangle]
-pub extern "C" struct AlignmentScores {
+#[repr(C)]
+pub struct AlignmentScores {
     pub gap: i16,
     pub r#match: i16,
     pub miss: i16,
