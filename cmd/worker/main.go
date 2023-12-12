@@ -60,7 +60,7 @@ func main() {
 
 		log.Printf("Got work. Start calculating alignments...")
 		log.Printf("Calculating %d queries", len(work.Queries))
-		w.ExecuteWork(work)
+		w.ExecuteWorkInParallel(work)
 		log.Printf("Done calculating alignments.")
 		log.Printf("Waiting for work...")
 	}
