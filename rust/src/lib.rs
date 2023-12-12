@@ -18,7 +18,7 @@ const SCORES: AlignmentScores = AlignmentScores {
     miss: -3,
 };
 
-type AlignResult = (Vec<char>, Vec<char>);
+type AlignResult = (Vec<char>, Vec<char>, i16);
 
 pub fn find_alignment_sequential(query: &[char], target: &[char]) -> AlignResult {
     let data = string_scores_sequential(query, target, SCORES);
@@ -42,7 +42,7 @@ pub fn find_alignment_sequential(query: &[char], target: &[char]) -> AlignResult
         );
     }
 
-    (query_result, target_result)
+    (query_result, target_result, 0)
 }
 
 pub fn find_alignment_sequential_straight(
@@ -72,7 +72,7 @@ pub fn find_alignment_sequential_straight(
         );
     }
 
-    (query_result, target_result)
+    (query_result, target_result, 0)
 }
 
 pub fn find_alignment_parallel(query: &[char], target: &[char], threads: usize) -> AlignResult {
@@ -97,7 +97,7 @@ pub fn find_alignment_parallel(query: &[char], target: &[char], threads: usize) 
         );
     }
 
-    (query_result, target_result)
+    (query_result, target_result, 0)
 }
 
 pub fn find_alignment_simd<const LANES: usize>(
@@ -131,7 +131,8 @@ where
         scores,
     );
 
-    (query_result, target_result)
+
+    (query_result, target_result, data[max_index])
 }
 
 pub mod utils {

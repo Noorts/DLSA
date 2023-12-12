@@ -7,12 +7,19 @@ import "C"
 type Result struct {
 	QueryPtr  *C.char
 	TargetPtr *C.char
+	Score     int
 }
 
 type GoResult struct {
 	Query  string
 	Target string
-	Score  int
+	Score  uint16
+}
+
+type AlignmentScore struct {
+	MatchScore      int
+	MismatchPenalty int
+	GapPenalty      int
 }
 
 func cCharPtrToString(cStr *C.char) string {
@@ -20,12 +27,15 @@ func cCharPtrToString(cStr *C.char) string {
 }
 
 func ConvertResultToGoResult(cResult *C.struct_Result) GoResult {
+
 	query := cCharPtrToString(cResult.query_ptr)
 	target := cCharPtrToString(cResult.target_ptr)
+	score := uint16(cResult.score)
 
 	return GoResult{
 		Query:  query,
 		Target: target,
+		Score:  score,
 	}
 }
 
@@ -56,11 +66,16 @@ func FindRustAlignmentSequential(query, target string) GoResult {
 	return goResult
 }
 
-func FindRustAlignmentSimd(query, target string) GoResult {
+func FindRustAlignmentSimd(query, target string, alignmentScore AlignmentScore) GoResult {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
+	alignmentScoreC := C.struct_AlignmentScores{
+		gap:   C.ushort(alignmentScore.GapPenalty),
+		match: C.ushort(alignmentScore.MatchScore),
+		miss:  C.ushort(alignmentScore.MismatchPenalty),
+	}
 
-	cResult := C.find_alignment_simd(queryC, targetC)
+	cResult := C.find_alignment_simd(queryC, targetC, alignmentScoreC)
 	defer FreeAlignmentResult(cResult)
 
 	return convertResultToGoResult(cResult)

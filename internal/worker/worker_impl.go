@@ -1,7 +1,10 @@
 package worker
 
 import (
+	"dlsa/internal/smithwaterman"
 	"log"
+	"runtime"
+	"sync"
 	"time"
 )
 
@@ -56,16 +59,14 @@ func (w *Worker) GetWork() (*WorkPackage, error) {
 
 // ExecuteWork Function to execute the work package, returns the work result for every pair if successful
 // For now we just execute the work sequentially and send the result back for every seq,tar pair
-// TODO: This seems kinda hacky for now idk should think about this
-// TODO: Parallelization work
-func (w *Worker) ExecuteWork(work *WorkPackage) {
+func (w *Worker) ExecuteWork(work *WorkPackage, queries []QueryTargetType) {
 	w.status = Working
 
 	// A list of results that are then sent batched to the master
 	bufferSize := 100
 	workResultBuffer := WorkResult{Alignments: make([]AlignmentDetail, 0)}
 
-	for idx, comb := range work.Queries {
+	for idx, comb := range queries {
 		targetSeq, ok1 := work.Sequences[comb.Target]
 		querySeq, ok2 := work.Sequences[comb.Query]
 
@@ -74,11 +75,11 @@ func (w *Worker) ExecuteWork(work *WorkPackage) {
 			log.Fatalf("Target and query not found in work package")
 		}
 
-		rustRes := FindRustAlignmentSimd(string(querySeq), string(targetSeq))
-		qRes := rustRes.Query
-		score := rustRes.Score
+		qRes, _, score := smithwaterman.FindLocalAlignment(string(querySeq), string(targetSeq), work.MatchScore, work.MismatchPenalty, work.GapPenalty)
 
-		// qRes, _, score := smithwaterman.FindLocalAlignment(string(querySeq), string(targetSeq), work.MatchScore, work.MismatchPenalty, work.GapPenalty)
+		// rustRes := FindRustAlignmentSimd(string(querySeq), string(targetSeq))
+		// qRes := rustRes.Query
+		// score := rustRes.Score
 
 		alignment := AlignmentDetail{
 			Alignment: Alignment{
@@ -103,6 +104,37 @@ func (w *Worker) ExecuteWork(work *WorkPackage) {
 	}
 	w.client.SendResult(workResultBuffer, *work.ID)
 	w.status = Waiting
+}
+
+func (w *Worker) ExecuteWorkInParallel(work *WorkPackage) {
+	var cpuCount = runtime.NumCPU()
+	var workPackages = work.Queries
+
+	// Split the work packages into chunks
+	var chunkSize = (len(workPackages) + cpuCount - 1) / cpuCount
+	var chunks = make([][]QueryTargetType, cpuCount)
+	for i := 0; i < cpuCount; i++ {
+		var start = i * chunkSize
+		var end = start + chunkSize
+		if end > len(workPackages) {
+			end = len(workPackages)
+		}
+		chunks[i] = workPackages[start:end]
+	}
+	var wg sync.WaitGroup
+
+	for i := 0; i < cpuCount; i++ {
+		wg.Add(1)
+
+		tmp := i
+		go func() {
+			defer wg.Done()
+
+			w.ExecuteWork(work, chunks[tmp])
+		}()
+	}
+
+	wg.Wait()
 }
 
 func (w *Worker) heartbeatRoutine() {
