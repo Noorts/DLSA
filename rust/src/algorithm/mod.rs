@@ -208,7 +208,7 @@ pub fn find_alignment_simd_lowmem<const LANES: usize>(
     query: &[char],
     target: &[char],
     scores: AlignmentScores,
-) -> (Vec<char>, Vec<char>)
+) -> (Vec<char>, Vec<char>, i16)
 where
     std::simd::LaneCount<LANES>: std::simd::SupportedLaneCount,
 {
@@ -434,7 +434,7 @@ where
         }
     }
 
-    (total_query_result, total_target_result)
+    (total_query_result, total_target_result, current_max)
 }
 
 pub fn string_scores_parallel(

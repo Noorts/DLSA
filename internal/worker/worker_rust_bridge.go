@@ -81,6 +81,21 @@ func FindRustAlignmentSimd(query, target string, alignmentScore AlignmentScore) 
 	return convertResultToGoResult(cResult)
 }
 
+func FindRustAlignmentSimdLowMem(query, target string, alignmentScore AlignmentScore) GoResult {
+	queryC := C.CString(query)
+	targetC := C.CString(target)
+	alignmentScoreC := C.struct_AlignmentScores{
+		gap:   C.ushort(alignmentScore.GapPenalty),
+		match: C.ushort(alignmentScore.MatchScore),
+		miss:  C.ushort(alignmentScore.MismatchPenalty),
+	}
+
+	cResult := C.find_alignment_low_memory(queryC, targetC, alignmentScoreC)
+	defer FreeAlignmentResult(cResult)
+
+	return convertResultToGoResult(cResult)
+}
+
 func cCharPtrToGoString(cStr *C.char) string {
 	return C.GoString(cStr)
 }

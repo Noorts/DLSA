@@ -76,7 +76,7 @@ func (w *Worker) ExecuteWork(work *WorkPackage, queries []QueryTargetType) {
 
 		// qRes, _, score := smithwaterman.FindLocalAlignment(string(querySeq), string(targetSeq), work.MatchScore, work.MismatchPenalty, work.GapPenalty)
 
-		rustRes := FindRustAlignmentSimd(string(querySeq), string(targetSeq),
+		rustRes := FindRustAlignmentSimdLowMem(string(querySeq), string(targetSeq),
 			AlignmentScore{work.MatchScore, -work.MismatchPenalty, -work.GapPenalty})
 		qRes := rustRes.Query
 		score := int(rustRes.Score)

@@ -1,6 +1,7 @@
 use std::ffi::{c_char, CStr, CString};
 use std::panic::{self, AssertUnwindSafe};
 use crate::algorithm::AlignmentScores;
+use crate::algorithm::find_alignment_simd_lowmem;
 
 const LANES: usize = 64;
 
@@ -102,6 +103,48 @@ pub extern "C" fn find_alignment_simd(
         // println!("Searching for alignment: Q: {query:?}; T: {target:?}");
 
         let (query_res, target_res, score) = crate::find_alignment_simd::<LANES>(&query, &target, alignment_scores);
+
+        let query_res_ref: &[char] = query_res.as_ref();
+        let target_res_ref: &[char] = target_res.as_ref();
+
+        // println!("Found alignment Q: {query_res:?}; T: {target_res:?}");
+
+        let q_res: String = query_res_ref.into_iter().collect();
+        let t_res: String = target_res_ref.into_iter().collect();
+
+        let res = Box::new(AlignmentResult {
+            query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
+            target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
+            score: score,
+        });
+
+        Box::into_raw(res)
+    }));
+    match result {
+        Ok(ptr) => ptr,
+        Err(_) => std::ptr::null_mut() 
+    }
+}
+
+#[no_mangle]
+pub extern "C" fn find_alignment_low_memory(
+    query_ptr: *const c_char,
+    target_ptr: *const c_char,
+    alignment_scores: AlignmentScores,
+) -> *mut AlignmentResult {
+    let result = panic::catch_unwind(AssertUnwindSafe(|| { 
+        let query: &[u8] = unsafe { CStr::from_ptr(query_ptr).to_bytes() };
+        let target: &[u8] = unsafe { CStr::from_ptr(target_ptr).to_bytes() };
+
+        let query: Vec<char> = String::from_utf8(query.to_vec()).unwrap().chars().collect();
+        let target: Vec<char> = String::from_utf8(target.to_vec())
+            .unwrap()
+            .chars()
+            .collect();
+
+        // println!("Searching for alignment: Q: {query:?}; T: {target:?}");
+
+        let (query_res, target_res, score) = find_alignment_simd_lowmem::<LANES>(&query, &target, alignment_scores);
 
         let query_res_ref: &[char] = query_res.as_ref();
         let target_res_ref: &[char] = target_res.as_ref();
