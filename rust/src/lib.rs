@@ -13,15 +13,15 @@ pub mod algorithm;
 pub mod bindings;
 
 const SCORES: AlignmentScores = AlignmentScores {
-    gap: -2,
-    r#match: 3,
-    miss: -3,
+    gap: -1,
+    r#match: 2,
+    miss: -1,
 };
 
 type AlignResult = (Vec<char>, Vec<char>, i16);
 
-pub fn find_alignment_sequential(query: &[char], target: &[char]) -> AlignResult {
-    let data = string_scores_sequential(query, target, SCORES);
+pub fn find_alignment_sequential(query: &[char], target: &[char], scores: AlignmentScores) -> AlignResult {
+    let data = string_scores_sequential(query, target, scores);
     let mut query_result = Vec::with_capacity(query.len());
     let mut target_result = Vec::with_capacity(target.len());
 
@@ -38,7 +38,7 @@ pub fn find_alignment_sequential(query: &[char], target: &[char]) -> AlignResult
             width,
             &mut query_result,
             &mut target_result,
-            SCORES,
+            scores,
         );
     }
 
@@ -68,15 +68,15 @@ pub fn find_alignment_sequential_straight(
             width,
             &mut query_result,
             &mut target_result,
-            SCORES,
+            scores,
         );
     }
 
     (query_result, target_result, 0)
 }
 
-pub fn find_alignment_parallel(query: &[char], target: &[char], threads: usize) -> AlignResult {
-    let data = string_scores_parallel(query, target, SCORES, threads);
+pub fn find_alignment_parallel(query: &[char], target: &[char], threads: usize, scores: AlignmentScores) -> AlignResult {
+    let data = string_scores_parallel(query, target, scores, threads);
     let mut query_result = Vec::with_capacity(query.len());
     let mut target_result = Vec::with_capacity(target.len());
 
@@ -93,7 +93,7 @@ pub fn find_alignment_parallel(query: &[char], target: &[char], threads: usize) 
             width,
             &mut query_result,
             &mut target_result,
-            SCORES,
+            scores,
         );
     }
 
@@ -214,7 +214,7 @@ fn visualize(data: &[i16], query: &[char], target: &[char]) {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::utils::*;
+    use crate::{utils::*, algorithm::find_alignment_simd_lowmem};
 
     const LANES: usize = 64;
 
@@ -241,7 +241,8 @@ mod tests {
         }
     }
 
-    fn alignment_tester_simd(
+    fn alignment_tester(
+        alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>),
         q_in: &str,
         t_in: &str,
         q_out: &str,
@@ -252,27 +253,127 @@ mod tests {
         let t_in = &t_in.chars().collect::<Vec<_>>();
         let q_out = &q_out.chars().collect::<Vec<_>>();
         let t_out = &t_out.chars().collect::<Vec<_>>();
-        let res = find_alignment_simd::<LANES>(&q_in, &t_in, scores);
+        let res = alignment_function(&q_in, &t_in, scores);
         assert_eq!(&res.0, q_out);
         assert_eq!(&res.1, t_out);
     }
 
-    // #[test]
-    // fn test_find_alignment_straight() {
-    //     let scores = AlignmentScores {
-    //         gap: -1,
-    //         r#match: 2,
-    //         mis: -1,
-    //     };
-    //     let res = find_alignment_sequential_straight(&['h', 'o', 'i'], &['h', 'o', 'i'], scores);
-    //     assert_eq!(&res.0, &['h', 'o', 'i']);
-    // }
-    //
-    // #[test]
-    // fn test_find_alignment_parallel() {
-    //     let res = find_alignment_parallel(&['h', 'o', 'i'], &['h', 'o', 'i'], 1);
-    //     assert_eq!(&res.0, &['h', 'o', 'i']);
-    // }
+    fn test_basic(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "A", "A", "A", "A", SCORES);
+        alignment_tester(alignment_function, "HOI", "HOI", "HOI", "HOI", SCORES);
+        alignment_tester(alignment_function, "AAAAAAATAAAAAAAA", "CCTCCCCCCCCCCCCC", "T", "T", SCORES);
+    }
+
+    fn test_no_match(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "A", "T", "", "", SCORES);
+        alignment_tester(alignment_function, "AAAA", "TTTT", "", "", SCORES);
+        alignment_tester(alignment_function, "ATATTTATTAAATATATTATATATTAA", "CCCCGCGGGGCGCGCGGCGCGCGCGCGCG", "", "", SCORES);
+    }
+
+    fn test_gap(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "CCAA", "GATA", "A-A", "ATA", SCORES);
+        alignment_tester(alignment_function, "AA", "ATA", "A-A", "ATA", SCORES);
+        alignment_tester(alignment_function, "AA", "ATTA", "A", "A", SCORES);
+        alignment_tester(alignment_function, "AAAAAAAAA", "AAATTAAATTAAA", "AAA--AAA--AAA", "AAATTAAATTAAA", SCORES);
+
+        let scores_alternative = AlignmentScores {
+            gap: -1,
+            r#match : 3,
+            miss : -1,
+        };
+
+        alignment_tester(alignment_function, "AA", "ATTA", "A--A", "ATTA", scores_alternative);
+        alignment_tester(alignment_function, "ATA", "ATTA", "A-TA", "ATTA", scores_alternative);
+    }
+
+    fn test_mismatch(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "ATA", "ACA", "ATA", "ACA", SCORES);
+
+        let scores_alternative = AlignmentScores {
+            gap: -3,
+            r#match : 5,
+            miss : -2,
+        };
+
+        alignment_tester(alignment_function, "ACAC", "ACGCTTTTACC", "ACAC", "ACGC", scores_alternative);
+        alignment_tester(alignment_function, "ACAC", "AGGCTTTTACC", "ACAC", "AC-C", scores_alternative);
+    }
+
+    fn test_multiple_options(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "AA", "AATAA", "AA", "AA", SCORES);
+        alignment_tester(alignment_function, "ATTA", "ATAA", "ATTA", "A-TA", SCORES);
+    }
+
+    fn test_advanced_short(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        alignment_tester(alignment_function, "TACGGGCCCGCTAC", "TAGCCCTATCGGTCA", "TACGGGCCCGCTA-C", "TA---G-CC-CTATC", SCORES);
+        alignment_tester(alignment_function, "AAGTCGTAAAAGTGCACGT", "TAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", SCORES);
+    }
+
+    fn test_long(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        let query = std::iter::repeat('x')
+            .take(1000)
+            .chain("abc".chars())
+            .chain(std::iter::repeat('x').take(500))
+            .collect::<String>();
+        let target = std::iter::repeat('z')
+            .take(2000)
+            .chain("abc".chars())
+            .chain(std::iter::repeat('z').take(1000))
+            .collect::<String>();
+
+        alignment_tester(alignment_function, &*query, &*target, "abc", "abc", SCORES);
+
+        let target2 = std::iter::repeat('z')
+            .take(2000)
+            .chain("ac".chars())
+            .chain(std::iter::repeat('z').take(1000))
+            .collect::<String>();
+
+        alignment_tester(alignment_function, &*query, &*target2, "abc", "a-c", SCORES);
+    }
+
+    fn test_all(alignment_function: fn(&[char], &[char], AlignmentScores) -> (Vec<char>, Vec<char>)) {
+        test_basic(alignment_function);
+        test_no_match(alignment_function);
+        test_gap(alignment_function);
+        test_mismatch(alignment_function);
+        test_multiple_options(alignment_function);
+        test_advanced_short(alignment_function);
+        test_long(alignment_function);
+    }
+
+    #[test]
+    fn test_all_sequential() {
+        test_all(find_alignment_sequential);
+    }
+
+    #[test]
+    fn test_all_sequential_straight() {
+        test_all(find_alignment_sequential_straight);
+    }
+
+    fn find_alignment_parallel_wrapper<const THREADS: usize>(query: &[char], target: &[char], scores: AlignmentScores) -> AlignResult {
+        return find_alignment_parallel(query, target, THREADS, scores);
+    }
+
+    #[test]
+    fn test_all_parallel() {
+        test_all(find_alignment_parallel_wrapper::<2>);
+        test_all(find_alignment_parallel_wrapper::<3>);
+        test_all(find_alignment_parallel_wrapper::<4>);
+    }
+
+    #[test]
+    fn test_all_simd() {
+        test_all(find_alignment_simd::<LANES>);
+    }
+
+    #[test]
+    fn test_all_simd_lowmem() {
+        test_all(find_alignment_simd_lowmem::<LANES>);
+    }
+
+    /*
 
     #[test]
     fn test_find_alignment_simd() {
@@ -282,9 +383,9 @@ mod tests {
             miss: -1,
         };
         // Basic
-        alignment_tester_simd("a", "a", "a", "a", scores);
-        alignment_tester_simd("hoi", "hoi", "hoi", "hoi", scores);
-        alignment_tester_simd("ho", "hoi", "ho", "ho", scores);
+        alignment_tester(find_alignment_simd::<LANES>, "a", "a", "a", "a", scores);
+        alignment_tester(find_alignment_simd::<LANES>, "hoi", "hoi", "hoi", "hoi", scores);
+        alignment_tester(find_alignment_simd::<LANES>, "ho", "hoi", "ho", "ho", scores);
 
         // Long cases
         {
@@ -295,7 +396,7 @@ mod tests {
                 .chain("abc".chars())
                 .chain(std::iter::repeat('z').take(1000))
                 .collect::<String>();
-            alignment_tester_simd(query, &target, "abc", "abc", scores);
+            alignment_tester(find_alignment_simd::<LANES>, query, &target, "abc", "abc", scores);
         }
 
         {
@@ -311,7 +412,7 @@ mod tests {
                 .chain(std::iter::repeat('z').take(1000))
                 .collect::<String>();
 
-            alignment_tester_simd(&query, &target, "abc", "abc", scores);
+            alignment_tester(find_alignment_simd::<LANES>, &query, &target, "abc", "abc", scores);
         }
 
         {
@@ -327,7 +428,7 @@ mod tests {
                 .chain(std::iter::repeat('z').take(1000))
                 .collect::<String>();
 
-            alignment_tester_simd(&query, &target, "abc", "a-c", scores);
+            alignment_tester(find_alignment_simd::<LANES>, &query, &target, "abc", "a-c", scores);
         }
 
         // No match
@@ -339,28 +440,28 @@ mod tests {
                 r#match: 3,
                 miss: -3,
             };
-            alignment_tester_simd("Hoi", "HHii", "Hoi", "H-i", scores);
+            alignment_tester(find_alignment_simd::<LANES>, "Hoi", "HHii", "Hoi", "H-i", scores);
         }
 
         // Mismatch
-        alignment_tester_simd(
+        alignment_tester(find_alignment_simd::<LANES>,
             "TACGGGCCCGCTAC",
             "TAGCCCTATCGGTCA",
             "TACGGGCCCGCTA-C",
             "TA---G-CC-CTATC",
             scores,
         );
-        alignment_tester_simd(
+        alignment_tester(find_alignment_simd::<LANES>,
             "AAGTCGTAAAAGTGCACGT",
             "TAAGCCGTTAAGTGCGCGTG",
             "AAGTCGTAAAAGTGCACGT",
             "AAGCCGT-TAAGTGCGCGT",
             scores,
         );
-        alignment_tester_simd("AAGTCGTAAAAGTGCACGT",
+        alignment_tester(find_alignment_simd::<LANES>, "AAGTCGTAAAAGTGCACGT",
                  "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzTAAGCCGTTAAGTGCGCGTG",
                  "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", scores);
-    }
+    }*/
 
     use test::Bencher;
 

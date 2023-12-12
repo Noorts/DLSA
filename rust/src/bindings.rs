@@ -12,7 +12,6 @@ pub struct AlignmentResult {
 }
 
 
-
 #[no_mangle]
 extern "C" fn test_binding() {
     println!("Hello world");
