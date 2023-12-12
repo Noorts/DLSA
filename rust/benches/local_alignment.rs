@@ -3,7 +3,7 @@ use std::time::Duration;
 
 use self::criterion::*;
 use criterion::{criterion_group, criterion_main, Criterion};
-use sw::{algorithm::AlignmentScores, find_alignment_simd};
+use sw::{algorithm::{AlignmentScores, find_alignment_simd_lowmem}, find_alignment_simd};
 
 const LANES: usize = 64;
 fn bench_local_alignment(c: &mut Criterion) {
@@ -30,6 +30,14 @@ fn bench_local_alignment(c: &mut Criterion) {
                 &(&query, &target),
                 |b, (ref query, ref target)| {
                     b.iter(|| find_alignment_simd::<64>(&query, &target, scores));
+                },
+            );
+
+            group.bench_with_input(
+                BenchmarkId::new("SIMD (lowmem)", target_len),
+                &(&query, &target),
+                |b, (ref query, ref target)| {
+                    b.iter(|| find_alignment_simd_lowmem::<64>(&query, &target, scores));
                 },
             );
         }
