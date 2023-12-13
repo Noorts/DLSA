@@ -4,6 +4,10 @@ package worker
 // #include "./../../rust/header/sw.h"
 import "C"
 
+import (
+	"errors"
+)
+
 type Result struct {
 	QueryPtr  *C.char
 	TargetPtr *C.char
@@ -53,20 +57,28 @@ func ConvertResultToGoResult(cResult *C.struct_Result) GoResult {
 // 	return goResult
 // }
 
-func FindRustAlignmentSequential(query, target string) GoResult {
+func FindRustAlignmentSequential(query, target string, alignmentScore AlignmentScore) (*GoResult, error) {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 
-	cResult_ref := C.find_alignment_sequential_straight(queryC, targetC)
+	alignmentScoreC := C.struct_AlignmentScores{
+		gap:   C.ushort(alignmentScore.GapPenalty),
+		match: C.ushort(alignmentScore.MatchScore),
+		miss:  C.ushort(alignmentScore.MismatchPenalty),
+	}
 
+	cResult_ref := C.find_alignment_sequential_straight(queryC, targetC, alignmentScoreC)
+	if cResult_ref == nil {
+		return nil, errors.New("Crash in rust sequential alignment")
+	}
 	goResult := convertResultToGoResult(cResult_ref)
 
 	defer FreeAlignmentResult(cResult_ref)
 
-	return goResult
+	return &goResult, nil
 }
 
-func FindRustAlignmentSimd(query, target string, alignmentScore AlignmentScore) GoResult {
+func FindRustAlignmentSimd(query, target string, alignmentScore AlignmentScore) (*GoResult, error) {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 	alignmentScoreC := C.struct_AlignmentScores{
@@ -76,12 +88,18 @@ func FindRustAlignmentSimd(query, target string, alignmentScore AlignmentScore) 
 	}
 
 	cResult := C.find_alignment_simd(queryC, targetC, alignmentScoreC)
+    if cResult == nil {
+        return nil, errors.New("Crash in rust SIMD alignment")
+    }
+
+	goResult := convertResultToGoResult(cResult)
+
 	defer FreeAlignmentResult(cResult)
 
-	return convertResultToGoResult(cResult)
+	return &goResult, nil
 }
 
-func FindRustAlignmentSimdLowMem(query, target string, alignmentScore AlignmentScore) GoResult {
+func FindRustAlignmentSimdLowMem(query, target string, alignmentScore AlignmentScore) (*GoResult, error) {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 	alignmentScoreC := C.struct_AlignmentScores{
@@ -91,9 +109,15 @@ func FindRustAlignmentSimdLowMem(query, target string, alignmentScore AlignmentS
 	}
 
 	cResult := C.find_alignment_low_memory(queryC, targetC, alignmentScoreC)
+    if cResult == nil {
+        return nil, errors.New("Crash in SIMD ringbuffer alignment")
+    }
+
+    goResult := convertResultToGoResult(cResult)
+
 	defer FreeAlignmentResult(cResult)
 
-	return convertResultToGoResult(cResult)
+	return &goResult, nil
 }
 
 func cCharPtrToGoString(cStr *C.char) string {
