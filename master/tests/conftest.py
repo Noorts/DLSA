@@ -44,7 +44,7 @@ def f_worker_node(f_client: TestClient) -> tuple[WorkerId, StoppableThread]:
     # Send a pulse to the master over and over again
     interval = set_interval(
         lambda: f_client.post("/worker/pulse", json=worker_id.model_dump(mode="json")),
-        SETTINGS.worker_timout // 2,
+        SETTINGS.worker_timeout // 2,
     )
 
     yield worker_id, interval

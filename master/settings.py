@@ -12,7 +12,7 @@ class _Settings(BaseSettings):
     scheduler_type: SchedulerType = "proportional"
     work_package_cleaning_interval: int = 5
     worker_cleaning_interval: int = 5
-    worker_timout: int = 10
+    worker_timeout: int = 10
     work_package_time_split_in_seconds: int = 60 * 3
     enable_job_deletion: bool = True
 

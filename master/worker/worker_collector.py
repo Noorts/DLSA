@@ -57,7 +57,7 @@ class WorkerCollector(Cleaner, Singleton):
                 worker = self.get_worker_by_id(worker)
             except WorkerNotFoundException:
                 return False
-        return worker.last_seen_alive > current_sec() - SETTINGS.worker_timout and worker.status != "DEAD"
+        return worker.last_seen_alive > current_sec() - SETTINGS.worker_timeout and worker.status != "DEAD"
 
     def execute_clean(self) -> None:
         for worker in [*self._workers.values()]:
