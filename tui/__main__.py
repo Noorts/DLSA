@@ -171,7 +171,6 @@ def main():
 
         top_k_map = {k: sorted(v, key=lambda x: x[1], reverse=True) for k, v in top_k_map.items()}
         if args.top_k is not None:
-            print(f"Showing top-{args.top_k} results")
             top_k_map = {k: v[: args.top_k] for k, v in top_k_map.items()}
 
         for query, results in top_k_map.items():
