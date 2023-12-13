@@ -73,7 +73,7 @@ where
     // Padding the query to the next whole number of LANES
     let query_size = utils::roundup(query.len(), LANES);
     let query: Vec<_> = query
-        .iter()
+        .into_iter()
         .map(|x| *x as u16 + 2)
         .chain(std::iter::repeat(0))
         .take(query_size)
@@ -82,7 +82,7 @@ where
     // Padding the target to the next whole number of LANES
     let target_size = utils::roundup(target.len(), LANES);
     let target: Vec<_> = target
-        .iter()
+        .into_iter()
         .map(|x| *x as u16 + 2)
         .chain(std::iter::repeat(1))
         .take(target_size)
@@ -218,7 +218,7 @@ where
     // Padding the query to the next whole number of LANES
     let query_size = utils::roundup(query.len(), LANES);
     let query_u16: Vec<_> = query
-        .iter()
+        .into_iter()
         .map(|x| *x as u16 + 2)
         .chain(std::iter::repeat(0))
         .take(query_size)
@@ -227,7 +227,7 @@ where
     // Padding the target to the next whole number of LANES
     let target_size = utils::roundup(target.len(), LANES);
     let target_u16: Vec<_> = target
-        .iter()
+        .into_iter()
         .map(|x| *x as u16 + 2)
         .chain(std::iter::repeat(1))
         .take(target_size)
