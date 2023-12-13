@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"errors"
 	"log"
 	"runtime"
 	"sync"
@@ -76,8 +77,16 @@ func (w *Worker) ExecuteWork(work *WorkPackage, queries []QueryTargetType) {
 
 		// qRes, _, score := smithwaterman.FindLocalAlignment(string(querySeq), string(targetSeq), work.MatchScore, work.MismatchPenalty, work.GapPenalty)
 
-		rustRes := FindRustAlignmentSimd(string(querySeq), string(targetSeq),
+		rustRes, err := findAlignmentWithFallback(string(querySeq), string(targetSeq),
 			AlignmentScore{work.MatchScore, -work.MismatchPenalty, -work.GapPenalty})
+
+		if err != nil {
+			// TODO: What now?
+			// At least we want some logging here, but we should probably
+			// mention to the master that there is a problem
+			log.Printf("%s\n", err)
+		}
+
 		qRes := rustRes.Query
 		score := int(rustRes.Score)
 
@@ -104,6 +113,32 @@ func (w *Worker) ExecuteWork(work *WorkPackage, queries []QueryTargetType) {
 	}
 	w.client.SendResult(workResultBuffer, *work.ID)
 	w.status = Waiting
+}
+
+func findAlignmentWithFallback(query, target string, alignmentScore AlignmentScore) (*GoResult, error) {
+	var rustRes *GoResult
+	var err error
+
+	rustRes, err = FindRustAlignmentSimdLowMem(query, target, alignmentScore)
+
+	if err == nil {
+		return rustRes, nil
+	}
+
+	rustRes, err = FindRustAlignmentSimd(query, target, alignmentScore)
+
+	if err == nil {
+		return rustRes, nil
+	}
+
+	rustRes, err = FindRustAlignmentSequential(query, target, alignmentScore)
+
+	if err == nil {
+		return rustRes, nil
+	}
+
+	return nil, errors.New("All alignment functions failed to align a sequence")
+
 }
 
 func (w *Worker) ExecuteWorkInParallel(work *WorkPackage) {
