@@ -10,6 +10,8 @@ import requests
 
 descr_map = {}
 
+PRINT_UNIT = 'milliseconds'
+PRINT_UNIT_FROM_NANO_RATIO = 1_000_000
 
 def parse_fasta(fasta_file_path):
     with open(fasta_file_path, "r") as file:
@@ -123,7 +125,7 @@ def main():
     # print(f'Job ID: {job_id}')
 
     # if response is successful, poll for results
-    curr_time = time.time()
+    curr_time = time.time_ns()
     job_start = None
     if response.status_code == 200:
         # print('Polling for results...')
@@ -138,20 +140,21 @@ def main():
                 continue
             elif response.json()["state"] == "IN_PROGRESS":
                 if job_start is None:
-                    job_start = time.time()
+                    job_start = time.time_ns()
                 progress = response.json()["progress"]
                 update_progress(progress)
                 time.sleep(1)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
             else:
                 if job_start is None:
-                    job_start = time.time()
-                    total_elapsed_time = time.time() - job_start
+                    job_start = time.time_ns()
+                    total_elapsed_time = time.time_ns() - job_start
                 update_progress(1.0)
-                total_elapsed_time = time.time() - curr_time
-                computation_time = time.time() - job_start
-                print("\nJob done, total elapsed time: ", int(total_elapsed_time), "seconds")
-                print("Computation time: ", int(computation_time), "seconds")
+                total_elapsed_time = time.time_ns() - curr_time
+                computation_time = time.time_ns() - job_start
+
+                print(f'\nJob done - total elapsed time: {int(total_elapsed_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}'.replace(',', '.'))
+                print(f'Computation time: {int(computation_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}'.replace(',', '.'))
                 break
         # TODO: Sort the results by score???
         top_k_map = {}
