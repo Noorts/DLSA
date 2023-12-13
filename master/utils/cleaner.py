@@ -1,3 +1,4 @@
+import logging
 import time
 from abc import ABC, abstractmethod
 from threading import Thread
@@ -11,7 +12,14 @@ class Cleaner(ABC):
 
     def _cleaning_loop(self) -> None:
         while True:
-            self.execute_clean()
+            try:
+                self.execute_clean()
+            except Exception as e:
+                # Get the filename of the class that extends the cleaner class
+                super_class_file_name = self.__class__.__module__.split(".")[-1]
+                logger = logging.getLogger(super_class_file_name)
+                logger.debug(f"Exception in cleaner thread: {e}")
+
             time.sleep(self._interval)
 
     @abstractmethod

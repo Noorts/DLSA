@@ -82,15 +82,14 @@ class WorkPackageCollector(Cleaner, Singleton):
             mismatch_penalty=scheduled_package.package.mismatch_penalty,
             gap_penalty=scheduled_package.package.gap_penalty,
         )
-        logger.info(f"Created work package {package.id} to worker {worker_id} with {len(package.queries)} queries")
+        logger.info(f"Created work package for worker with {len(package.queries)} queries")
         worker.status = "WORKING"
         return package, scheduled_package
 
     def execute_clean(self) -> None:
         for package in self._work_packages:
             if package.worker.status == "DEAD":
-                logger.info(
-                    f"Aborting work package {package.package.id} because worker {package.worker.worker_id} is dead"
-                )
+                logger.info(f"Aborting work package because worker is dead")
+                logger.info("Preparing to assign it to a different worker")
                 self._work_scheduler.abort_work_package(package)
                 self._work_packages.remove(package)

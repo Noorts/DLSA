@@ -183,3 +183,4 @@ results/*
 
 # Mac files
 .DS_Store
+/cmd/worker/bin/

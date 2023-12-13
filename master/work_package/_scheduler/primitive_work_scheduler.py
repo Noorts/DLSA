@@ -17,7 +17,7 @@ class PrimitiveWorkPackageScheduler(WorkPackageScheduler):
         queries = job.missing_sequences()
 
         if len(queries) == 0:
-            logger.error(f"Job {job.id} has no missing sequences")
+            logger.error(f"Job {job.id} has no sequences to schedule")
             return None
 
         package = InternalWorkPackage(

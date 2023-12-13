@@ -23,7 +23,7 @@ class ProportionalWorkScheduler(WorkPackageScheduler):
         # Get all missing sequences for the job
         queries = job.missing_sequences()
         if len(queries) == 0:
-            logger.error(f"Job {job.id} has no missing sequences")
+            logger.error(f"Job {job.id} has no sequences to schedule")
             return None
 
         # Get all workers that are currently NOT working on a job (this includes the worker requesting work)

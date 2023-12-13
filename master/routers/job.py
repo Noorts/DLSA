@@ -77,7 +77,7 @@ def delete_job(job_id: UUID):
     Job deletion might have unwanted side effects, as workers might still be working on the job and work packages are
     not cleaned up.
     """
-    logger.info(f"Deleting job {job_id}")
+    logger.info(f"Deleting job")
     if not SETTINGS.enable_job_deletion:
         raise HTTPException(status_code=403, detail="Job deletion is disabled")
 

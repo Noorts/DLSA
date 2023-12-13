@@ -22,7 +22,7 @@ class JobQueue(Singleton):
 
     def add_job_to_queue(self, request: JobRequest) -> QueuedJob:
         job_id = uuid4()
-        logger.info(f"Adding job {job_id} to queue. Job has {len(request.queries)} queries")
+        logger.info(f"Adding job to queue. Job has {len(request.queries)} queries")
         self._jobs[job_id] = QueuedJob(
             request=request,
             completed_sequences={},
@@ -52,6 +52,6 @@ class JobQueue(Singleton):
         return job
 
     def delete_job_by_id(self, job_id: UUID):
-        logger.info(f"Deleting job {job_id} from queue")
+        logger.info(f"Deleting job from queue")
         self.get_job_by_id(job_id)
         del self._jobs[job_id]
