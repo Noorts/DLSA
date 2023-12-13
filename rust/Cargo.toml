@@ -1,0 +1,27 @@
+[package]
+name = "sw"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["lib", "staticlib"]
+# path = "src/lib.rs"
+
+[dependencies]
+argminmax = "0.6.1"
+crossbeam = "0.8.2"
+rand = "0.8.5"
+spin-sync = "0.3.2"
+
+[dev-dependencies]
+criterion = "0.5.1"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1
+# panic = "abort" We need unwind to be safe
+
+
+[[bench]]
+name = "local_alignment"
+harness = false

@@ -1,6 +1,13 @@
 package smithwaterman
 
+/*
+#cgo LDFLAGS: ./rust/target/release/libsw.a -ldl
+#include "./../../rust/header/sw.h"
+*/
+import "C"
+
 import (
+	"fmt"
 	"strings"
 )
 
@@ -9,13 +16,12 @@ import (
 // var MATCH_SCORE = 2
 // var MISMATCH_PENALTY = 1
 
-/*
-*
+func test_func() {
+	res := C.find_alignment_simd(C.CString("Hoi"), C.CString("HHii"))
 
-	A one-to-one simple implementation of the Smith Waterman 2D array construction
-	Assumptions
-	 - Single gap penalty
-*/
+	fmt.Printf("Go: %s\n", C.GoString(res.query_ptr))
+	fmt.Printf("Go: %s\n", C.GoString(res.target_ptr))
+}
 
 func findStringScore(query string, target string, matchScore int, gapPen int, mismatchPen int) []int {
 	score := make([]int, (len(query)+1)*(len(target)+1))

@@ -5,6 +5,10 @@ import (
 )
 
 // Example as listed on Wikipedi
+func TestTest(t *testing.T) {
+	test_func()
+}
+
 // Global variables for now only for testing
 var GAP_PENALTY = 1
 var MATCH_SCORE = 2
@@ -45,6 +49,7 @@ func TestMultipleOptions(t *testing.T) {
 func TestAdvanced(t *testing.T) {
 	test_with_scoring(1, 1, 2, "TACGGGCCCGCTAC", "TAGCCCTATCGGTCA", "TACGGGCCCGCTA-C", "TA---G-CC-CTATC", t)
 	test_with_scoring(1, 1, 2, "AAGTCGTAAAAGTGCACGT", "TAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", t)
+	test_with_scoring(1, 1, 2, "AAGTCGTAAAAGTGCACGT", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzTAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", t)
 }
 
 func test_with_scoring(gap int, mismatch int, match int, query, target, expected_query, expected_target string, t *testing.T) {
