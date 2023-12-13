@@ -7,7 +7,6 @@ package smithwaterman
 import "C"
 
 import (
-	"fmt"
 	"strings"
 )
 
