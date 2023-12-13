@@ -12,25 +12,6 @@ pub struct AlignmentResult {
     score: i16,
 }
 
-
-#[no_mangle]
-extern "C" fn test_binding() {
-    println!("Hello world");
-}
-#[no_mangle]
-extern "C" fn test_write(_target_res_ptr: *mut c_char, _size: usize) -> AlignmentResult {
-    let query = CString::new("Hoi").unwrap();
-    let target = CString::new("Doei").unwrap();
-    let score = 0;
-    let data = AlignmentResult {
-        query: query.into_raw(),
-        target: target.into_raw(),
-        score: score,
-    };
-
-    return data;
-}
-
 /// Find a local alignment using a parallel implementation
 ///
 /// Note: If SIMD is available for your platform, you probably want to use that
