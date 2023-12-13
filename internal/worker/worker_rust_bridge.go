@@ -88,9 +88,9 @@ func FindRustAlignmentSimd(query, target string, alignmentScore AlignmentScore) 
 	}
 
 	cResult := C.find_alignment_simd(queryC, targetC, alignmentScoreC)
-    if cResult == nil {
-        return nil, errors.New("Crash in rust SIMD alignment")
-    }
+	if cResult == nil {
+		return nil, errors.New("Crash in rust SIMD alignment")
+	}
 
 	goResult := convertResultToGoResult(cResult)
 
@@ -109,11 +109,11 @@ func FindRustAlignmentSimdLowMem(query, target string, alignmentScore AlignmentS
 	}
 
 	cResult := C.find_alignment_low_memory(queryC, targetC, alignmentScoreC)
-    if cResult == nil {
-        return nil, errors.New("Crash in SIMD ringbuffer alignment")
-    }
+	if cResult == nil {
+		return nil, errors.New("Crash in SIMD ringbuffer alignment")
+	}
 
-    goResult := convertResultToGoResult(cResult)
+	goResult := convertResultToGoResult(cResult)
 
 	defer FreeAlignmentResult(cResult)
 

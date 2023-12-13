@@ -2,6 +2,7 @@ package worker
 
 import (
 	"errors"
+	"fmt"
 	"log"
 	"runtime"
 	"sync"
@@ -124,6 +125,10 @@ func findAlignmentWithFallback(query, target string, alignmentScore AlignmentSco
 	if err == nil {
 		return rustRes, nil
 	}
+
+	fmt.Printf("Error in SIMD low memory alignment, falling back to smid: %s\n", err)
+	fmt.Printf("Query: %s\n", query)
+	fmt.Printf("Target: %s\n", target)
 
 	rustRes, err = FindRustAlignmentSimd(query, target, alignmentScore)
 
