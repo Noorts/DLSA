@@ -18,7 +18,7 @@ const retryDelayGetWorkInSeconds = 1
 func main() {
 	masterNodeAddress := defaultMasterNodeAddress
 
-	// To supply the master node address via the CLI run: `go run cmd/worker/main.go -- 192.168.0.1:8000`.
+	// To supply the master node address via the CLI run: `go run cmd/worker/main.go 192.168.0.1:8000`.
 	if len(os.Args) == 2 && regexp.MustCompile(ipv4WithPortRegex).MatchString(os.Args[1]) {
 		masterNodeAddress = os.Args[1]
 		log.Printf("Master node address: %v", protocolPrefix+masterNodeAddress)
