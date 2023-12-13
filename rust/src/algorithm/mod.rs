@@ -236,8 +236,9 @@ where
     let width = query_u16.len() + 1;
     let data_height = query_u16.len() + target_u16.len() + 1;
     // TODO: Fix trunc div error
-    let wrapping_height =
-        query_u16.len() * (1 + (scores.r#match.abs() / scores.gap.abs()) as usize);
+    let wrapping_height = query_u16.len()
+    + ((query_u16.len() * scores.r#match.abs() as usize) / scores.gap.abs() as usize);
+
     let data_store_height = wrapping_height + width;
 
     let mut data: Vec<i16> = vec![0; width * data_store_height];
