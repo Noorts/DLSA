@@ -66,7 +66,7 @@ pub struct AlignmentResult {
 // }
 
 #[no_mangle]
-pub extern "C" fn find_alignment_simd(
+pub unsafe extern "C" fn find_alignment_simd(
     query_ptr: *const c_char,
     target_ptr: *const c_char,
     alignment_scores: AlignmentScores,
@@ -90,13 +90,13 @@ pub extern "C" fn find_alignment_simd(
 
         // println!("Found alignment Q: {query_res:?}; T: {target_res:?}");
 
-        let q_res: String = query_res_ref.into_iter().collect();
-        let t_res: String = target_res_ref.into_iter().collect();
+        let q_res: String = query_res_ref.iter().collect();
+        let t_res: String = target_res_ref.iter().collect();
 
         let res = Box::new(AlignmentResult {
             query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
             target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
-            score: score,
+            score,
         });
 
         Box::into_raw(res)
@@ -108,7 +108,7 @@ pub extern "C" fn find_alignment_simd(
 }
 
 #[no_mangle]
-pub extern "C" fn find_alignment_low_memory(
+pub unsafe extern "C" fn find_alignment_low_memory(
     query_ptr: *const c_char,
     target_ptr: *const c_char,
     alignment_scores: AlignmentScores,
@@ -132,13 +132,13 @@ pub extern "C" fn find_alignment_low_memory(
 
         // println!("Found alignment Q: {query_res:?}; T: {target_res:?}");
 
-        let q_res: String = query_res_ref.into_iter().collect();
-        let t_res: String = target_res_ref.into_iter().collect();
+        let q_res: String = query_res_ref.iter().collect();
+        let t_res: String = target_res_ref.iter().collect();
 
         let res = Box::new(AlignmentResult {
             query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
             target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
-            score: score,
+            score,
         });
 
         Box::into_raw(res)
@@ -178,7 +178,7 @@ pub extern "C" fn find_alignment_low_memory(
 // }
 
 #[no_mangle]
-pub extern "C" fn find_alignment_sequential_straight(
+pub unsafe extern "C" fn find_alignment_sequential_straight(
     query_ptr: *const c_char,
     target_ptr: *const c_char,
     alignment_scores: AlignmentScores,
@@ -201,19 +201,19 @@ pub extern "C" fn find_alignment_sequential_straight(
 
     // println!("Found alignment Q: {query_res:?}; T: {target_res:?}");
 
-    let q_res: String = query_res_ref.into_iter().collect();
-    let t_res: String = target_res_ref.into_iter().collect();
+    let q_res: String = query_res_ref.iter().collect();
+    let t_res: String = target_res_ref.iter().collect();
 
     AlignmentResult {
         query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
         target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
-        score: score,
+        score,
     }
 }
 
 //functions to free the memory allocated by the rust code
 #[no_mangle]
-pub extern "C" fn free_alignment_result(alignment_result_ptr: *mut AlignmentResult) {
+pub unsafe extern "C" fn free_alignment_result(alignment_result_ptr: *mut AlignmentResult) {
     unsafe {
         if alignment_result_ptr.is_null() {
             return;
@@ -223,7 +223,7 @@ pub extern "C" fn free_alignment_result(alignment_result_ptr: *mut AlignmentResu
 }
 
 #[no_mangle]
-pub extern "C" fn free_c_string(c_str_ptr: *mut c_char) {
+pub unsafe extern "C" fn free_c_string(c_str_ptr: *mut c_char) {
     unsafe {
         if !c_str_ptr.is_null() {
             let _ = CString::from_raw(c_str_ptr);

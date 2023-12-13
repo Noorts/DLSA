@@ -128,7 +128,7 @@ where
 
     let query_vecs = query
         .chunks_exact(LANES)
-        .map(|x| Simd::<u16, LANES>::from_slice(x))
+        .map(Simd::<u16, LANES>::from_slice)
         .collect::<Vec<_>>();
 
     for y in width..=(target.len() + 1) {
@@ -237,7 +237,7 @@ where
     let data_height = query_u16.len() + target_u16.len() + 1;
     // TODO: Fix trunc div error
     let wrapping_height = query_u16.len()
-    + ((query_u16.len() * scores.r#match.abs() as usize) / scores.gap.abs() as usize);
+    + ((query_u16.len() * scores.r#match.unsigned_abs() as usize) / scores.gap.unsigned_abs() as usize);
 
     let data_store_height = wrapping_height + width;
 
@@ -284,8 +284,8 @@ where
             total_query_result = Vec::with_capacity(wrapping_height);
             traceback_wrapping(
                 &data,
-                &query,
-                &target,
+                query,
+                target,
                 max_x,
                 y,
                 width,
@@ -307,11 +307,11 @@ where
 
     let query_vecs = query_u16
         .chunks_exact(LANES)
-        .map(|x| Simd::<u16, LANES>::from_slice(x))
+        .map(Simd::<u16, LANES>::from_slice)
         .collect::<Vec<_>>();
 
     for y in width..=(target_u16.len() + 1) {
-        let mut row_0_i = index(1, (y - 0) % data_store_height, width);
+        let mut row_0_i = index(1, y % data_store_height, width);
         let mut row_1_i = index(1, (y - 1) % data_store_height, width);
         let mut row_2_i = index(1, (y - 2) % data_store_height, width);
         let mut start_x = 1;
@@ -370,8 +370,8 @@ where
             total_query_result = Vec::with_capacity(wrapping_height);
             traceback_wrapping(
                 &data,
-                &query,
-                &target,
+                query,
+                target,
                 x,
                 y,
                 width,
@@ -400,7 +400,7 @@ where
 
             data[index(x, rel_y, width)] = max(
                 max(
-                    data[index(x - 0, (y - 1) % data_store_height, width)] + scores.gap, // Skip query
+                    data[index(x, (y - 1) % data_store_height, width)] + scores.gap, // Skip query
                     data[index(x - 1, (y - 1) % data_store_height, width)] + scores.gap, // Skip in target
                 ),
                 max(
@@ -423,8 +423,8 @@ where
             total_query_result = Vec::with_capacity(wrapping_height);
             traceback_wrapping(
                 &data,
-                &query,
-                &target,
+                query,
+                target,
                 x,
                 y,
                 width,
@@ -449,9 +449,7 @@ pub fn string_scores_parallel(
 
     let mut data = Vec::with_capacity(width * height);
 
-    let data_ptr = SendPtr {
-        0: data.as_mut_ptr(),
-    };
+    let data_ptr = SendPtr(data.as_mut_ptr());
 
     let barrier = Arc::new(Barrier::new(threads));
 

@@ -12,12 +12,6 @@ use crate::utils::index;
 pub mod algorithm;
 pub mod bindings;
 
-const SCORES: AlignmentScores = AlignmentScores {
-    gap: -1,
-    r#match: 2,
-    miss: -1,
-};
-
 type AlignResult = (Vec<char>, Vec<char>, i16);
 
 pub fn find_alignment_sequential(query: &[char], target: &[char], scores: AlignmentScores) -> AlignResult {
@@ -143,7 +137,7 @@ pub mod utils {
 
     #[inline(always)]
     pub fn coord(index: usize, width: usize) -> (usize, usize) {
-        return (index % width, index / width);
+        (index % width, index / width)
     }
 
     #[inline(always)]
@@ -158,7 +152,7 @@ pub mod utils {
             return number;
         }
 
-        return number + (multiple - remainder);
+        number + (multiple - remainder)
     }
 }
 
@@ -172,14 +166,14 @@ fn visualize_straight(data: &[i16], query: &[char], target: &[char]) {
         print!("  {}  ", letter);
     }
 
-    println!("");
+    println!();
 
     for y in 1..height {
         print!(" {} ", target[y - 1]);
         for x in 1..width {
             print!(" {:3} ", data[index(x, y, width)]);
         }
-        println!("");
+        println!();
     }
 }
 
@@ -193,7 +187,7 @@ fn visualize(data: &[i16], query: &[char], target: &[char]) {
         print!("  {}  ", letter);
     }
 
-    println!("");
+    println!();
 
     for y in 1..height + width {
         print!(
@@ -207,7 +201,7 @@ fn visualize(data: &[i16], query: &[char], target: &[char]) {
         for x in 1..width {
             print!(" {:3} ", data[index(x, y + x - 1, width)]);
         }
-        println!("");
+        println!();
     }
 }
 
