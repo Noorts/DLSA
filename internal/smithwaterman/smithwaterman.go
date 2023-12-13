@@ -16,13 +16,6 @@ import (
 // var MATCH_SCORE = 2
 // var MISMATCH_PENALTY = 1
 
-func test_func() {
-	res := C.find_alignment_simd(C.CString("Hoi"), C.CString("HHii"))
-
-	fmt.Printf("Go: %s\n", C.GoString(res.query_ptr))
-	fmt.Printf("Go: %s\n", C.GoString(res.target_ptr))
-}
-
 func findStringScore(query string, target string, matchScore int, gapPen int, mismatchPen int) []int {
 	score := make([]int, (len(query)+1)*(len(target)+1))
 
