@@ -25,7 +25,7 @@ jobs:
     - name: Build Rust project
       run: |
         cd rust
-        cargo build
+        cargo build --release
 
     # Setup Go environment
     - name: Set up Go
