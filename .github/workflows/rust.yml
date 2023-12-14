@@ -1,0 +1,34 @@
+name: Rust Test
+
+on:
+  push:
+    branches: [ "master" ]
+  pull_request:
+    branches: [ "master" ]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    # Setup Rust environment
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+
+    # Build Rust project
+    - name: Build Rust project
+      run: |
+        cd rust
+        cargo build --release
+
+    # Test Rust project
+    - name: Test Rust project
+      run: |
+        cd rust
+        cargo test --release
