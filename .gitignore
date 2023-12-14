@@ -187,3 +187,5 @@ results/*
 
 # FlameGraph
 perf.data*
+
+datasets/*
