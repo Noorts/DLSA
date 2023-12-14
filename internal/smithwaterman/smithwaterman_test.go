@@ -4,11 +4,6 @@ import (
 	"testing"
 )
 
-// Example as listed on Wikipedi
-func TestTest(t *testing.T) {
-	test_func()
-}
-
 // Global variables for now only for testing
 var GAP_PENALTY = 1
 var MATCH_SCORE = 2
