@@ -27,5 +27,6 @@ def __main__():
         database_name='target_sequences.fasta'
     )
 
+# Run using `python3 ./utils/generate_synthetic_data.py`
 if __name__ == '__main__':
     __main__()
