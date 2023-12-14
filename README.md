@@ -28,8 +28,7 @@ We've used the following versions in our testing. Nightly rust is currently bein
 | rustc | rustc 1.76.0-nightly (eeff92ad3 2023-12-13) |
 | cargo | cargo 1.76.0-nightly (1aa9df1a5 2023-12-12) |
 
-Python dependencies are managed by [Poetry](https://python-poetry.org/).
-See https://python-poetry.org/docs/#installation for installation instructions. After installing Poetry, you can install the project's dependencies from the root folder using `poetry install`.
+Python dependencies are managed by [Poetry](https://python-poetry.org/) ([installation instructions](https://python-poetry.org/docs/#installation)). After installing Poetry, you can install the project's dependencies from the root folder using `poetry install`.
 
 Note: Specific instructions for running this project on the DAS5 compute cluster can be found [here](DAS5.md).
 
