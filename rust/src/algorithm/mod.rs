@@ -37,13 +37,10 @@ pub fn string_scores_sequential(
             if x >= y {
                 continue;
             }
-            if y > target.len() + x - 1 {
+            if y > target.len() + x {
                 continue;
             }
-            let lhs = query[x - 1];
-            let rhs = target[y - x];
-
-            let sub_score = if lhs == rhs {
+            let sub_score = if query[x - 1] == target[y - x - 1] {
                 scores.r#match
             } else {
                 scores.miss
@@ -233,10 +230,7 @@ where
         .collect();
 
     // Padding the target to the next whole number of LANES
-    let target_u16: Vec<_> = target
-        .into_iter()
-        .map(|x| *x as u16 + 1)
-        .collect();
+    let target_u16: Vec<_> = target.into_iter().map(|x| *x as u16 + 1).collect();
 
     let width = query_u16.len() + 1;
     assert!(query_u16.len() >= query.len());
@@ -461,6 +455,8 @@ pub fn string_scores_parallel(
     let width = query.len() + 1;
     let height = query.len() + target.len() + 1;
 
+    let threads = min(threads, query.len());
+
     let mut data = Vec::with_capacity(width * height);
 
     let data_ptr = SendPtr(data.as_mut_ptr());
@@ -479,19 +475,16 @@ pub fn string_scores_parallel(
                 let data_ref =
                     unsafe { std::slice::from_raw_parts_mut(data_ptr.0, width * height) };
 
-                for y in 1..height {
-                    let max_x = min(right, y);
-                    for x in left..max_x {
-                        // HOT LOOP
-                        // PERF: Probably faster to kickstart the top and bottom
-                        // On a single thread and save ourselves the branching
-                        // inside the hot loop
-
-                        if target.len() + x - 1 < y {
+                for y in 2..height {
+                    for x in left..right {
+                        if x >= y {
+                            continue;
+                        }
+                        if y > target.len() + x {
                             continue;
                         }
 
-                        let sub_score = if query[x - 1] == target[y - x] {
+                        let sub_score = if query[x - 1] == target[y - x - 1] {
                             scores.r#match
                         } else {
                             scores.miss
@@ -516,7 +509,6 @@ pub fn string_scores_parallel(
             child
         });
 
-        // TODO: Probably not necessary anymore due to the thread scope
         for handle in handles.collect::<Vec<_>>() {
             handle.join().unwrap();
         }

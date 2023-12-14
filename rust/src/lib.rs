@@ -25,20 +25,19 @@ pub fn find_alignment_sequential(
 
     let width = query.len() + 1;
     // TODO: Find max index
-    if let Some((index, _value)) = data.iter().enumerate().max_by_key(|(_i, x)| *x) {
-        let (x, y) = coord(index, width);
-        traceback_straight(
-            &data,
-            query,
-            target,
-            x,
-            y,
-            width,
-            &mut query_result,
-            &mut target_result,
-            scores,
-        );
-    }
+    let max_index = data.argmax();
+    let (x, y) = coord(max_index, width);
+    traceback(
+        &data,
+        query,
+        target,
+        x,
+        y,
+        width,
+        &mut query_result,
+        &mut target_result,
+        scores,
+    );
 
     (query_result, target_result, 0)
 }
@@ -51,24 +50,22 @@ pub fn find_alignment_sequential_straight(
     let data = string_scores_straight(query, target, scores);
     let mut query_result = Vec::with_capacity(query.len());
     let mut target_result = Vec::with_capacity(target.len());
-    visualize_straight(&data, query, target);
 
     let width = query.len() + 1;
-    // TODO: Find max index
-    if let Some((index, _value)) = data.iter().enumerate().max_by_key(|(_i, x)| *x) {
-        let (x, y) = coord(index, width);
-        traceback_straight(
-            &data,
-            query,
-            target,
-            x,
-            y,
-            width,
-            &mut query_result,
-            &mut target_result,
-            scores,
-        );
-    }
+    let (_, max_index) = data.argminmax();
+
+    let (x, y) = coord(max_index, width);
+    traceback_straight(
+        &data,
+        query,
+        target,
+        x,
+        y,
+        width,
+        &mut query_result,
+        &mut target_result,
+        scores,
+    );
 
     (query_result, target_result, 0)
 }
@@ -84,21 +81,22 @@ pub fn find_alignment_parallel(
     let mut target_result = Vec::with_capacity(target.len());
 
     let width = query.len() + 1;
-    // TODO: Find max index
-    if let Some((index, _value)) = data.iter().enumerate().max_by_key(|(_i, x)| *x) {
-        let (x, y) = coord(index, width);
-        traceback(
-            &data,
-            query,
-            target,
-            x,
-            y,
-            width,
-            &mut query_result,
-            &mut target_result,
-            scores,
-        );
+    if data.is_empty() {
+        return (query_result, target_result, 0);
     }
+    let argmax = data.argmax();
+    let (x, y) = coord(argmax, width);
+    traceback(
+        &data,
+        query,
+        target,
+        x,
+        y,
+        width,
+        &mut query_result,
+        &mut target_result,
+        scores,
+    );
 
     (query_result, target_result, 0)
 }
@@ -418,16 +416,15 @@ mod tests {
     }
 
     // TODO: Fix algorihm
-    // #[test]
-    // fn test_all_sequential() {
-    //     test_all(find_alignment_sequential);
-    // }
+    #[test]
+    fn test_all_sequential() {
+        test_all(find_alignment_sequential);
+    }
 
-    // TODO: Fix algorihm
-    // #[test]
-    // fn test_all_sequential_straight() {
-    //     test_all(find_alignment_sequential_straight);
-    // }
+    #[test]
+    fn test_all_sequential_straight() {
+        test_all(find_alignment_sequential_straight);
+    }
 
     // fn find_alignment_parallel_wrapper<const THREADS: usize>(
     //     query: &[char],
@@ -436,8 +433,8 @@ mod tests {
     // ) -> AlignResult {
     //     return find_alignment_parallel(query, target, THREADS, scores);
     // }
-
-    // TODO: Fix algorihm
+    //
+    // // TODO: Fix algorihm
     // #[test]
     // fn test_all_parallel() {
     //     test_all(find_alignment_parallel_wrapper::<2>);
