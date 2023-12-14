@@ -1,7 +1,4 @@
-# This workflow will build a golang project
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-go
-
-name: Go
+name: Rust and Go Build & Test
 
 on:
   push:
@@ -10,19 +7,36 @@ on:
     branches: [ "master" ]
 
 jobs:
-
-  build:
+  build-and-test:
     runs-on: ubuntu-latest
+
     steps:
     - uses: actions/checkout@v3
 
+    # Setup Rust environment
+    - name: Install Rust
+      uses: actions-rs/toolchain@v1
+      with:
+        profile: minimal
+        toolchain: stable
+        override: true
+
+    # Build Rust project
+    - name: Build Rust project
+      run: |
+        cd rust
+        cargo build
+
+    # Setup Go environment
     - name: Set up Go
       uses: actions/setup-go@v4
       with:
         go-version: '1.21'
 
-    - name: Build
+    # Build Go project
+    - name: Build Go project
       run: go build -v ./...
 
-    - name: Test
+    # Run Go tests
+    - name: Test Go project
       run: go test -v ./...
