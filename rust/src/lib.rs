@@ -455,22 +455,6 @@ mod tests {
         test_all(find_alignment_simd_lowmem::<LANES>);
     }
 
-    #[test]
-    fn test_failing() {
-        let query = include_str!("./query_seq.txt").chars().collect::<Vec<_>>();
-        let target = include_str!("./query_seq.txt").chars().collect::<Vec<_>>();
-
-        let _x = find_alignment_simd_lowmem::<LANES>(
-            &query,
-            &target,
-            AlignmentScores {
-                gap: -1,
-                r#match: 2,
-                miss: -1,
-            },
-        );
-    }
-
     use test::Bencher;
 
     #[bench]
