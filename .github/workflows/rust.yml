@@ -13,6 +13,16 @@ jobs:
     steps:
     - uses: actions/checkout@v3
 
+    # Cache dependencies and build outputs
+    - name: Cache cargo registry
+      uses: actions/cache@v2
+      with:
+        path: |
+          ~/.cargo/registry
+          ~/.cargo/git
+          target
+        key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
     # Setup Rust environment
     - name: Install Rust
       uses: actions-rs/toolchain@v1
