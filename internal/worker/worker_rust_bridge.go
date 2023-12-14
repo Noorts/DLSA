@@ -5,6 +5,7 @@ package worker
 import "C"
 
 import (
+	"dlsa/internal/smithwaterman"
 	"errors"
 )
 
@@ -18,12 +19,6 @@ type GoResult struct {
 	Query  string
 	Target string
 	Score  uint16
-}
-
-type AlignmentScore struct {
-	MatchScore      int
-	MismatchPenalty int
-	GapPenalty      int
 }
 
 func cCharPtrToString(cStr *C.char) string {
@@ -57,7 +52,7 @@ func ConvertResultToGoResult(cResult *C.struct_Result) GoResult {
 // 	return goResult
 // }
 
-func FindRustAlignmentSequential(query, target string, alignmentScore AlignmentScore) (*GoResult, error) {
+func FindRustAlignmentSequential(query, target string, alignmentScore smithwaterman.AlignmentScore) (*GoResult, error) {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 
@@ -78,7 +73,7 @@ func FindRustAlignmentSequential(query, target string, alignmentScore AlignmentS
 	return &goResult, nil
 }
 
-func FindRustAlignmentSimd(query, target string, alignmentScore AlignmentScore) (*GoResult, error) {
+func FindRustAlignmentSimd(query, target string, alignmentScore smithwaterman.AlignmentScore) (*GoResult, error) {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 	alignmentScoreC := C.struct_AlignmentScores{
@@ -99,7 +94,7 @@ func FindRustAlignmentSimd(query, target string, alignmentScore AlignmentScore) 
 	return &goResult, nil
 }
 
-func FindRustAlignmentSimdLowMem(query, target string, alignmentScore AlignmentScore) (*GoResult, error) {
+func FindRustAlignmentSimdLowMem(query, target string, alignmentScore smithwaterman.AlignmentScore) (*GoResult, error) {
 	queryC := C.CString(query)
 	targetC := C.CString(target)
 	alignmentScoreC := C.struct_AlignmentScores{

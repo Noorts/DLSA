@@ -1,6 +1,7 @@
 package worker
 
 import (
+	"dlsa/internal/smithwaterman"
 	"errors"
 	"fmt"
 	"log"
@@ -79,7 +80,7 @@ func (w *Worker) ExecuteWork(work *WorkPackage, queries []QueryTargetType) {
 		// qRes, _, score := smithwaterman.FindLocalAlignment(string(querySeq), string(targetSeq), work.MatchScore, work.MismatchPenalty, work.GapPenalty)
 
 		rustRes, err := findAlignmentWithFallback(string(querySeq), string(targetSeq),
-			AlignmentScore{work.MatchScore, -work.MismatchPenalty, -work.GapPenalty})
+			smithwaterman.AlignmentScore{work.MatchScore, -work.MismatchPenalty, -work.GapPenalty})
 
 		if err != nil {
 			// TODO: What now?
@@ -116,7 +117,7 @@ func (w *Worker) ExecuteWork(work *WorkPackage, queries []QueryTargetType) {
 	w.status = Waiting
 }
 
-func findAlignmentWithFallback(query, target string, alignmentScore AlignmentScore) (*GoResult, error) {
+func findAlignmentWithFallback(query, target string, alignmentScore smithwaterman.AlignmentScore) (*GoResult, error) {
 	var rustRes *GoResult
 	var err error
 
@@ -154,8 +155,8 @@ func (w *Worker) ExecuteWorkInParallel(work *WorkPackage) {
 	// Split the work packages into chunks
 	var chunks = make([][]QueryTargetType, cpuCount)
 	for i := 0; i < cpuCount; i++ {
-		var start = numWorkPackages * i / cpuCount;
-		var end = numWorkPackages * (i + 1) / cpuCount;
+		var start = numWorkPackages * i / cpuCount
+		var end = numWorkPackages * (i + 1) / cpuCount
 		chunks[i] = workPackages[start:end]
 	}
 	var wg sync.WaitGroup

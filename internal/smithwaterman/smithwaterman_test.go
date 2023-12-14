@@ -1,72 +1,97 @@
 package smithwaterman
 
 import (
+	"fmt"
+	"strings"
 	"testing"
 )
 
 // Global variables for now only for testing
-var GAP_PENALTY = 1
-var MATCH_SCORE = 2
-var MISMATCH_PENALTY = 1
 
 func TestBasic(t *testing.T) {
-	test_substring("A", "A", "A", "A", t)
-	test_substring("HOI", "HOI", "HOI", "HOI", t)
-	test_substring("AAAAAAATAAAAAAAA", "CCTCCCCCCCCCCCCC", "T", "T", t)
+	scores := AlignmentScore{
+		MatchScore:      2,
+		MismatchPenalty: 1,
+		GapPenalty:      1,
+	}
+
+	test_substring("A", "A", "A", "A", scores, t)
+	test_substring("HOI", "HOI", "HOI", "HOI", scores, t)
+	test_substring("AAAAAAATAAAAAAAA", "CCTCCCCCCCCCCCCC", "T", "T", scores, t)
 }
 
 func TestNoMatch(t *testing.T) {
-	test_substring("A", "T", "", "", t)
-	test_substring("AAAA", "TTTT", "", "", t)
-	test_substring("ATATTTATTAAATATATTATATATTAA", "CCCCGCGGGGCGCGCGGCGCGCGCGCGCG", "", "", t)
+	scores := AlignmentScore{
+		MatchScore:      2,
+		MismatchPenalty: 1,
+		GapPenalty:      1,
+	}
+
+	test_substring("A", "T", "", "", scores, t)
+	test_substring("AAAA", "TTTT", "", "", scores, t)
+	test_substring("ATATTTATTAAATATATTATATATTAA", "CCCCGCGGGGCGCGCGGCGCGCGCGCGCG", "", "", scores, t)
 }
 
 func TestGap(t *testing.T) {
-	test_with_scoring(1, 1, 2, "CCAA", "GATA", "A-A", "ATA", t)
-	test_with_scoring(1, 1, 2, "AA", "ATA", "A-A", "ATA", t)
-	test_with_scoring(1, 1, 2, "AA", "ATTA", "A", "A", t)
-	test_with_scoring(1, 1, 3, "AA", "ATTA", "A--A", "ATTA", t)
-	test_with_scoring(1, 1, 3, "ATA", "ATTA", "A-TA", "ATTA", t)
-	test_with_scoring(1, 1, 2, "AAAAAAAAA", "AAATTAAATTAAA", "AAA--AAA--AAA", "AAATTAAATTAAA", t)
+	scores := AlignmentScore{
+		MatchScore:      2,
+		MismatchPenalty: 1,
+		GapPenalty:      1,
+	}
+	test_substring("CCAA", "GATA", "A-A", "ATA", scores, t)
+	test_substring("AA", "ATA", "A-A", "ATA", scores, t)
+	test_substring("AA", "ATTA", "A", "A", scores, t)
+	test_substring("AAAAAAAAA", "AAATTAAATTAAA", "AAA--AAA--AAA", "AAATTAAATTAAA", scores, t)
+
+	scores = AlignmentScore{
+		MatchScore:      3,
+		MismatchPenalty: 1,
+		GapPenalty:      1,
+	}
+
+	test_substring("AA", "ATTA", "A--A", "ATTA", scores, t)
+	test_substring("ATA", "ATTA", "A-TA", "ATTA", scores, t)
 }
 
 func TestMismatch(t *testing.T) {
-	test_with_scoring(1, 1, 2, "ATA", "ACA", "ATA", "ACA", t)
-	test_with_scoring(3, 2, 5, "ACAC", "ACGCTTTTACC", "ACAC", "ACGC", t)
-	test_with_scoring(3, 2, 5, "ACAC", "AGGCTTTTACC", "ACAC", "AC-C", t)
+	scores := AlignmentScore{
+		MatchScore:      2,
+		MismatchPenalty: 1,
+		GapPenalty:      1,
+	}
+	test_substring("ATA", "ACA", "ATA", "ACA", scores, t)
+	scores = AlignmentScore{
+		MatchScore:      5,
+		MismatchPenalty: 2,
+		GapPenalty:      3,
+	}
+	test_substring("ACAC", "ACGCTTTTACC", "ACAC", "ACGC", scores, t)
+	test_substring("ACAC", "AGGCTTTTACC", "ACAC", "AC-C", scores, t)
 }
 
 func TestMultipleOptions(t *testing.T) {
-	test_with_scoring(1, 1, 2, "AA", "AATAA", "AA", "AA", t)
-	test_with_scoring(1, 1, 2, "ATTA", "ATAA", "ATTA", "AT-A", t)
+	scores := AlignmentScore{
+		MatchScore:      2,
+		MismatchPenalty: 1,
+		GapPenalty:      1,
+	}
+	test_substring("AA", "AATAA", "AA", "AA", scores, t)
+	test_substring("ATTA", "ATAA", "ATTA", "AT-A", scores, t)
 }
 
 func TestAdvanced(t *testing.T) {
-	test_with_scoring(1, 1, 2, "TACGGGCCCGCTAC", "TAGCCCTATCGGTCA", "TACGGGCCCGCTA-C", "TA---G-CC-CTATC", t)
-	test_with_scoring(1, 1, 2, "AAGTCGTAAAAGTGCACGT", "TAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", t)
-	test_with_scoring(1, 1, 2, "AAGTCGTAAAAGTGCACGT", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzTAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", t)
-}
-
-func test_with_scoring(gap int, mismatch int, match int, query, target, expected_query, expected_target string, t *testing.T) {
-	if gap < 0 || mismatch < 0 || match < 0 {
-		t.Log("Normally these should be all positive")
+	scores := AlignmentScore{
+		MatchScore:      2,
+		MismatchPenalty: 1,
+		GapPenalty:      1,
 	}
-	oldGap := GAP_PENALTY
-	oldMismatch := MISMATCH_PENALTY
-	oldMatch := MATCH_SCORE
-	GAP_PENALTY = gap
-	MISMATCH_PENALTY = mismatch
-	MATCH_SCORE = match
-
-	test_substring(query, target, expected_query, expected_target, t)
-
-	GAP_PENALTY = oldGap
-	MISMATCH_PENALTY = oldMismatch
-	MATCH_SCORE = oldMatch
+	test_substring("TACGGGCCCGCTAC", "TAGCCCTATCGGTCA", "TACGGGCCCGCTA-C", "TA---G-CC-CTATC", scores, t)
+	test_substring("AAGTCGTAAAAGTGCACGT", "TAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", scores, t)
+	test_substring("AAGTCGTAAAAGTGCACGT", "zzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzzTAAGCCGTTAAGTGCGCGTG", "AAGTCGTAAAAGTGCACGT", "AAGCCGT-TAAGTGCGCGT", scores, t)
 }
 
-func test_substring(query, target, expected_query, expected_target string, t *testing.T) {
-	found_query, found_target, score := FindLocalAlignment(query, target, MATCH_SCORE, GAP_PENALTY, MISMATCH_PENALTY)
+func test_substring(query, target, expected_query, expected_target string, scores AlignmentScore, t *testing.T) {
+	found_query, found_target, score := FindLocalAlignment(query, target, scores)
 	if score == 0 {
 		t.Logf("Found no substring")
 		return
@@ -90,4 +115,40 @@ func test_substring(query, target, expected_query, expected_target string, t *te
 	} else {
 		t.Errorf("Did not find the substring for query: %s and target %s", query, target)
 	}
+}
+
+func formatMatrix(matrix []int, query, target string) *string {
+	width := len(query) + 1
+	height := len(target) + 1
+
+	if len(matrix) != width*height {
+		ret := "Matrix is not the same size as the provided width * height"
+		return &ret
+	}
+
+	var output strings.Builder
+
+	output.WriteString("       ")
+
+	for x := 0; x < width-1; x++ {
+		output.WriteString(fmt.Sprintf(" %c  ", query[x]))
+	}
+
+	output.WriteRune('\n')
+
+	for y := 0; y < height; y++ {
+		if y > 0 {
+			output.WriteString(fmt.Sprintf(" %c", target[y-1]))
+		} else {
+			output.WriteString("  ")
+		}
+		for x := 0; x < width; x++ {
+			output.WriteString(fmt.Sprintf("%3d ", matrix[index(x, y, width)]))
+		}
+		output.WriteRune('\n')
+	}
+
+	ret := output.String()
+
+	return &ret
 }

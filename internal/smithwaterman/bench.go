@@ -10,11 +10,17 @@ func runOnce(nQ, nT int) (time.Duration, float32) {
 	const GapPenalty = 2
 	const MismatchPenalty = 1
 
+	scores := AlignmentScore{
+		MatchScore:      MatchScore,
+		MismatchPenalty: MismatchPenalty,
+		GapPenalty:      GapPenalty,
+	}
+
 	query := strings.Repeat("A", nQ)
 	target := strings.Repeat("T", nT)
 
 	start := time.Now()
-	findStringScore(query, target, MatchScore, GapPenalty, MismatchPenalty)
+	findStringScore(query, target, scores)
 	end := time.Now()
 
 	elapsed := end.Sub(start)
