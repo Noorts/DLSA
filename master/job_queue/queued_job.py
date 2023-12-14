@@ -30,10 +30,10 @@ class QueuedJob:
     def done(self) -> bool:
         return len(self.completed_sequences) == len(self.request.queries)
 
-    def missing_sequences(self) -> list[TargetQueryCombination]:
-        missing: list[TargetQueryCombination] = []
-        for sequence in self.request.queries:
-            if sequence not in self.completed_sequences and sequence not in self.sequences_in_progress:
-                missing.append(sequence)
+    def missing_sequences(self) -> set[TargetQueryCombination]:
+        completed_set = set(self.completed_sequences)
+        in_progress_set = set(self.sequences_in_progress)
+
+        missing = self.request.queries - (completed_set | in_progress_set)
 
         return missing

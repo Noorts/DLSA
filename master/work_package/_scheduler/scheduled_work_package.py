@@ -3,6 +3,7 @@ from uuid import UUID
 
 from master.api_models import TargetQueryCombination, Sequence, SequenceId
 from master.job_queue.queued_job import QueuedJob
+from master.utils.log_time import log_time
 from master.worker.worker import Worker
 
 
@@ -12,7 +13,7 @@ class InternalWorkPackage:
     id: UUID
     job: QueuedJob
     sequences: dict[SequenceId, Sequence]
-    queries: list[TargetQueryCombination]
+    queries: set[TargetQueryCombination]
     match_score: int
     mismatch_penalty: int
     gap_penalty: int
@@ -24,15 +25,12 @@ class ScheduledWorkPackage:
     worker: Worker
 
     @property
+    @log_time
     def percentage_done(self) -> float:
         # Get the length of the sequences that should be done in the work package
         sequence_length = len(self.package.queries)
-        completed_sequences = 0
-
-        for sequence in self.package.queries:
-            if sequence in self.package.job.completed_sequences:
-                completed_sequences += 1
-
+        completed_sequences_set = set(self.package.job.completed_sequences.keys())
+        completed_sequences = len(self.package.queries & completed_sequences_set)
         return completed_sequences / sequence_length
 
     def done(self) -> bool:

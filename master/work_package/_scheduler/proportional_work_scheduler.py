@@ -1,3 +1,4 @@
+import itertools
 import logging
 import math
 from uuid import uuid4
@@ -43,7 +44,7 @@ class ProportionalWorkScheduler(WorkPackageScheduler):
         amount_of_sequences = min(amount_of_sequences, len(queries))
 
         # Assign the queries to the current worker
-        queries = queries[:amount_of_sequences]
+        queries = set(itertools.islice(queries, amount_of_sequences))
 
         package = InternalWorkPackage(
             id=uuid4(),

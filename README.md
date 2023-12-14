@@ -20,13 +20,13 @@ The project uses Python, Golang, and (nightly) Rust.
 
 We've used the following versions in our testing. Nightly rust is currently being used for the [std::simd](https://doc.rust-lang.org/nightly/std/simd/index.html) module. Once the module is stabilized then stable rust can be used.
 
-| Dependency | Version |
-|-------|-------|
-| Python | 3.11.5 |
-| poetry | 1.7.1 |
-| Go | go1.21.4 linux/amd64 |
-| rustc | rustc 1.76.0-nightly (eeff92ad3 2023-12-13) |
-| cargo | cargo 1.76.0-nightly (1aa9df1a5 2023-12-12) |
+| Dependency | Version                                     |
+|------------|---------------------------------------------|
+| Python     | 3.11.5                                      |
+| poetry     | 1.7.1                                       |
+| Go         | go1.21.4 linux/amd64                        |
+| rustc      | rustc 1.76.0-nightly (eeff92ad3 2023-12-13) |
+| cargo      | cargo 1.76.0-nightly (1aa9df1a5 2023-12-12) |
 
 Python dependencies are managed by [Poetry](https://python-poetry.org/) ([installation instructions](https://python-poetry.org/docs/#installation)). After installing Poetry, you can install the project's dependencies from the root folder using `poetry install`.
 
