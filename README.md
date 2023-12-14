@@ -42,7 +42,7 @@ Optionally, navigate to `http://localhost:8000/docs` for the API documentation.
 
 ### Testing
 
-Run `pytest master` inside the root directory.
+Run `poetry run pytest master` inside the root directory.
 
 ## Worker
 
