@@ -4,10 +4,11 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from master.api_models import WorkResult, WorkerId, WorkPackage, RawWorkPackage
+from master.api_models import WorkResult, WorkerId, WorkPackage, RawWorkPackage, Alignment
 from master.settings import SETTINGS
 from master.utils.cleaner import Cleaner
 from master.utils.singleton import Singleton
+from master.utils.verify import verify_result
 from master.worker.worker_collector import WorkerCollector
 from ._scheduler.work_scheduler import WorkPackageScheduler, ScheduledWorkPackage
 
@@ -38,10 +39,19 @@ class WorkPackageCollector(Cleaner, Singleton):
         completed_sequences = work_package.package.job.completed_sequences
 
         for res in result.alignments:
+            if not verify_result(work_package.package, res):
+                # TODO
+                print("alarm alarm")
+                pass
+
             if res.combination not in completed_sequences:
                 completed_sequences[res.combination] = []
 
-            completed_sequences[res.combination].append(res.alignment)
+            completed_sequences[res.combination].append(Alignment(
+                alignment=res.alignment.query_alignment,
+                length=res.alignment.length,
+                score=res.alignment.score)
+            )
             # Remove the sequence from the in progress list if it is in there
             if res.combination in work_package.package.job.sequences_in_progress:
                 work_package.package.job.sequences_in_progress.remove(res.combination)
