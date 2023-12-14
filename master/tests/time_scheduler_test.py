@@ -86,7 +86,7 @@ def test_scheduler():
         ),
     }
 
-    work = _get_n_seconds_of_work(job, 27, dummy_worker)
+    work = _get_n_seconds_of_work(job, 29, dummy_worker)
     assert set(work) == {
         TargetQueryCombination(
             target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
