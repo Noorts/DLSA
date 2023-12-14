@@ -21,12 +21,6 @@ jobs:
         toolchain: stable
         override: true
 
-    # Build Rust project
-    - name: Build Rust project
-      run: |
-        cd rust
-        cargo build --release
-
     # Test Rust project
     - name: Test Rust project
       run: |
