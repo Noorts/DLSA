@@ -7,9 +7,12 @@ use std::{
     thread,
 };
 
-use crate::utils::{self, coord, index};
+use crate::{
+    find_alignment_simd,
+    utils::{self, coord, index},
+};
 
-use std::simd::prelude::{SimdPartialEq, SimdOrd, SimdInt};
+use std::simd::prelude::{SimdInt, SimdOrd, SimdPartialEq};
 
 #[derive(Copy, Clone)]
 #[repr(C)]
@@ -212,6 +215,11 @@ pub fn find_alignment_simd_lowmem<const LANES: usize>(
 where
     std::simd::LaneCount<LANES>: std::simd::SupportedLaneCount,
 {
+    // Unless we make the diagonals, the normal algorithms will be faster
+    if target.len() < 2 * query.len() {
+        return find_alignment_simd(query, target, scores);
+    }
+
     let mut total_target_result = Vec::new();
     let mut total_query_result = Vec::new();
 
@@ -219,25 +227,24 @@ where
     let query_size = utils::roundup(query.len(), LANES);
     let query_u16: Vec<_> = query
         .into_iter()
-        .map(|x| *x as u16 + 2)
+        .map(|x| *x as u16 + 1)
         .chain(std::iter::repeat(0))
         .take(query_size)
         .collect();
 
     // Padding the target to the next whole number of LANES
-    let target_size = utils::roundup(target.len(), LANES);
     let target_u16: Vec<_> = target
         .into_iter()
-        .map(|x| *x as u16 + 2)
-        .chain(std::iter::repeat(1))
-        .take(target_size)
+        .map(|x| *x as u16 + 1)
         .collect();
 
     let width = query_u16.len() + 1;
-    let data_height = query_u16.len() + target_u16.len() + 1;
+    assert!(query_u16.len() >= query.len());
+    let data_height = target.len() + query.len() + 1;
     // TODO: Fix trunc div error
     let wrapping_height = query_u16.len()
-    + ((query_u16.len() * scores.r#match.unsigned_abs() as usize) / scores.gap.unsigned_abs() as usize);
+        + ((query_u16.len() * scores.r#match.unsigned_abs() as usize)
+            / scores.gap.unsigned_abs() as usize);
 
     let data_store_height = wrapping_height + width;
 
@@ -310,7 +317,7 @@ where
         .map(Simd::<u16, LANES>::from_slice)
         .collect::<Vec<_>>();
 
-    for y in width..=(target_u16.len() + 1) {
+    for y in width..(target_u16.len() + 2) {
         let mut row_0_i = index(1, y % data_store_height, width);
         let mut row_1_i = index(1, (y - 1) % data_store_height, width);
         let mut row_2_i = index(1, (y - 2) % data_store_height, width);
@@ -382,13 +389,13 @@ where
         }
     }
 
-    for y in (data_height - width)..data_height {
-        let rel_y = y % data_store_height;
-        for x in 1..width {
+    // TODO: Error is problably in cases where the two diagonals overlap
+    let mut start_x = 2;
+    for y in (target.len() + 2)..data_height {
+        for x in start_x..query.len() + 1 {
+            assert!(y - x - 1 <= target.len());
+
             if x + 1 > y {
-                continue;
-            }
-            if y - x >= target_u16.len() {
                 continue;
             }
 
@@ -398,7 +405,7 @@ where
                 scores.miss
             };
 
-            data[index(x, rel_y, width)] = max(
+            data[index(x, y % data_store_height, width)] = max(
                 max(
                     data[index(x, (y - 1) % data_store_height, width)] + scores.gap, // Skip query
                     data[index(x - 1, (y - 1) % data_store_height, width)] + scores.gap, // Skip in target
@@ -410,12 +417,17 @@ where
             );
         }
 
-        let left = index(1, rel_y, width);
-        let (_argmin, argmax) = (&data[left..left + width - 1]).argminmax();
+        let left = index(start_x, y % data_store_height, width);
+        let right = index(query.len() + 1, y % data_store_height, width);
+        assert_ne!(left, right);
+        let (_argmin, argmax) = (&data[left..right]).argminmax();
         let row_max = data[argmax + left];
         if row_max > current_max {
             current_max = row_max;
-            let (x, _y) = coord(argmax, width);
+            let (max_x, _max_y) = coord(left + argmax, width);
+
+            assert!(_max_y == y % data_store_height);
+            assert!(max_x >= start_x);
 
             // PERF: We should benchmark if using `with_capacity` is cheaper or not
             // This should be done with realistic workloads!
@@ -425,7 +437,7 @@ where
                 &data,
                 query,
                 target,
-                x,
+                max_x,
                 y,
                 width,
                 &mut total_query_result,
@@ -433,6 +445,8 @@ where
                 scores,
             )
         }
+
+        start_x += 1;
     }
 
     (total_query_result, total_target_result, current_max)
