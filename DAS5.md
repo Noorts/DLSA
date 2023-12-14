@@ -1,7 +1,6 @@
 # Running on DAS5
 
-This document describes instructions for running this project on the [DAS5](https://www.cs.vu.nl/das5/home.shtml)'s compute nodes.
-
+This document describes instructions for running this project on the [DAS5](https://www.cs.vu.nl/das5/home.shtml)'s compute nodes. Also check out the main [README.md](README.md)
 ## Connecting to DAS5
 
 The first step is to connect to the DAS5 fileserver, from which you can schedule the jobs to be run on the compute nodes. To connect to this fileserver from outside of the VU network, you'll have to connect to the (proxy) access server. See below or [here](https://www.cs.vu.nl/das5/accounts.shtml) for more details.
@@ -31,11 +30,15 @@ We've used the following in our testing.
 | Conda | 23.10.0 |
 | pipx | 1.3.1 |
 | poetry | 1.7.1 |
+| rustc | rustc 1.76.0-nightly (eeff92ad3 2023-12-13) |
+| cargo | cargo 1.76.0-nightly (1aa9df1a5 2023-12-12) |
 
 ### Code
 First off copy the code over to the fileserver (this assumes you've set up the aliases as discussed above).
 ``` sh
 scp -r ./ DAS5:DLSA
+# or
+rsync -ru --delete ./* DAS5:DLSA
 ```
 
 ### Python Setup
@@ -68,7 +71,7 @@ pipx install poetry
 poetry install # if this does not work directly then make poetry use the miniconda environment: https://stackoverflow.com/a/75555576
 ```
 
-### Go Setup
+### 3. Go Setup
 
 For Go we'll download and unpack it, and then add it to the path persistently.
 
@@ -82,12 +85,21 @@ source ~/.bashrc
 go version # should now print `go version go1.21.4 linux/amd64`.
 ```
 
+### 4. Rust Setup
+
+Because DAS5 does not have nightly rust available, we have to cross compile or to simply compile on the same architecture. Thus far we've compiled the rust binary on a Linux machine and then transferred it to the DAS5 node.
+
 ## Run
 
 With the setup complete, run the following commands to start and test the system (see the `utils` directory).
 
 ```sh
-./utils/start_master.sh # run the master
-./utils/start_worker.sh <number_of_workers> <ip_address_of_master> # run a number of workers
-./utils/spawn_small_job.sh <ip_address_of_master> # spawn a job
+# run the master
+./utils/start_master.sh
+
+# run a number of workers
+./utils/start_worker.sh <number_of_workers> <ip_address_of_master>
+
+# spawn a job
+poetry run python3 tui --query datasets/query_sequences.fasta --database datasets/target_sequences.fasta --server-url http://10.149.0.59:8000 --match-score 2 --mismatch-penalty 1 --gap-penalty 1 --top-k 5
 ```
