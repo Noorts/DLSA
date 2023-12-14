@@ -1,9 +1,9 @@
 from uuid import UUID, uuid4
 
-from master.api_models import JobRequest, TargetQueryCombination
+from master.api_models import JobRequest, TargetQueryCombination, WorkerResources
 from master.job_queue.queued_job import QueuedJob
-from master.work_package._scheduler.time_work_scheduler import _calculate_score_of
-from master.work_package._scheduler.utils import estimate_work_in_seconds
+from master.work_package._scheduler.time_work_scheduler import _get_n_seconds_of_work
+from master.worker.worker import Worker
 
 job = QueuedJob(
     request=JobRequest(
@@ -23,17 +23,17 @@ job = QueuedJob(
             UUID("9e22cdce-68b5-4f94-a8a0-2980cbeeb74c"): "00000000",
         },
         queries=[
-            # cost: 8
+            # cost: 15
             TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
                 query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
             ),
-            # cost: 7
+            # cost: 10
             TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
                 query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
             ),
-            # cost: 3
+            # cost: 2
             TargetQueryCombination(
                 target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
                 query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
@@ -48,25 +48,34 @@ job = QueuedJob(
     gap_penalty=3,
 )
 
+dummy_worker = Worker(
+    worker_id=uuid4(), resources=WorkerResources(benchmark_result=1), last_seen_alive=0, status="IDLE"
+)
+
 
 def test_scheduler():
-    score, sequences = _calculate_score_of(
-        job,
-        10,
-        10,
-    )
+    assert len(job.missing_sequences()) == 3
+    assert len(job.completed_sequences) == 0
+    assert len(job.sequences_in_progress) == 0
 
-    assert score == 10
-    assert len(sequences) == 2
-    cost = 0
-    for sequence in sequences:
-        target = job.request.sequences[sequence.target]
-        query = job.request.sequences[sequence.query]
-        cost += estimate_work_in_seconds(target, query, 10)
+    work = _get_n_seconds_of_work(job, 3, dummy_worker)
+    assert work == [
+        TargetQueryCombination(
+            target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
+            query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
+        ),
+    ]
 
-    assert cost == 10
+    work = _get_n_seconds_of_work(job, 5, dummy_worker)
+    assert work == [
+        TargetQueryCombination(
+            target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
+            query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
+        ),
+    ]
 
-    assert sequences == [
+    work = _get_n_seconds_of_work(job, 13, dummy_worker)
+    assert set(work) == {
         TargetQueryCombination(
             target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
             query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
@@ -75,4 +84,20 @@ def test_scheduler():
             target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
             query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
         ),
-    ]
+    }
+
+    work = _get_n_seconds_of_work(job, 27, dummy_worker)
+    assert set(work) == {
+        TargetQueryCombination(
+            target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
+            query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
+        ),
+        TargetQueryCombination(
+            target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
+            query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
+        ),
+        TargetQueryCombination(
+            target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
+            query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c"),
+        ),
+    }
