@@ -107,7 +107,7 @@ def start_experiment(experiment_config):
 
     experiment_name = f"{time_start_readable.replace(' ', '_')}_{str(num_workers)}"
 
-    meta_file_path = "results.txt"
+    meta_file_path = "results.json"
 
     # Set up meta results file if it doesnt exist.
     if not os.path.exists(meta_file_path):
@@ -122,7 +122,7 @@ def start_experiment(experiment_config):
         "experiment_config": experiment_config,
         "time_start_epoch": time_start_epoch,
         "time_start_readable": time_start_readable,
-        "status": "STARTED"
+        "status": "FAILED"
     }
 
     with open(meta_file_path, 'w') as file:
@@ -143,7 +143,7 @@ def start_experiment(experiment_config):
         jobs_started.append(master_job_id)
 
         # Start worker(s)
-        logger.debug("Starting worker(s)...")
+        logger.debug(f"Starting {num_workers} worker(s)...")
         workers_res = start_workers(num_workers, master_ip)
         if (workers_res == None):
             logger.error("Failed to start workers. Exiting...")
@@ -203,13 +203,6 @@ def start_experiment(experiment_config):
 
     except:
         logger.critical("Experiment failed. Cleaning up and exiting...")
-        with open(meta_file_path, 'r') as file:
-            meta_object = json.load(file)
-
-        meta_object[experiment_name]["status"] = "FAILED"
-
-        with open(meta_file_path, 'w') as file:
-            json.dump(meta_object, file, indent=4)
     finally:
         cleanup_experiment(jobs_started)
 
@@ -218,7 +211,7 @@ def start_experiment(experiment_config):
 def cleanup_experiment(job_ids):
     cancel_cmd = ["scancel"]
     cancel_cmd.extend(job_ids)
-    logger.debug("Cleaning up jobs: ", job_ids)
+    logger.debug(f"Cleaning up jobs: {', '.join(job_ids)}")
     res = exec_cmd(cancel_cmd)
 
 
