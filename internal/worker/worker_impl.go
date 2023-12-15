@@ -181,6 +181,10 @@ func findAlignmentWithFallback(query, target string, alignmentScore smithwaterma
 		return rustRes, nil
 	}
 
+	fmt.Printf("Error in SIMD alignment, falling back to sequential: %s\n", err)
+	fmt.Printf("Query: %s\n", query)
+	fmt.Printf("Target: %s\n", target)
+
 	rustRes, err = FindRustAlignmentSequential(query, target, alignmentScore)
 
 	if err == nil {

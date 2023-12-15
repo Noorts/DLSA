@@ -1,6 +1,7 @@
-package smithwaterman
+package worker
 
 import (
+	"dlsa/internal/smithwaterman"
 	"strings"
 	"time"
 )
@@ -10,17 +11,19 @@ func runOnce(nQ, nT int) (time.Duration, float32) {
 	const GapPenalty = 2
 	const MismatchPenalty = 1
 
-	scores := AlignmentScore{
+	scores := smithwaterman.AlignmentScore{
 		MatchScore:      MatchScore,
-		MismatchPenalty: MismatchPenalty,
-		GapPenalty:      GapPenalty,
+		MismatchPenalty: -MismatchPenalty,
+		GapPenalty:      -GapPenalty,
 	}
 
 	query := strings.Repeat("A", nQ)
 	target := strings.Repeat("T", nT)
+	query = "TTTTCA" + query
+	target = "TTTTCA" + target
 
 	start := time.Now()
-	findStringScore(query, target, scores)
+	findAlignmentWithFallback(query, target, scores)
 	end := time.Now()
 
 	elapsed := end.Sub(start)
@@ -32,9 +35,9 @@ func runOnce(nQ, nT int) (time.Duration, float32) {
 	return elapsed, cups
 }
 
-func Benchmark(threshold time.Duration, qSteps, tSteps int) float32 {
-	var nQ = 1 << 8
-	var nT = 1 << 14
+func BenchmarkRust(threshold time.Duration, qSteps, tSteps int) float32 {
+	var nQ = 1 << 12
+	var nT = 1 << 18
 
 	for {
 		elapsed, _ := runOnce(nQ, nT)
