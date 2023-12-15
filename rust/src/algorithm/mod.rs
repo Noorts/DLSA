@@ -267,7 +267,7 @@ where
             );
         }
         let left = index(1, y, width);
-        let (_, row_max_index) = (&data[left..left + width - 1]).argminmax();
+        let row_max_index = (&data[left..left + width - 1]).argmax();
         let row_max = data[left + row_max_index];
 
         // PERF: Probably better to do this for the entire diagonal part in one run.
@@ -354,7 +354,7 @@ where
         if row_max > current_max {
             current_max = row_max;
             let left = index(1, y % data_store_height, width);
-            let (_argmin, argmax) = (&data[left..left + width - 1]).argminmax();
+            let argmax = (&data[left..left + width - 1]).argmax();
             let (x, _y) = coord(left + argmax, width);
 
             // PERF: We should benchmark if using `with_capacity` is cheaper or not
@@ -406,7 +406,7 @@ where
         let left = index(start_x, y % data_store_height, width);
         let right = index(query.len() + 1, y % data_store_height, width);
         assert_ne!(left, right);
-        let (_argmin, argmax) = (&data[left..right]).argminmax();
+        let argmax = (&data[left..right]).argmax();
         let row_max = data[argmax + left];
         if row_max > current_max {
             current_max = row_max;
