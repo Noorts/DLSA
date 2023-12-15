@@ -121,7 +121,6 @@ where
     let match_splat = Simd::<i16, LANES>::splat(scores.r#match);
     let mis_splat = Simd::<i16, LANES>::splat(scores.miss);
     let zero_splat = Simd::<i16, LANES>::splat(0);
-    let one_splat = Simd::<i16, LANES>::splat(1);
 
     let mut target_rev = target.clone();
     target_rev.reverse();
@@ -149,12 +148,9 @@ where
                 Simd::<i16, LANES>::from_slice(&data[(i - width - 1)..(i - width - 1 + LANES)])
                     + gap_splat;
 
-            let mask = query_vec.simd_eq(target_vec).to_int().cast::<i16>();
+            let mask = query_vec.simd_eq(target_vec);
 
-            let pos_mask = mask.abs();
-            let neg_mask = mask + one_splat;
-
-            let mismatch_vec = (match_splat * pos_mask) + (mis_splat * neg_mask);
+            let mismatch_vec = mask.select(match_splat, mis_splat);
 
             let r_match_mis = Simd::<i16, LANES>::from_slice(
                 &data[(i - 2 * width - 1)..(i - 2 * width - 1 + LANES)],
@@ -301,7 +297,6 @@ where
     let match_splat = Simd::<i16, LANES>::splat(scores.r#match);
     let mis_splat = Simd::<i16, LANES>::splat(scores.miss);
     let zero_splat = Simd::<i16, LANES>::splat(0);
-    let one_splat = Simd::<i16, LANES>::splat(1);
 
     let mut target_rev = target_u16.clone();
     target_rev.reverse();
@@ -331,12 +326,9 @@ where
             let r_target_skip =
                 Simd::<i16, LANES>::from_slice(&data[row_1_i - 1..row_1_i - 1 + LANES]) + gap_splat;
 
-            let mask = query_vec.simd_eq(target_vec).to_int().cast::<i16>();
+            let mask = query_vec.simd_eq(target_vec);
 
-            let pos_mask = mask.abs();
-            let neg_mask = mask + one_splat;
-
-            let mismatch_vec = (match_splat * pos_mask) + (mis_splat * neg_mask);
+            let mismatch_vec = mask.select(match_splat, mis_splat);
 
             let r_match_mis =
                 Simd::<i16, LANES>::from_slice(&data[row_2_i - 1..row_2_i - 1 + LANES])
