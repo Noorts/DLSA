@@ -12,5 +12,5 @@ else
 fi
 
 for ((i = 1; i <= "$1"; i++)); do
-    sbatch --time=00:05:00 --job-name="dlsa_worker_$1" --nodes=1 ~/DLSA/utils/worker.sh $2
+    sbatch --time=00:15:00 --job-name="dlsa_w_$1" --nodes=1 ~/DLSA/utils/worker.sh $2
 done
