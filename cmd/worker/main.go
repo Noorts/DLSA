@@ -26,7 +26,7 @@ func main() {
 	}
 
 	log.Printf("Benchmarking worker...")
-	benchmark := worker.BenchmarkRust(time.Duration(1e7), 2, 4)
+	benchmark := worker.BenchmarkRust(time.Duration(1e7), 1, 2)
 	client := worker.InitRestClient(protocolPrefix + masterNodeAddress)
 
 	// Create a new worker instance with the machine specs, the worker ID is null
