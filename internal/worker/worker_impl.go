@@ -60,6 +60,9 @@ func (w *Worker) GetWork() (*CompleteWorkPackage, error) {
 	if err != nil {
 		return nil, err
 	}
+	if work == nil {
+		return nil, nil
+	}
 
 	return w.GetSequencesForWork(work)
 }
@@ -189,7 +192,7 @@ func findAlignmentWithFallback(query, target string, alignmentScore smithwaterma
 }
 
 func (w *Worker) ExecuteWorkInParallel(work *CompleteWorkPackage) {
-	var cpuCount = runtime.NumCPU()
+	var cpuCount = runtime.NumCPU() - 1
 	var workPackages = work.Queries
 	var numWorkPackages = len(workPackages)
 
