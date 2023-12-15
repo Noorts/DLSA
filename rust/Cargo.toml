@@ -25,3 +25,15 @@ codegen-units = 1
 [[bench]]
 name = "local_alignment"
 harness = false
+
+[[bench]]
+name = "scalability_target"
+harness = false
+
+[[bench]]
+name = "scalability_query"
+harness = false
+
+[[bench]]
+name = "simd"
+harness = false
