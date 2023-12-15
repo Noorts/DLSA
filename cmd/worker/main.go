@@ -1,7 +1,6 @@
 package main
 
 import (
-	"dlsa/internal/smithwaterman"
 	"dlsa/internal/worker"
 	"log"
 	"os"
@@ -27,7 +26,7 @@ func main() {
 	}
 
 	log.Printf("Benchmarking worker...")
-	benchmark := smithwaterman.Benchmark(time.Duration(1e7), 4, 2)
+	benchmark := worker.BenchmarkRust(time.Duration(1e7), 2, 4)
 	client := worker.InitRestClient(protocolPrefix + masterNodeAddress)
 
 	// Create a new worker instance with the machine specs, the worker ID is null
