@@ -2,6 +2,7 @@ from dataclasses import dataclass
 from uuid import UUID
 
 from master.api_models import JobRequest, TargetQueryCombination, JobState, Alignment
+from master.utils.log_time import log_time
 
 
 @dataclass
@@ -30,10 +31,11 @@ class QueuedJob:
     def done(self) -> bool:
         return len(self.completed_sequences) == len(self.request.queries)
 
-    def missing_sequences(self) -> list[TargetQueryCombination]:
-        missing: list[TargetQueryCombination] = []
-        for sequence in self.request.queries:
-            if sequence not in self.completed_sequences and sequence not in self.sequences_in_progress:
-                missing.append(sequence)
+    @log_time
+    def missing_sequences(self) -> set[TargetQueryCombination]:
+        completed_set = self.completed_sequences.keys()
+        in_progress_set = self.sequences_in_progress
+
+        missing = self.request.queries - (completed_set | in_progress_set)
 
         return missing

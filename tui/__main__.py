@@ -53,10 +53,8 @@ def send_to_server(query_files, target_files, server_url, match_score, mismatch_
     sequences = query_files + target_files
     sequence_files = []
     for seq_name, seq_content in sequences:
-        seq_file = io.BytesIO(str.encode(f">{seq_name}\n{seq_content}\n"))
-
-        seq_file_name = f"{seq_name}"
-        sequence_files.append(("sequences", (seq_file_name, seq_file, "application/octet-stream")))
+        seq_file = io.BytesIO(seq_content.encode())
+        sequence_files.append(("sequences", (seq_name, seq_file, "application/octet-stream")))
 
     multipart_data = {
         "body": body_content,

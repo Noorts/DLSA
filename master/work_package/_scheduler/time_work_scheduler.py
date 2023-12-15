@@ -31,8 +31,8 @@ def _get_n_seconds_of_work(
     job: QueuedJob,
     seconds: int,
     worker: Worker,
-) -> list[TargetQueryCombination]:
-    unfinished_queries = job.missing_sequences()
+) -> set[TargetQueryCombination]:
+    unfinished_queries = [*job.missing_sequences()]
     # Shuffle the unfinished queries to get a more even distribution
     random.shuffle(unfinished_queries)
 
@@ -56,4 +56,4 @@ def _get_n_seconds_of_work(
         if total_time > seconds * 0.9:
             break
 
-    return queries
+    return set(queries)

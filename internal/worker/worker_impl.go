@@ -55,13 +55,57 @@ func (w *Worker) RegisterWorker() (*string, error) {
 }
 
 // GetWork Function to request work from the master, returns the work package if successful
-func (w *Worker) GetWork() (*WorkPackage, error) {
-	return w.client.RequestWork(*w.workerId)
+func (w *Worker) GetWork() (*CompleteWorkPackage, error) {
+	work, err := w.client.RequestWork(*w.workerId)
+	if err != nil {
+		return nil, err
+	}
+	if work == nil {
+		return nil, nil
+	}
+
+	return w.GetSequencesForWork(work)
+}
+
+func (w *Worker) GetSequencesForWork(workPackage *WorkPackage) (*CompleteWorkPackage, error) {
+
+	// Create a map of sequence IDs to sequences
+	sequences := make(map[SequenceId]Sequence)
+
+	var addIfNotPresent = func(id SequenceId) error {
+		_, ok := sequences[id]
+		if !ok {
+			sequence, err := w.client.RequestSequence(*workPackage.ID, id, w.workerId)
+			if err != nil {
+				return err
+			}
+			sequences[id] = *sequence
+		}
+		return nil
+
+	}
+
+	for _, query := range workPackage.Queries {
+		err := addIfNotPresent(query.Query)
+		if err != nil {
+			return nil, err
+		}
+		err = addIfNotPresent(query.Target)
+		if err != nil {
+			return nil, err
+		}
+	}
+
+	// Return the work package with the sequences
+	return &CompleteWorkPackage{
+		WorkPackage: workPackage,
+		Sequences:   sequences,
+	}, nil
 }
 
 // ExecuteWork Function to execute the work package, returns the work result for every pair if successful
 // For now we just execute the work sequentially and send the result back for every seq,tar pair
-func (w *Worker) ExecuteWork(work *WorkPackage, queries []QueryTargetType) {
+func (w *Worker) ExecuteWork(work *CompleteWorkPackage, queries []QueryTargetType) {
 	w.status = Working
 
 	// A list of results that are then sent batched to the master
@@ -147,8 +191,8 @@ func findAlignmentWithFallback(query, target string, alignmentScore smithwaterma
 
 }
 
-func (w *Worker) ExecuteWorkInParallel(work *WorkPackage) {
-	var cpuCount = runtime.NumCPU()
+func (w *Worker) ExecuteWorkInParallel(work *CompleteWorkPackage) {
+	var cpuCount = runtime.NumCPU() - 1
 	var workPackages = work.Queries
 	var numWorkPackages = len(workPackages)
 

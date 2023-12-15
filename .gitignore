@@ -189,3 +189,4 @@ results/*
 perf.data*
 
 datasets/*
+/utils/GRCh38_latest_genomic.fna

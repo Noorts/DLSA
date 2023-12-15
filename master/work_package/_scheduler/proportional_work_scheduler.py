@@ -1,9 +1,9 @@
+import itertools
 import logging
 import math
-from uuid import uuid4
 
 from master.worker.worker import Worker
-from .scheduled_work_package import ScheduledWorkPackage, InternalWorkPackage
+from .scheduled_work_package import ScheduledWorkPackage
 from .utils import work_packages_from_queries
 from .work_scheduler import WorkPackageScheduler
 from ...api_models import TargetQueryCombination
@@ -29,12 +29,12 @@ class ProportionalWorkScheduler(WorkPackageScheduler):
 
 def _get_proportional_work_packages(
     job: QueuedJob, worker: Worker, idle_workers: list[Worker]
-) -> list[TargetQueryCombination]:
+) -> set[TargetQueryCombination]:
     # Get all missing sequences for the job
     queries = job.missing_sequences()
     if len(queries) == 0:
         logger.error(f"Job {job.id} has no sequences to schedule")
-        return []
+        return set()
 
     # Get all workers that are currently NOT working on a job (this includes the worker requesting work)
     total_processing_power = sum([worker.resources.benchmark_result for worker in idle_workers])
@@ -52,4 +52,4 @@ def _get_proportional_work_packages(
     amount_of_sequences = min(amount_of_sequences, len(queries))
 
     # Assign the queries to the current worker
-    return queries[:amount_of_sequences]
+    return set(itertools.islice(queries, amount_of_sequences))

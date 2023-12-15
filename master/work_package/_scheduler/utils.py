@@ -14,7 +14,7 @@ def estimate_work_in_seconds(target: Sequence, query: Sequence, cups: int) -> fl
 
 
 def work_packages_from_queries(
-    job: QueuedJob, queries: list[TargetQueryCombination], worker: Worker
+    job: QueuedJob, queries: set[TargetQueryCombination], worker: Worker
 ) -> ScheduledWorkPackage | None:
     if not queries:
         return None

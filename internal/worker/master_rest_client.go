@@ -25,13 +25,17 @@ type Alignment struct {
 }
 
 type WorkPackage struct {
-	ID              *string                 `json:"id"`
-	JobID           *string                 `json:"job_id"`
-	Queries         []QueryTargetType       `json:"queries"`
-	Sequences       map[SequenceId]Sequence `json:"sequences"`
-	MatchScore      int                     `json:"match_score"`
-	MismatchPenalty int                     `json:"mismatch_penalty"`
-	GapPenalty      int                     `json:"gap_penalty"`
+	ID              *string           `json:"id"`
+	JobID           *string           `json:"job_id"`
+	Queries         []QueryTargetType `json:"queries"`
+	MatchScore      int               `json:"match_score"`
+	MismatchPenalty int               `json:"mismatch_penalty"`
+	GapPenalty      int               `json:"gap_penalty"`
+}
+
+type CompleteWorkPackage struct {
+	*WorkPackage
+	Sequences map[SequenceId]Sequence `json:"sequences"`
 }
 
 type MachineSpecsRequest struct {
@@ -101,7 +105,7 @@ func (c *RestClient) RequestWork(workerId string) (*WorkPackage, error) {
 		return nil, err
 	}
 
-	resp, err := c.client.Post(c.baseURL+"/work/", "application/json", bytes.NewReader(jsonData))
+	resp, err := c.client.Post(c.baseURL+"/work/raw", "application/json", bytes.NewReader(jsonData))
 	if err != nil {
 		return nil, err
 	}
@@ -173,4 +177,25 @@ func (c *RestClient) SendHeartbeat(workerId string) {
 		log.Fatalf("Worker %s is not registered anymore. Shutting down...", workerId)
 	}
 	_ = resp.Body.Close()
+}
+
+func (c *RestClient) RequestSequence(workPackageId string, query SequenceId, workerId *string) (*Sequence, error) {
+	// Get sequence the work package from /work/{work_id}/sequence/{sequence_id}
+	resp, err := c.client.Get(c.baseURL + "/work/" + workPackageId + "/sequence/" + string(query) + "/" + *workerId)
+	if err != nil {
+		return nil, err
+	}
+
+	defer resp.Body.Close()
+
+	bodyBuffer := new(bytes.Buffer)
+	_, err = bodyBuffer.ReadFrom(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	bodyStringPtr := new(string)
+	*bodyStringPtr = bodyBuffer.String()
+
+	return (*Sequence)(bodyStringPtr), nil
 }
