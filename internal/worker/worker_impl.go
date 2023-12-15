@@ -75,7 +75,7 @@ func (w *Worker) GetSequencesForWork(workPackage *WorkPackage) (*CompleteWorkPac
 	var addIfNotPresent = func(id SequenceId) error {
 		_, ok := sequences[id]
 		if !ok {
-			sequence, err := w.client.RequestSequence(*workPackage.ID, id)
+			sequence, err := w.client.RequestSequence(*workPackage.ID, id, w.workerId)
 			if err != nil {
 				return err
 			}

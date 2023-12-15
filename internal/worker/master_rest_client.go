@@ -179,9 +179,9 @@ func (c *RestClient) SendHeartbeat(workerId string) {
 	_ = resp.Body.Close()
 }
 
-func (c *RestClient) RequestSequence(workPackageId string, query SequenceId) (*Sequence, error) {
+func (c *RestClient) RequestSequence(workPackageId string, query SequenceId, workerId *string) (*Sequence, error) {
 	// Get sequence the work package from /work/{work_id}/sequence/{sequence_id}
-	resp, err := c.client.Get(c.baseURL + "/work/" + workPackageId + "/sequence/" + string(query))
+	resp, err := c.client.Get(c.baseURL + "/work/" + workPackageId + "/sequence/" + string(query) + "/" + *workerId)
 	if err != nil {
 		return nil, err
 	}

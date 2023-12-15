@@ -44,6 +44,7 @@ def worker_pulse(worker_id: WorkerId) -> None:
 # request work returns a piece of work (for worker, called in an interval while not working)
 @worker_router.post("/work/")
 def get_work_for_worker(worker_id: WorkerId) -> WorkPackage | None:
+    _worker_collector.add_life_pulse(worker_id.id)
     package = _work_collector.get_new_work_package(worker_id)
     return package
 
@@ -51,14 +52,16 @@ def get_work_for_worker(worker_id: WorkerId) -> WorkPackage | None:
 # request work returns a piece of work (for worker, called in an interval while not working)
 @worker_router.post("/work/raw")
 def get_raw_work_for_worker(worker_id: WorkerId) -> RawWorkPackage | None:
+    _worker_collector.add_life_pulse(worker_id.id)
     package = _work_collector.get_new_raw_work_package(worker_id)
     if not package:
         return None
     return package[0]
 
 
-@worker_router.get("/work/{work_id}/sequence/{sequence_id}")
-def get_sequence_for_work(work_id: UUID, sequence_id: UUID) -> str:
+@worker_router.get("/work/{work_id}/sequence/{sequence_id}/{worker_id}")
+def get_sequence_for_work(work_id: UUID, sequence_id: UUID, worker_id: UUID) -> str:
+    _worker_collector.add_life_pulse(worker_id)
     work_package = _work_collector.get_package_by_id(work_id)
     if sequence_id not in work_package.package.sequences:
         raise HTTPException(status_code=404, detail="Sequence not found")
@@ -69,4 +72,6 @@ def get_sequence_for_work(work_id: UUID, sequence_id: UUID) -> str:
 # to allow incremental result sharing
 @worker_router.post("/work/{work_id}/result")
 def work_result(result: WorkResult, work_id: UUID) -> None:
+    work_package = _work_collector.get_package_by_id(work_id)
+    _worker_collector.add_life_pulse(work_package.worker.worker_id)
     _work_collector.update_work_result(work_id, result)
