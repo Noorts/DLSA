@@ -10,6 +10,7 @@ from master.utils.cleaner import Cleaner
 from master.utils.singleton import Singleton
 from master.worker.worker_collector import WorkerCollector
 from ._scheduler.work_scheduler import WorkPackageScheduler, ScheduledWorkPackage
+from ..utils.log_time import log_time
 
 logger = logging.getLogger(__name__)
 
@@ -43,8 +44,10 @@ class WorkPackageCollector(Cleaner, Singleton):
 
             completed_sequences[res.combination].append(res.alignment)
             # Remove the sequence from the in progress list if it is in there
-            if res.combination in work_package.package.job.sequences_in_progress:
+            try:
                 work_package.package.job.sequences_in_progress.remove(res.combination)
+            except ValueError:
+                pass
 
         # Check if the work package is done
         if work_package.done():
@@ -65,6 +68,7 @@ class WorkPackageCollector(Cleaner, Singleton):
             sequences={str(uuid): sequence for uuid, sequence in scheduled_package.package.sequences.items()},
         )
 
+    @log_time
     def get_new_raw_work_package(self, worker_id: WorkerId) -> None | Tuple[RawWorkPackage, ScheduledWorkPackage]:
         worker = self._worker_collector.get_worker_by_id(worker_id.id)
         scheduled_package = self._work_scheduler.schedule_work_for(worker)
