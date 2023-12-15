@@ -80,7 +80,7 @@ func (w *Worker) ExecuteWork(work *WorkPackage, queries []QueryTargetType) {
 		// qRes, _, score := smithwaterman.FindLocalAlignment(string(querySeq), string(targetSeq), work.MatchScore, work.MismatchPenalty, work.GapPenalty)
 
 		rustRes, err := findAlignmentWithFallback(string(querySeq), string(targetSeq),
-			smithwaterman.AlignmentScore{work.MatchScore, -work.MismatchPenalty, -work.GapPenalty})
+			smithwaterman.AlignmentScore{MatchScore: work.MatchScore, MismatchPenalty: -work.MismatchPenalty, GapPenalty: -work.GapPenalty})
 
 		if err != nil {
 			// TODO: What now?
