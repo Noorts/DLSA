@@ -20,12 +20,12 @@ def generate_synthetic_data(
 
 def __main__():
     generate_synthetic_data(
-        no_queries=100,
+        no_queries=40,
         query_max_size=1000,
-        query_min_size=200,
-        no_targets=100,
+        query_min_size=500,
+        no_targets=500,
         target_min_size=1000,
-        target_max_size=5000,
+        target_max_size=10000,
         query_name="query_sequences.fasta",
         database_name="target_sequences.fasta",
     )
