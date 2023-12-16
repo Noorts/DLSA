@@ -43,7 +43,7 @@ type SharedMap = Arc<(Mutex<SharedState>, Condvar)>;
 
 fn main() {
     //MPSC channel for sending work results to master node
-    const BUFFER_SIZE: usize = 500;
+    const BUFFER_SIZE: usize = 300;
 
     let args: Vec<String> = env::args().collect();
     let ipv4_with_port_regex = Regex::new(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$").unwrap();
@@ -64,16 +64,6 @@ fn main() {
     } else {
         default_master_node_address
     };
-
-    //maps for storing queries and targets
-    // let shared_map: SharedMap = Arc::new((
-    //     Mutex::new(SharedState {
-    //         map: HashMap::new(),
-    //         is_fetching: false,
-    //         condvar: Condvar::new(),
-    //     }),
-    //     Condvar::new(),
-    // ));
 
     println!("Master node address: {}", master_node_address);
     let client = RestClient::new(format!("{}{}", protocol_prefix, master_node_address));
@@ -153,26 +143,6 @@ fn main() {
                 } else {
                     print!("Work package has no ID")
                 }
-                // Check if there are any fetch requests to process
-                //     while let Ok(request) = fetch_receiver.try_recv() {
-                //         println!("Got fetch request: {}", request);
-                //         process_fetch_request(
-                //             &request,
-                //             &client,
-                //             &shared_map,
-                //             &work_package,
-                //             &worker_id,
-                //         );
-                //     }
-
-                //     // Handle alignment details, potentially in a separate thread or after all fetch requests are processed
-                //     handle_results(
-                //         &alignment_receiver,
-                //         BUFFER_SIZE,
-                //         &client,
-                //         work_package.id.unwrap(),
-                //     );
-                // }
             } // worker.run
         }
     }
@@ -217,31 +187,6 @@ pub fn handle_results(
     }
 }
 
-// // This function is called for each fetch request
-// fn process_fetch_request(
-//     request: &String,
-//     client: &RestClient,
-//     shared_map: &SharedMap,
-//     work_package: &WorkPackage,
-//     worker_id: &str,
-// ) {
-//     let seq = match client.get_sequence(
-//         work_package.id.clone().unwrap(),
-//         request.clone(),
-//         worker_id.to_string(),
-//     ) {
-//         Ok(sequence) => sequence,
-//         Err(e) => {
-//             eprintln!("Failed to fetch sequence for request {}: {}", request, e);
-//             return;
-//         }
-//     };
-
-//     let (lock, _cvar) = &**shared_map;
-//     let mut shared = lock.lock().unwrap(); // Consider handling the PoisonError here
-//     shared.map.insert(Arc::new(request.clone()), Arc::new(seq));
-// }
-
 fn get_all_sequences<'a>(
     work_package: &'a mut WorkPackage,
     client: &RestClient,
@@ -265,7 +210,7 @@ fn get_all_sequences<'a>(
     println!("Got all sequences ");
     return Ok(CompleteWorkPackage {
         work_package: work_package,
-        sequences: sequences,
+        sequences: Arc::new(sequences),
     });
 }
 

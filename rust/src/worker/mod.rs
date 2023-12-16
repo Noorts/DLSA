@@ -4,14 +4,10 @@ use std::{
     mem,
     sync::{mpsc::Sender, Arc},
 };
-use sw::{algorithm::AlignmentScores, bindings::AlignmentResult};
+use sw::algorithm::AlignmentScores;
 
-use crate::{
-    api::{
-        Alignment, AlignmentDetail, CompleteWorkPackage, RestClient, Sequence, SequenceId,
-        TargetQueryCombination, WorkPackage, WorkResult,
-    },
-    HashId, SharedMap, SharedState,
+use crate::api::{
+    Alignment, AlignmentDetail, Sequence, SequenceId, TargetQueryCombination, WorkPackage,
 };
 use rayon::prelude::*;
 use std::error::Error;
@@ -68,27 +64,27 @@ pub fn calculate_alignment_scores(
     Ok(())
 }
 //Function to fetch sequence from shared map
-fn fetch_sequence(
-    shared_state: &SharedMap,
-    fetch_sender: &Sender<String>,
-    key: &String,
-) -> Option<Arc<String>> {
-    println!("Shared state: {:?}", shared_state);
-    let (lock, cvar) = &**shared_state;
-    let mut shared = lock.lock().unwrap();
+// fn fetch_sequence(
+//     shared_state: &SharedMap,
+//     fetch_sender: &Sender<String>,
+//     key: &String,
+// ) -> Option<Arc<String>> {
+//     println!("Shared state: {:?}", shared_state);
+//     let (lock, cvar) = &**shared_state;
+//     let mut shared = lock.lock().unwrap();
 
-    while shared.is_fetching {
-        shared = cvar.wait(shared).unwrap();
-    }
+//     while shared.is_fetching {
+//         shared = cvar.wait(shared).unwrap();
+//     }
 
-    if !shared.map.contains_key(key) {
-        shared.is_fetching = true;
+//     if !shared.map.contains_key(key) {
+//         shared.is_fetching = true;
 
-        fetch_sender.send(key.clone()).unwrap();
-        shared.is_fetching = false;
-        cvar.notify_all();
-    }
+//         fetch_sender.send(key.clone()).unwrap();
+//         shared.is_fetching = false;
+//         cvar.notify_all();
+//     }
 
-    assert!(shared.map.contains_key(key));
-    shared.map.get(key).cloned()
-}
+//     assert!(shared.map.contains_key(key));
+//     shared.map.get(key).cloned()
+// }

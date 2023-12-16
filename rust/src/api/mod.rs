@@ -2,6 +2,7 @@ use reqwest::blocking::Client;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::error::Error;
+use std::sync::Arc;
 use uuid::Uuid;
 
 pub type Sequence = String;
@@ -34,7 +35,7 @@ pub struct WorkPackage {
 pub struct CompleteWorkPackage<'a> {
     // #[serde(flatten)]
     pub work_package: &'a mut WorkPackage,
-    pub sequences: HashMap<SequenceId, Sequence>,
+    pub sequences: Arc<HashMap<SequenceId, Sequence>>,
 }
 
 #[derive(Serialize, Deserialize)]
