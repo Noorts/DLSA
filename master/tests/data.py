@@ -3,6 +3,7 @@ from uuid import UUID
 from master.api_models import (
     JobRequest,
     WorkResult,
+    Alignment,
     WorkAlignment,
     TargetQueryCombination,
     JobResultCombination,
@@ -106,19 +107,19 @@ JOB_RESULT_COMPLETE = JobResult(
             combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignment=WorkAlignment(query_alignment="ABCD", target_alignment="ABCD", length=4, score=4, maxX=3, maxY=3),
+            alignments=[Alignment(alignment="ABCD", length=4, score=4)],
         ),
         JobResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignment=WorkAlignment(query_alignment="ABCD", target_alignment="ABCD", length=4, score=4, maxX=3, maxY=3),
+            alignments=[Alignment(alignment="ABCD", length=4, score=4)],
         ),
         JobResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignment=WorkAlignment(query_alignment="ABCD", target_alignment="ABCD", length=4, score=4, maxX=3, maxY=3),
+            alignments=[Alignment(alignment="ABCD", length=4, score=4)],
         ),
     ]
 )
