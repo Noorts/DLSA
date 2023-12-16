@@ -29,7 +29,7 @@ fn parse_fasta(file_path: &str) -> io::Result<Vec<Vec<char>>> {
 }
 
 //creats a vector of tuples of all possible combinations of query and target
-fn create_target_pairs(file1: &str, file2: &str) -> io::Result<Vec<(Vec<char>, Vec<char>, i16)>> {
+fn create_target_pairs(file1: &str, file2: &str) -> io::Result<Vec<(Vec<char>, Vec<char>, i16, usize, usize)>> {
     let queries: Vec<Vec<char>> = parse_fasta(file1)?;
     let targets: Vec<Vec<char>> = parse_fasta(file2)?;
     let scores = algorithm::AlignmentScores {
@@ -37,11 +37,11 @@ fn create_target_pairs(file1: &str, file2: &str) -> io::Result<Vec<(Vec<char>, V
         r#match: 3,
         miss: -3,
     };
-    let pairs: Vec<(Vec<char>, Vec<char>, i16)> = iproduct!(queries.iter(), targets.iter())
+    let pairs: Vec<(Vec<char>, Vec<char>, i16, usize, usize)> = iproduct!(queries.iter(), targets.iter())
         .map(|(query, target)| {
-            let (q_res, t_res, score) =
+            let (q_res, t_res, score, max_x, max_y) =
                 sw::algorithm::find_alignment_simd_lowmem::<64>(query, target, scores);
-            return (q_res, t_res, score);
+            return (q_res, t_res, score, max_x, max_y);
         })
         .collect();
     // .max_by_key(|(_, _, score)| *score)
@@ -60,9 +60,9 @@ fn main() {
         );
         std::process::exit(1);
     }
-    let mut pairs: Vec<(Vec<char>, Vec<char>, i16)> =
+    let mut pairs: Vec<(Vec<char>, Vec<char>, i16, usize, usize)> =
         create_target_pairs(file1, file2).expect("Could not create pairs");
-    pairs.sort_by(|(_, _, score), (_, _, otherscore)| score.cmp(otherscore));
+    pairs.sort_by(|(_, _, score, _, _), (_, _, otherscore, _, _)| score.cmp(otherscore));
     for pair in pairs {
         println!(
             "Q: {:?}\nT: {:?}\nScore: {}",

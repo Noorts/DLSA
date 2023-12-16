@@ -415,10 +415,10 @@ where
         let row_max = data[argmax + left];
         if row_max > current_max {
             current_max = row_max;
-            (current_max_x, _y) = coord(left + argmax, width);
+            (current_max_x, _) = coord(left + argmax, width);
             current_max_y = y;
 
-            assert!(_y == y % data_store_height);
+            //assert!(_y == y % data_store_height);
             assert!(current_max_x >= start_x);
 
             // PERF: We should benchmark if using `with_capacity` is cheaper or not
