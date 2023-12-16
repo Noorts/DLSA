@@ -35,7 +35,7 @@ pub struct WorkPackage {
 pub struct CompleteWorkPackage<'a> {
     // #[serde(flatten)]
     pub work_package: &'a mut WorkPackage,
-    pub sequences: Arc<HashMap<SequenceId, Sequence>>,
+    pub sequences: HashMap<SequenceId, Sequence>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -132,22 +132,22 @@ impl RestClient {
         work_result: WorkResult,
         work_id: &String,
     ) -> Result<(), Box<dyn Error>> {
-        println!("work_id: {}", work_id);
+        // println!("work_id: {}", work_id);
         let url = format!("{}/work/{}/result", self.base_url, work_id);
-        println!("Sending work result to {}", url);
+        // println!("Sending work result to {}", url);
         // println!("Work result json: {:?}", work_result);
-        println!(
-            "First query: {:?}",
-            work_result.alignments[0].combination.query
-        );
-        println!(
-            "First target: {:?}",
-            work_result.alignments[0].combination.target
-        );
+        // println!(
+        //     "First query: {:?}",
+        //     work_result.alignments[0].combination.query
+        // );
+        // println!(
+        //     "First target: {:?}",
+        //     work_result.alignments[0].combination.target
+        // );
 
         let res = self.client.post(&url).json(&work_result).send()?;
-        println!("Work result sent: {:?}", res);
-        println!("Status: {:?}", res.status());
+        // println!("Work result sent: {:?}", res);
+        // println!("Status: {:?}", res.status());
 
         Ok(())
     }

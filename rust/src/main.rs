@@ -1,22 +1,16 @@
-use rand::Rng;
 use regex::Regex;
-use reqwest::Client;
+
 use std::error::Error;
 use std::mem;
-use std::sync::mpsc::Receiver;
 use std::{collections::HashMap, env};
 mod api;
 mod worker;
-use std::sync::{mpsc, Arc, Condvar, Mutex};
+use std::sync::{mpsc, Arc};
 
 use api::{
     AlignmentDetail, CompleteWorkPackage, MachineSpecs, RestClient, Sequence, SequenceId,
     WorkResult,
 }; // Import RestClient from the api module
-use sw::{
-    algorithm::{find_alignment_simd_lowmem, AlignmentScores},
-    find_alignment_simd,
-};
 
 #[allow(unused_imports)]
 use sw::algorithm::{
@@ -33,17 +27,9 @@ struct HashId {
     id: String,
 }
 
-#[derive(Debug)]
-struct SharedState {
-    map: HashMap<Arc<String>, Arc<String>>,
-    is_fetching: bool,
-    condvar: Condvar,
-}
-type SharedMap = Arc<(Mutex<SharedState>, Condvar)>;
-
 fn main() {
     //MPSC channel for sending work results to master node
-    const BUFFER_SIZE: usize = 300;
+    const BUFFER_SIZE: usize = 330;
 
     let args: Vec<String> = env::args().collect();
     let ipv4_with_port_regex = Regex::new(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$").unwrap();
@@ -92,6 +78,7 @@ fn main() {
     });
     let worker_id_clone = worker_id.clone();
     let client_clone = RestClient::new(format!("{}{}", protocol_prefix, master_node_address));
+
     let heartbeat_thread = std::thread::spawn(move || loop {
         match client_clone.send_pulse(&worker_id_clone) {
             Ok(_) => {
@@ -117,13 +104,15 @@ fn main() {
                 ));
             }
             Err(e) => {
-                // Handle error
+                println!("Failed to get work: {}", e)
             }
-
             Ok(Some(mut work_package)) => {
                 // Clone the id first, then unwrap
                 if let Some(id) = work_package.id.clone() {
-                    id_sender.send(id.clone()).expect("Failed to send id");
+                    //send id and total number of sequences to result handler
+                    id_sender
+                        .send((id.clone(), work_package.queries.len()))
+                        .expect("Failed to send id");
 
                     match get_all_sequences(&mut work_package, &client, &worker_id) {
                         Ok(mut complete_work_package) => {
@@ -133,6 +122,9 @@ fn main() {
                                 &alignment_sender,                // fetch_sender.clone(),
                                                                   // alignment_sender.clone(),
                             );
+                            //clear all the variables
+                            complete_work_package.work_package.queries.clear();
+                            complete_work_package.sequences.clear();
 
                             println!("Scores: {:?}", scores);
                         }
@@ -152,22 +144,47 @@ pub fn handle_results(
     receiver: &mpsc::Receiver<AlignmentDetail>,
     buffer_size: usize,
     client: &RestClient,
-    id_receiver: &mpsc::Receiver<String>,
+    id_receiver: &mpsc::Receiver<(String, usize)>,
 ) {
     let mut result_buffer: Vec<AlignmentDetail> = Vec::with_capacity(buffer_size);
     let mut current_id: Option<String> = None;
+    let mut total_sequences = 0;
+    let mut recv_count = 0;
     loop {
         // Check for a new ID
-        if let Ok(new_id) = id_receiver.try_recv() {
-            current_id = Some(new_id);
+        if let Ok((id, count)) = id_receiver.try_recv() {
+            current_id = Some(id);
+            total_sequences = count;
+            recv_count = 0;
             print!("Got new ID: {}", current_id.clone().unwrap());
         }
 
         if let Ok(received) = receiver.try_recv() {
             result_buffer.push(received);
+            recv_count += 1;
 
             if result_buffer.len() >= buffer_size {
                 // Replace the buffer with a new, empty Vec and pass the old buffer
+                let work_result = WorkResult {
+                    alignments: mem::replace(&mut result_buffer, Vec::with_capacity(buffer_size)),
+                };
+
+                match client.send_work_result(work_result, &current_id.clone().unwrap()) {
+                    Ok(_) => {
+                        println!("Successfully sent buffered work result");
+                    }
+                    Err(e) => {
+                        println!("Failed to send work result: {}", e);
+                    }
+                }
+                result_buffer.clear();
+                // No need to clear result_buffer as it's now a new, empty Vec
+            }
+            //Send final batch
+            if recv_count >= total_sequences {
+                print!("Got all results, clearing");
+                print!("Total sequences: {}", total_sequences);
+                print!("Received count: {}", recv_count);
                 let work_result = WorkResult {
                     alignments: mem::replace(&mut result_buffer, Vec::with_capacity(buffer_size)),
                 };
@@ -193,6 +210,7 @@ fn get_all_sequences<'a>(
     worker_id: &str,
 ) -> Result<CompleteWorkPackage<'a>, Box<dyn Error>> {
     let mut sequences: HashMap<SequenceId, Sequence> = HashMap::new();
+    let mut received_count = 0; // Counter for received items
     for query_target in &work_package.queries {
         let query = &query_target.query;
         let target = &query_target.target;
@@ -210,7 +228,7 @@ fn get_all_sequences<'a>(
     println!("Got all sequences ");
     return Ok(CompleteWorkPackage {
         work_package: work_package,
-        sequences: Arc::new(sequences),
+        sequences: sequences,
     });
 }
 
