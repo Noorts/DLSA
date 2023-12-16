@@ -9,3 +9,15 @@ run:
 	sudo cset shield --cpu 1,2
 	cset shield -e -- env RUSTFLAGS="-C target-cpu=native" cargo run --release
 	sudo cset shield --reset
+
+.PHONY: build-linux-avx2
+build-linux-avx2:
+	RUSTFLAGS="-C target-feature=+avx2" cargo build --release --target x86_64-unknown-linux-gnu
+
+.PHONY: build-darwin-avx2
+build-macos-x86-avx2:
+	RUSTFLAGS="-C target-feature=+avx2" cargo build --release --target x86_64-apple-darwin
+
+.PHONY: build-native
+build-native:
+	RUSTFLAGS="-C target-cpu=native" cargo build --release

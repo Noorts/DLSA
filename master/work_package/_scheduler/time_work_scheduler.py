@@ -1,10 +1,9 @@
 import logging
-import sys
-from uuid import uuid4
+import random
 
 from master.worker.worker import Worker
-from .scheduled_work_package import ScheduledWorkPackage, InternalWorkPackage
-from .utils import estimate_work_in_seconds
+from .scheduled_work_package import ScheduledWorkPackage
+from .utils import estimate_work_in_seconds, work_packages_from_queries
 from .work_scheduler import WorkPackageScheduler
 from ...api_models import TargetQueryCombination
 from ...job_queue.queued_job import QueuedJob
@@ -21,88 +20,40 @@ class TimeWorkScheduler(WorkPackageScheduler):
         if not unfinished_jobs:
             return None
 
-        job, queries = _get_best_match_for(
-            unfinished_jobs, worker.resources.benchmark_result, SETTINGS.work_package_time_split_in_seconds
+        # Get the first unfinished job
+        job = unfinished_jobs.pop(0)
+
+        queries = _get_n_seconds_of_work(job, SETTINGS.work_package_time_split_in_seconds, worker)
+        return work_packages_from_queries(job, queries, worker)
+
+
+def _get_n_seconds_of_work(
+    job: QueuedJob,
+    seconds: int,
+    worker: Worker,
+) -> set[TargetQueryCombination]:
+    unfinished_queries = [*job.missing_sequences()]
+    # Shuffle the unfinished queries to get a more even distribution
+    random.shuffle(unfinished_queries)
+
+    total_time = 0
+    queries: list[TargetQueryCombination] = []
+
+    for query in unfinished_queries:
+        query_time = estimate_work_in_seconds(
+            target=job.request.sequences[query.target],
+            query=job.request.sequences[query.query],
+            cups=worker.resources.benchmark_result,
         )
 
-        package = InternalWorkPackage(
-            id=uuid4(),
-            job=job,
-            queries=queries,
-            sequences={
-                # Query
-                **{sequence.query: job.request.sequences[sequence.query] for sequence in queries},
-                # Target
-                **{sequence.target: job.request.sequences[sequence.target] for sequence in queries},
-            },
-            match_score=job.request.match_score,
-            mismatch_penalty=job.request.mismatch_penalty,
-            gap_penalty=job.request.gap_penalty,
-        )
+        if total_time + query_time > seconds:
+            continue
 
-        job.sequences_in_progress.update(package.queries)
-        return ScheduledWorkPackage(
-            package=package,
-            worker=worker,
-        )
+        total_time += query_time
+        queries.append(query)
 
+        # If we are in 10% of the time limit, we can stop
+        if total_time > seconds * 0.9:
+            break
 
-def _calculate_score_of(
-    unfinished_job: QueuedJob, performance: int, seconds_of_work: int
-) -> tuple[int, list[TargetQueryCombination]]:
-    query_time_lookup: dict[TargetQueryCombination, int] = {}
-    missing = unfinished_job.missing_sequences()
-
-    for query in missing:
-        query_time_lookup[query] = estimate_work_in_seconds(
-            unfinished_job.request.sequences[query.target],
-            unfinished_job.request.sequences[query.query],
-            performance,
-        )
-
-    # Dynamic programming approach
-    dp = [sys.maxsize] * (seconds_of_work + 1)
-    dp[0] = 0
-    selected_queries: list[TargetQueryCombination | None] = [None] * (seconds_of_work + 1)
-
-    for query, time in query_time_lookup.items():
-        for i in range(seconds_of_work - time, -1, -1):
-            if dp[i] != sys.maxsize and dp[i] + time < dp[i + time]:
-                dp[i + time] = dp[i] + time
-                selected_queries[i + time] = query
-
-    # Reconstruct the selected queries
-    result: list[TargetQueryCombination] = []
-    remaining_time = seconds_of_work
-    while remaining_time > 0 and selected_queries[remaining_time] is not None:
-        result.append(selected_queries[remaining_time])
-        remaining_time -= query_time_lookup[selected_queries[remaining_time]]
-
-    # If the result is empty, return the query target combination with the lowest work in seconds
-    if not result:
-        sequence = min(query_time_lookup, key=lambda k: query_time_lookup[k])
-        time = query_time_lookup[sequence]
-        return time, [sequence]
-
-    return dp[seconds_of_work], result
-
-
-def _get_best_match_for(unfinished_jobs: list[QueuedJob], performance: int, seconds_of_work: int) -> WorkForWorker:
-    """
-    We try to do the following thing: Create a package of Queries that is as close as possible to the seconds_of_work
-    :param unfinished_jobs: All jobs that have unfinished sequences
-    :param performance: The performance of the worker
-    :param seconds_of_work: The amount of seconds the worker should work
-    :return: A dictionary with the job as a key and the queries as value
-    """
-
-    best_solution = None
-    best_score = sys.maxsize
-
-    for job in unfinished_jobs:
-        score, sequences = _calculate_score_of(job, performance, seconds_of_work)
-        if score < best_score:
-            best_solution = job, sequences
-            best_score = score
-
-    return best_solution
+    return set(queries)

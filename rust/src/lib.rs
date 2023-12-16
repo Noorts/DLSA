@@ -52,7 +52,7 @@ pub fn find_alignment_sequential_straight(
     let mut target_result = Vec::with_capacity(target.len());
 
     let width = query.len() + 1;
-    let (_, max_index) = data.argminmax();
+    let max_index = data.argmax();
 
     let (x, y) = coord(max_index, width);
     traceback_straight(
@@ -119,7 +119,7 @@ where
     let mut target_result = Vec::with_capacity(target.len());
 
     // TODO: Find max index
-    let (_min_index, max_index) = data.argminmax();
+    let max_index = data.argmax();
     let (x, y) = coord(max_index, data_width);
     traceback(
         &data,

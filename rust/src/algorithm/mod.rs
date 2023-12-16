@@ -7,7 +7,11 @@ use std::{
     thread,
 };
 
-use crate::{AlignResult, find_alignment_simd, utils::{self, coord, index}};
+use crate::{
+    AlignResult,
+    find_alignment_simd,
+    utils::{self, coord, index},
+};
 
 use std::simd::prelude::{SimdInt, SimdOrd, SimdPartialEq};
 
@@ -118,7 +122,6 @@ where
     let match_splat = Simd::<i16, LANES>::splat(scores.r#match);
     let mis_splat = Simd::<i16, LANES>::splat(scores.miss);
     let zero_splat = Simd::<i16, LANES>::splat(0);
-    let one_splat = Simd::<i16, LANES>::splat(1);
 
     let mut target_rev = target.clone();
     target_rev.reverse();
@@ -146,12 +149,9 @@ where
                 Simd::<i16, LANES>::from_slice(&data[(i - width - 1)..(i - width - 1 + LANES)])
                     + gap_splat;
 
-            let mask = query_vec.simd_eq(target_vec).to_int().cast::<i16>();
+            let mask = query_vec.simd_eq(target_vec);
 
-            let pos_mask = mask.abs();
-            let neg_mask = mask + one_splat;
-
-            let mismatch_vec = (match_splat * pos_mask) + (mis_splat * neg_mask);
+            let mismatch_vec = mask.select(match_splat, mis_splat);
 
             let r_match_mis = Simd::<i16, LANES>::from_slice(
                 &data[(i - 2 * width - 1)..(i - 2 * width - 1 + LANES)],
@@ -270,7 +270,7 @@ where
             );
         }
         let left = index(1, y, width);
-        let (_, row_max_index) = (&data[left..left + width - 1]).argminmax();
+        let row_max_index = (&data[left..left + width - 1]).argmax();
         let row_max = data[left + row_max_index];
 
         // PERF: Probably better to do this for the entire diagonal part in one run.
@@ -301,7 +301,6 @@ where
     let match_splat = Simd::<i16, LANES>::splat(scores.r#match);
     let mis_splat = Simd::<i16, LANES>::splat(scores.miss);
     let zero_splat = Simd::<i16, LANES>::splat(0);
-    let one_splat = Simd::<i16, LANES>::splat(1);
 
     let mut target_rev = target_u16.clone();
     target_rev.reverse();
@@ -331,12 +330,9 @@ where
             let r_target_skip =
                 Simd::<i16, LANES>::from_slice(&data[row_1_i - 1..row_1_i - 1 + LANES]) + gap_splat;
 
-            let mask = query_vec.simd_eq(target_vec).to_int().cast::<i16>();
+            let mask = query_vec.simd_eq(target_vec);
 
-            let pos_mask = mask.abs();
-            let neg_mask = mask + one_splat;
-
-            let mismatch_vec = (match_splat * pos_mask) + (mis_splat * neg_mask);
+            let mismatch_vec = mask.select(match_splat, mis_splat);
 
             let r_match_mis =
                 Simd::<i16, LANES>::from_slice(&data[row_2_i - 1..row_2_i - 1 + LANES])
@@ -362,7 +358,7 @@ where
         if row_max > current_max {
             current_max = row_max;
             let left = index(1, y % data_store_height, width);
-            let (_argmin, argmax) = (&data[left..left + width - 1]).argminmax();
+            let argmax = (&data[left..left + width - 1]).argmax();
             (current_max_x, _) = coord(left + argmax, width);
             current_max_y = y;
 
@@ -415,14 +411,14 @@ where
         let left = index(start_x, y % data_store_height, width);
         let right = index(query.len() + 1, y % data_store_height, width);
         assert_ne!(left, right);
-        let (_argmin, argmax) = (&data[left..right]).argminmax();
+        let argmax = (&data[left..right]).argmax();
         let row_max = data[argmax + left];
         if row_max > current_max {
             current_max = row_max;
-            (current_max_x, _) = coord(left + argmax, width);
+            (current_max_x, _y) = coord(left + argmax, width);
             current_max_y = y;
 
-            // assert!(_max_y == y % data_store_height);
+            assert!(_y == y % data_store_height);
             assert!(current_max_x >= start_x);
 
             // PERF: We should benchmark if using `with_capacity` is cheaper or not
@@ -445,7 +441,6 @@ where
         start_x += 1;
     }
 
-    // TODO what are the start indices?
     (total_query_result, total_target_result, current_max, current_max_x - 1, current_max_y - current_max_x - 1)
 }
 

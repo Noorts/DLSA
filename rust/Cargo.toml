@@ -12,6 +12,7 @@ argminmax = "0.6.1"
 crossbeam = "0.8.2"
 rand = "0.8.5"
 spin-sync = "0.3.2"
+itertools = "0.12.0"
 
 [dev-dependencies]
 criterion = "0.5.1"
@@ -24,4 +25,16 @@ codegen-units = 1
 
 [[bench]]
 name = "local_alignment"
+harness = false
+
+[[bench]]
+name = "scalability_target"
+harness = false
+
+[[bench]]
+name = "scalability_query"
+harness = false
+
+[[bench]]
+name = "simd"
 harness = false

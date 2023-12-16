@@ -1,4 +1,5 @@
 from __future__ import annotations
+
 import json
 from typing import Literal, Annotated
 from uuid import UUID
@@ -22,7 +23,7 @@ class TargetQueryCombination(BaseModel):
 
 # noinspection PyNestedDecorators
 class MultipartJobRequest(BaseModel):
-    queries: list[TargetQueryCombination]
+    queries: set[TargetQueryCombination]
     match_score: int
     mismatch_penalty: int
     gap_penalty: int

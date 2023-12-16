@@ -162,26 +162,26 @@ pub unsafe extern "C" fn find_alignment_low_memory(
 //     target_ptr: *const c_char,
 // ) -> AlignmentResult {
 //     todo!();
-//     // let query: &[u8] = unsafe { CStr::from_ptr(query_ptr).to_bytes() };
-//     // // let target: &[char] = unsafe { std::mem::transmute(CStr::from_ptr(target_ptr).to_bytes()) };
-//     //
-//     // let query: Vec<char> = String::from_utf8(query.to_vec()).unwrap().chars().collect();
-//     //
-//     // let (query_res, target_res) = crate::find_alignment_sequential(&query, target);
-//     //
-//     // let query_res_ref: &[char] = query_res.as_ref();
-//     // let target_res_ref: &[char] = target_res.as_ref();
-//     //
-//     // assert!(query.len() >= query_res.len());
-//     // assert!(target.len() >= target_res.len());
-//     //
-//     // let q_c_slice: &[u8] = unsafe { std::mem::transmute(query_res_ref) };
-//     // let t_c_slice: &[u8] = unsafe { std::mem::transmute(target_res_ref) };
-//     //
-//     // AlignmentResult {
-//     //     query: CString::new(q_c_slice).unwrap().into_raw(),
-//     //     target: CString::new(t_c_slice).unwrap().into_raw(),
-//     // }
+//     let query: &[u8] = unsafe { CStr::from_ptr(query_ptr).to_bytes() };
+//     // let target: &[char] = unsafe { std::mem::transmute(CStr::from_ptr(target_ptr).to_bytes()) };
+
+//     let query: Vec<char> = String::from_utf8(query.to_vec()).unwrap().chars().collect();
+
+//     let (query_res, target_res) = crate::find_alignment_sequential(&query, target);
+
+//     let query_res_ref: &[char] = query_res.as_ref();
+//     let target_res_ref: &[char] = target_res.as_ref();
+
+//     assert!(query.len() >= query_res.len());
+//     assert!(target.len() >= target_res.len());
+
+//     let q_c_slice: &[u8] = unsafe { std::mem::transmute(query_res_ref) };
+//     let t_c_slice: &[u8] = unsafe { std::mem::transmute(target_res_ref) };
+
+//     AlignmentResult {
+//         query: CString::new(q_c_slice).unwrap().into_raw(),
+//         target: CString::new(t_c_slice).unwrap().into_raw(),
+//     }
 // }
 
 #[no_mangle]
@@ -189,7 +189,9 @@ pub unsafe extern "C" fn find_alignment_sequential_straight(
     query_ptr: *const c_char,
     target_ptr: *const c_char,
     alignment_scores: AlignmentScores,
-) -> AlignmentResult {
+) -> *mut AlignmentResult {
+    let result = panic::catch_unwind(AssertUnwindSafe(|| {
+
     let query: &[u8] = unsafe { CStr::from_ptr(query_ptr).to_bytes() };
     let target: &[u8] = unsafe { CStr::from_ptr(target_ptr).to_bytes() };
 
@@ -210,13 +212,19 @@ pub unsafe extern "C" fn find_alignment_sequential_straight(
 
     let q_res: String = query_res_ref.iter().collect();
     let t_res: String = target_res_ref.iter().collect();
-
-    AlignmentResult {
+    let res = Box::new(AlignmentResult {
         query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
         target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
         score,
         max_x: u64::try_from(max_x).unwrap(),
         max_y: u64::try_from(max_y).unwrap()
+    });
+
+    Box::into_raw(res)
+    }));
+    match result {
+        Ok(ptr) => ptr,
+        Err(_) => std::ptr::null_mut()
     }
 }
 

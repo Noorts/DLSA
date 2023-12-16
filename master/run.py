@@ -8,6 +8,8 @@ if __name__ == "__main__":
         host="0.0.0.0",
         port=8000,
         reload=False,
+        timeout_keep_alive=20,
+        timeout_graceful_shutdown=60,
         log_config=dictConfig(
             {
                 "version": 1,

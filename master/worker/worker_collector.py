@@ -30,10 +30,10 @@ class WorkerCollector(Cleaner, Singleton):
     def register(self, resources: WorkerResources) -> UUID:
         worker_id = uuid4()
         logger.info(f"Registering worker with resources {resources.benchmark_result // 1_000_000} MCUPS")
-        logger.info(f"Number of registered workers: {len(self._workers)}")
         self._workers[worker_id] = Worker(
             worker_id=worker_id, resources=resources, last_seen_alive=current_sec(), status="IDLE"
         )
+        logger.info(f"Number of registered workers: {len(self._workers)}")
         return worker_id
 
     def get_worker_by_id(self, worker_id: UUID) -> Worker:

@@ -4,7 +4,7 @@ Alignment@Home is a distributed system for distributed local [sequence alignment
 
 It was developed as a lab project for the 2023/2024 Distributed Systems course at the Vrije Universiteit Amsterdam.
 
-The key idea of the project is to enable crowdsourced local sequence alignment. This allows heterogeneous computers of any size (e.g., a laptop or a compute cluster node) to work together to perform sequence alignment jobs for scientists (this is a similar idea to [Folding@Home](https://en.wikipedia.org/wiki/Folding@home)).
+The key idea of the project is to enable crowdsourced local sequence alignment. This allows heterogeneous computers of different sizes (e.g., a laptop or a compute cluster node) to work together to perform sequence alignment jobs for scientists (this is a similar idea to [Folding@Home](https://en.wikipedia.org/wiki/Folding@home)).
 
 ## Overview
 The project consists of two main aspects, 1) an implementation of the [Smith-Waterman algorithm](https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm), and 2) a [coordinator-worker architecture](https://en.wikipedia.org/wiki/Master%E2%80%93slave_(technology)) that is able to "intelligently" schedule and distribute the sequence alignment jobs across the pool of workers. The heterogeneous workers individually run a compute capacity estimation benchmark (using synthetic sequences), which is communicated to and used by the scheduler to distribute the work.
@@ -20,13 +20,13 @@ The project uses Python, Golang, and (nightly) Rust.
 
 We've used the following versions in our testing. Nightly rust is currently being used for the [std::simd](https://doc.rust-lang.org/nightly/std/simd/index.html) module. Once the module is stabilized then stable rust can be used.
 
-| Dependency | Version |
-|-------|-------|
-| Python | 3.11.5 |
-| poetry | 1.7.1 |
-| Go | go1.21.4 linux/amd64 |
-| rustc | rustc 1.76.0-nightly (eeff92ad3 2023-12-13) |
-| cargo | cargo 1.76.0-nightly (1aa9df1a5 2023-12-12) |
+| Dependency | Version                                     |
+|------------|---------------------------------------------|
+| Python     | 3.11.5                                      |
+| poetry     | 1.7.1                                       |
+| Go         | go1.21.4 linux/amd64                        |
+| rustc      | rustc 1.76.0-nightly (eeff92ad3 2023-12-13) |
+| cargo      | cargo 1.76.0-nightly (1aa9df1a5 2023-12-12) |
 
 Python dependencies are managed by [Poetry](https://python-poetry.org/) ([installation instructions](https://python-poetry.org/docs/#installation)). After installing Poetry, you can install the project's dependencies from the root folder using `poetry install`.
 
@@ -65,9 +65,9 @@ A command-line tool has been developed that allows one to submit sequence alignm
 
 Run `poetry run python3 tui [params]` to submit a job. Run it without any parameters for help.
 
-An example use could be: `poetry run python3 tui --query datasets/query_sequences.fasta --database datasets/target_sequences.fasta --server-url http://0.0.0.0:8000 --match-score 2 --mismatch-penalty 1 --gap-penalty 1 --top-k 5`
+An example use: `poetry run python3 tui --query datasets/query_sequences.fasta --database datasets/target_sequences.fasta --server-url http://0.0.0.0:8000 --match-score 2 --mismatch-penalty 1 --gap-penalty 1 --top-k 5`
 
 The result of the alignments will be saved to the `results` directory, where for every query sequence, a file is generated, with the corresponding best result for every target in the database file, with the same id as in the original files.
 
 ## Synthetic Dataset Generation
-You can use the [generate_synthetic_dataset.py](utils/generate_synthetic_data.py) script to generate a query and a database file to use for a test query.
+To generate a synthetic query and a target/database file you can use the [generate_synthetic_dataset.py](utils/generate_synthetic_data.py) script. First adjust the configuration in the script, and then execute `python3 ./utils/generate_synthetic_data.py`, the query and target files will be saved to the current working directory.
