@@ -25,6 +25,7 @@ class WorkPackageCollector(Cleaner, Singleton):
         self._worker_collector = WorkerCollector()
         self._work_scheduler = WorkPackageScheduler.create()
         self._work_packages: list[ScheduledWorkPackage] = []
+        self._verify_work = SETTINGS.verify_work
         super().__init__(interval=SETTINGS.work_package_cleaning_interval)
 
     def get_package_by_id(self, work_package_id: UUID) -> ScheduledWorkPackage:
@@ -38,11 +39,15 @@ class WorkPackageCollector(Cleaner, Singleton):
         work_package = self.get_package_by_id(work_id)
         completed_sequences = work_package.package.job.completed_sequences
 
+        if self._verify_work and not self._worker_collector.is_alive(work_package.worker):  # malicious deleted worker is marked dead
+            return
+
         for res in result.alignments:
-            if not verify_result(work_package.package, res):
-                # TODO
-                print("alarm alarm")
-                pass
+            if self._verify_work and not verify_result(work_package.package, res):
+                work_package.package.job.sequences_in_progress.update(work_package.package.job.completed_sequences.keys())
+                work_package.package.job.completed_sequences.clear()
+                self._worker_collector.remove_worker(work_package.worker)
+                return
 
             if res.combination not in completed_sequences:
                 completed_sequences[res.combination] = []
