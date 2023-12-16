@@ -1,7 +1,7 @@
+use crate::algorithm::find_alignment_simd_lowmem;
+use crate::algorithm::AlignmentScores;
 use std::ffi::{c_char, CStr, CString};
 use std::panic::{self, AssertUnwindSafe};
-use crate::algorithm::AlignmentScores;
-use crate::algorithm::find_alignment_simd_lowmem;
 
 const LANES: usize = 64;
 
@@ -35,8 +35,8 @@ pub struct AlignmentResult {
 //     // However a proper implementation should not care about it anyway as long as it implements Eq
 //     // and is indexable. For now the assumption is that the input data has to be valid UTF-8 that
 //     // would be indexable.
-//     let result = panic::catch_unwind(AssertUnwindSafe(|| { 
-        
+//     let result = panic::catch_unwind(AssertUnwindSafe(|| {
+
 //         let query: &[char] = unsafe { std::mem::transmute(CStr::from_ptr(query_ptr).to_bytes()) };
 //         let target: &[char] = unsafe { std::mem::transmute(CStr::from_ptr(target_ptr).to_bytes()) };
 
@@ -71,7 +71,7 @@ pub unsafe extern "C" fn find_alignment_simd(
     target_ptr: *const c_char,
     alignment_scores: AlignmentScores,
 ) -> *mut AlignmentResult {
-    let result = panic::catch_unwind(AssertUnwindSafe(|| { 
+    let result = panic::catch_unwind(AssertUnwindSafe(|| {
         let query: &[u8] = unsafe { CStr::from_ptr(query_ptr).to_bytes() };
         let target: &[u8] = unsafe { CStr::from_ptr(target_ptr).to_bytes() };
 
@@ -83,7 +83,8 @@ pub unsafe extern "C" fn find_alignment_simd(
 
         // println!("Searching for alignment: Q: {query:?}; T: {target:?}");
 
-        let (query_res, target_res, score) = crate::find_alignment_simd::<LANES>(&query, &target, alignment_scores);
+        let (query_res, target_res, score) =
+            crate::find_alignment_simd::<LANES>(&query, &target, alignment_scores);
 
         let query_res_ref: &[char] = query_res.as_ref();
         let target_res_ref: &[char] = target_res.as_ref();
@@ -103,7 +104,7 @@ pub unsafe extern "C" fn find_alignment_simd(
     }));
     match result {
         Ok(ptr) => ptr,
-        Err(_) => std::ptr::null_mut() 
+        Err(_) => std::ptr::null_mut(),
     }
 }
 
@@ -113,7 +114,7 @@ pub unsafe extern "C" fn find_alignment_low_memory(
     target_ptr: *const c_char,
     alignment_scores: AlignmentScores,
 ) -> *mut AlignmentResult {
-    let result = panic::catch_unwind(AssertUnwindSafe(|| { 
+    let result = panic::catch_unwind(AssertUnwindSafe(|| {
         let query: &[u8] = unsafe { CStr::from_ptr(query_ptr).to_bytes() };
         let target: &[u8] = unsafe { CStr::from_ptr(target_ptr).to_bytes() };
 
@@ -125,7 +126,8 @@ pub unsafe extern "C" fn find_alignment_low_memory(
 
         // println!("Searching for alignment: Q: {query:?}; T: {target:?}");
 
-        let (query_res, target_res, score) = find_alignment_simd_lowmem::<LANES>(&query, &target, alignment_scores);
+        let (query_res, target_res, score) =
+            find_alignment_simd_lowmem::<LANES>(&query, &target, alignment_scores);
 
         let query_res_ref: &[char] = query_res.as_ref();
         let target_res_ref: &[char] = target_res.as_ref();
@@ -145,7 +147,7 @@ pub unsafe extern "C" fn find_alignment_low_memory(
     }));
     match result {
         Ok(ptr) => ptr,
-        Err(_) => std::ptr::null_mut() 
+        Err(_) => std::ptr::null_mut(),
     }
 }
 
@@ -157,20 +159,20 @@ pub unsafe extern "C" fn find_alignment_low_memory(
 //     todo!();
 //     let query: &[u8] = unsafe { CStr::from_ptr(query_ptr).to_bytes() };
 //     // let target: &[char] = unsafe { std::mem::transmute(CStr::from_ptr(target_ptr).to_bytes()) };
-    
+
 //     let query: Vec<char> = String::from_utf8(query.to_vec()).unwrap().chars().collect();
-    
+
 //     let (query_res, target_res) = crate::find_alignment_sequential(&query, target);
-    
+
 //     let query_res_ref: &[char] = query_res.as_ref();
 //     let target_res_ref: &[char] = target_res.as_ref();
-    
+
 //     assert!(query.len() >= query_res.len());
 //     assert!(target.len() >= target_res.len());
-    
+
 //     let q_c_slice: &[u8] = unsafe { std::mem::transmute(query_res_ref) };
 //     let t_c_slice: &[u8] = unsafe { std::mem::transmute(target_res_ref) };
-    
+
 //     AlignmentResult {
 //         query: CString::new(q_c_slice).unwrap().into_raw(),
 //         target: CString::new(t_c_slice).unwrap().into_raw(),
@@ -183,43 +185,44 @@ pub unsafe extern "C" fn find_alignment_sequential_straight(
     target_ptr: *const c_char,
     alignment_scores: AlignmentScores,
 ) -> *mut AlignmentResult {
-    let result = panic::catch_unwind(AssertUnwindSafe(|| { 
+    let result = panic::catch_unwind(AssertUnwindSafe(|| {
+        let query: &[u8] = unsafe { CStr::from_ptr(query_ptr).to_bytes() };
+        let target: &[u8] = unsafe { CStr::from_ptr(target_ptr).to_bytes() };
 
-    let query: &[u8] = unsafe { CStr::from_ptr(query_ptr).to_bytes() };
-    let target: &[u8] = unsafe { CStr::from_ptr(target_ptr).to_bytes() };
+        let query: Vec<char> = String::from_utf8(query.to_vec()).unwrap().chars().collect();
+        let target: Vec<char> = String::from_utf8(target.to_vec())
+            .unwrap()
+            .chars()
+            .collect();
 
-    let query: Vec<char> = String::from_utf8(query.to_vec()).unwrap().chars().collect();
-    let target: Vec<char> = String::from_utf8(target.to_vec())
-        .unwrap()
-        .chars()
-        .collect();
+        // println!("Searching for alignment: Q: {query:?}; T: {target:?}");
 
-    // println!("Searching for alignment: Q: {query:?}; T: {target:?}");
+        let (query_res, target_res, score) =
+            crate::find_alignment_sequential_straight(&query, &target, alignment_scores);
 
-    let (query_res, target_res, score) = crate::find_alignment_sequential_straight(&query, &target, alignment_scores);
+        let query_res_ref: &[char] = query_res.as_ref();
+        let target_res_ref: &[char] = target_res.as_ref();
 
-    let query_res_ref: &[char] = query_res.as_ref();
-    let target_res_ref: &[char] = target_res.as_ref();
+        // println!("Found alignment Q: {query_res:?}; T: {target_res:?}");
 
-    // println!("Found alignment Q: {query_res:?}; T: {target_res:?}");
+        let q_res: String = query_res_ref.iter().collect();
+        let t_res: String = target_res_ref.iter().collect();
+        let res = Box::new(AlignmentResult {
+            query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
+            target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
+            score,
+        });
 
-    let q_res: String = query_res_ref.iter().collect();
-    let t_res: String = target_res_ref.iter().collect();
-    let res = Box::new(AlignmentResult {
-        query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
-        target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
-        score,
-    });
-
-    Box::into_raw(res)
+        Box::into_raw(res)
     }));
     match result {
         Ok(ptr) => ptr,
-        Err(_) => std::ptr::null_mut() 
+        Err(_) => std::ptr::null_mut(),
     }
 }
 
-//functions to free the memory allocated by the rust code
+//functions to
+
 #[no_mangle]
 pub unsafe extern "C" fn free_alignment_result(alignment_result_ptr: *mut AlignmentResult) {
     unsafe {
