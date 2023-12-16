@@ -4,8 +4,8 @@ use std::collections::HashMap;
 use std::error::Error;
 use uuid::Uuid;
 
-type Sequence = String;
-type SequenceId = String;
+pub type Sequence = String;
+pub type SequenceId = String;
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct QueryTargetType {
@@ -13,9 +13,9 @@ pub struct QueryTargetType {
     pub target: SequenceId,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct Alignment {
-    pub alignment_string: String,
+    pub alignment: String,
     pub length: i16,
     pub score: i16,
 }
@@ -30,11 +30,11 @@ pub struct WorkPackage {
     pub gap_penalty: i16,
 }
 
-#[derive(Serialize, Deserialize)]
-struct CompleteWorkPackage {
-    #[serde(flatten)]
-    work_package: WorkPackage,
-    sequences: HashMap<SequenceId, Sequence>,
+// #[derive(Serialize, Deserialize)]
+pub struct CompleteWorkPackage<'a> {
+    // #[serde(flatten)]
+    pub work_package: &'a mut WorkPackage,
+    pub sequences: HashMap<SequenceId, Sequence>,
 }
 
 #[derive(Serialize, Deserialize)]
@@ -48,22 +48,22 @@ struct WorkRequest {
 }
 
 #[derive(Serialize, Deserialize)]
-struct Heartbeat {
-    worker_id: String,
+pub struct Heartbeat {
+    pub id: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct TargetQueryCombination {
     pub target: SequenceId,
     pub query: SequenceId,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct WorkResult {
     pub alignments: Vec<AlignmentDetail>,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug)]
 pub struct AlignmentDetail {
     pub combination: TargetQueryCombination,
     pub alignment: Alignment,
@@ -104,27 +104,25 @@ impl RestClient {
                 id: worker_id.clone(),
             })
             .send()?; // This is a synchronous call
-        println!("Got work: {:?}", res);
-        // Parse the JSON response
+                      // Parse the JSON response
         let work_package: Option<WorkPackage> = res.json()?;
         Ok(work_package)
     }
 
     pub fn get_sequence(
         &self,
-        package_id: String,
-        query: SequenceId,
-        worker_id: String,
+        package_id: &String,
+        query: &SequenceId,
+        worker_id: &str,
     ) -> Result<Sequence, Box<dyn Error>> {
         //TODO: Is it query or &query?
 
         let url = format!(
             "{}/work/{}/sequence/{}/{}",
-            self.base_url, query, worker_id, package_id,
+            self.base_url, package_id, query, worker_id,
         );
         let res = self.client.get(&url).send()?;
         let sequence: Sequence = res.json()?;
-        println!("Got sequence: {:?}", sequence);
         Ok(sequence)
     }
 
@@ -133,31 +131,37 @@ impl RestClient {
         work_result: WorkResult,
         work_id: &String,
     ) -> Result<(), Box<dyn Error>> {
+        println!("work_id: {}", work_id);
         let url = format!("{}/work/{}/result", self.base_url, work_id);
+        println!("Sending work result to {}", url);
+        // println!("Work result json: {:?}", work_result);
+        println!(
+            "First query: {:?}",
+            work_result.alignments[0].combination.query
+        );
+        println!(
+            "First target: {:?}",
+            work_result.alignments[0].combination.target
+        );
+
         let res = self.client.post(&url).json(&work_result).send()?;
+        println!("Work result sent: {:?}", res);
+        println!("Status: {:?}", res.status());
+
         Ok(())
     }
 
-    fn start_heartbeat_routine(&self, interval: u64, worker_id: String) {
-        //TODO: While alive?
-        loop {
-            //TODO: Speciy thread or what
-            std::thread::sleep(std::time::Duration::from_secs(interval));
-            self.send_pulse(&worker_id);
-        }
-    }
-
-    //TODO: Ask Daniel why I had to to &String, can
-    fn send_pulse(&self, worker_id: &String) -> Result<(), Box<dyn Error>> {
+    pub fn send_pulse(&self, worker_id: &String) -> Result<(), Box<dyn Error>> {
         let url = format!("{}/worker/pulse", self.base_url);
         let res = self
             .client
             .post(&url)
             .json(&Heartbeat {
-                worker_id: worker_id.clone(),
+                id: worker_id.clone(),
             })
             .send()?;
         //Return res?
+        println!("Pulse sent: {:?}", res);
         Ok(())
     }
 }

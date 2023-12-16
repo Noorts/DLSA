@@ -1,12 +1,18 @@
 use rand::Rng;
 use regex::Regex;
+use reqwest::Client;
+use std::error::Error;
 use std::mem;
+use std::sync::mpsc::Receiver;
 use std::{collections::HashMap, env};
 mod api;
 mod worker;
 use std::sync::{mpsc, Arc, Condvar, Mutex};
 
-use api::{AlignmentDetail, MachineSpecs, RestClient, WorkResult}; // Import RestClient from the api module
+use api::{
+    AlignmentDetail, CompleteWorkPackage, MachineSpecs, RestClient, Sequence, SequenceId,
+    WorkResult,
+}; // Import RestClient from the api module
 use sw::{
     algorithm::{find_alignment_simd_lowmem, AlignmentScores},
     find_alignment_simd,
@@ -37,7 +43,7 @@ type SharedMap = Arc<(Mutex<SharedState>, Condvar)>;
 
 fn main() {
     //MPSC channel for sending work results to master node
-    const BUFFER_SIZE: usize = 200;
+    const BUFFER_SIZE: usize = 500;
 
     let args: Vec<String> = env::args().collect();
     let ipv4_with_port_regex = Regex::new(r"^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$").unwrap();
@@ -46,8 +52,7 @@ fn main() {
     let retry_delay_get_work_in_seconds = 1;
 
     //channels for synchronization
-    let (fetch_sender, fetch_receiver) = mpsc::channel();
-    let (alignment_sender, alignment_receiver) = mpsc::channel();
+    // let (alignment_sender, alignment_receiver) = mpsc::channel();
 
     let master_node_address = if args.len() > 1 {
         let arg = &args[1];
@@ -61,14 +66,14 @@ fn main() {
     };
 
     //maps for storing queries and targets
-    let shared_map: SharedMap = Arc::new((
-        Mutex::new(SharedState {
-            map: HashMap::new(),
-            is_fetching: false,
-            condvar: Condvar::new(),
-        }),
-        Condvar::new(),
-    ));
+    // let shared_map: SharedMap = Arc::new((
+    //     Mutex::new(SharedState {
+    //         map: HashMap::new(),
+    //         is_fetching: false,
+    //         condvar: Condvar::new(),
+    //     }),
+    //     Condvar::new(),
+    // ));
 
     println!("Master node address: {}", master_node_address);
     let client = RestClient::new(format!("{}{}", protocol_prefix, master_node_address));
@@ -77,12 +82,38 @@ fn main() {
 
     let worker_id = client
         .register_worker(MachineSpecs {
-            benchmark_result: 2000.0,
+            benchmark_result: 200000.0,
         })
         .unwrap();
     println!("Successfully registered worker with id: {}", worker_id);
 
     //Loop untel work is available
+    let (alignment_sender, alignment_receiver) = mpsc::channel();
+    let (id_sender, id_receiver) = mpsc::channel();
+
+    let client_clone = RestClient::new(format!("{}{}", protocol_prefix, master_node_address));
+    let send_results_thread = std::thread::spawn(move || {
+        handle_results(
+            &alignment_receiver,
+            BUFFER_SIZE,
+            &client_clone,
+            &id_receiver,
+        );
+    });
+    let worker_id_clone = worker_id.clone();
+    let client_clone = RestClient::new(format!("{}{}", protocol_prefix, master_node_address));
+    let heartbeat_thread = std::thread::spawn(move || loop {
+        match client_clone.send_pulse(&worker_id_clone) {
+            Ok(_) => {
+                println!("Successfully sent heartbeat");
+            }
+            Err(e) => {
+                println!("Failed to send heartbeat: {}", e);
+            }
+        }
+        std::thread::sleep(std::time::Duration::from_secs(4));
+    });
+    // Spawn a single thread to handle the results
     loop {
         match client.get_work(&worker_id) {
             Ok(None) => {
@@ -98,93 +129,144 @@ fn main() {
             Err(e) => {
                 // Handle error
             }
+
             Ok(Some(mut work_package)) => {
-                println!("Got work package: {:?}", work_package);
-                calculate_alignment_scores(
-                    &mut work_package,
-                    shared_map.clone(),
-                    fetch_sender.clone(),
-                    alignment_sender.clone(),
-                );
+                // Clone the id first, then unwrap
+                if let Some(id) = work_package.id.clone() {
+                    id_sender.send(id.clone()).expect("Failed to send id");
 
-                // Check if there are any fetch requests to process
-                while let Ok(request) = fetch_receiver.try_recv() {
-                    println!("Got fetch request: {}", request);
-                    process_fetch_request(
-                        &request,
-                        &client,
-                        &shared_map,
-                        &work_package,
-                        &worker_id,
-                    );
+                    match get_all_sequences(&mut work_package, &client, &worker_id) {
+                        Ok(mut complete_work_package) => {
+                            let scores = calculate_alignment_scores(
+                                &mut complete_work_package.work_package,
+                                &complete_work_package.sequences, // shared_map.clone(),
+                                &alignment_sender,                // fetch_sender.clone(),
+                                                                  // alignment_sender.clone(),
+                            );
+
+                            println!("Scores: {:?}", scores);
+                        }
+                        Err(e) => {
+                            println!("Failed to fetch all sequences: {}", e);
+                        }
+                    };
+                } else {
+                    print!("Work package has no ID")
                 }
+                // Check if there are any fetch requests to process
+                //     while let Ok(request) = fetch_receiver.try_recv() {
+                //         println!("Got fetch request: {}", request);
+                //         process_fetch_request(
+                //             &request,
+                //             &client,
+                //             &shared_map,
+                //             &work_package,
+                //             &worker_id,
+                //         );
+                //     }
 
-                // Handle alignment details, potentially in a separate thread or after all fetch requests are processed
-                handle_results(
-                    &alignment_receiver,
-                    BUFFER_SIZE,
-                    &client,
-                    work_package.id.unwrap(),
-                );
-            }
+                //     // Handle alignment details, potentially in a separate thread or after all fetch requests are processed
+                //     handle_results(
+                //         &alignment_receiver,
+                //         BUFFER_SIZE,
+                //         &client,
+                //         work_package.id.unwrap(),
+                //     );
+                // }
+            } // worker.run
         }
-        // worker.run
     }
 }
-
 //When buffer is full send results to master node
 pub fn handle_results(
     receiver: &mpsc::Receiver<AlignmentDetail>,
     buffer_size: usize,
     client: &RestClient,
-    id: String,
+    id_receiver: &mpsc::Receiver<String>,
 ) {
     let mut result_buffer: Vec<AlignmentDetail> = Vec::with_capacity(buffer_size);
-
-    for received in receiver {
-        result_buffer.push(received);
-
-        if result_buffer.len() >= buffer_size {
-            // Replace the buffer with a new, empty Vec and pass the old buffer
-            let work_result = WorkResult {
-                alignments: mem::replace(&mut result_buffer, Vec::with_capacity(buffer_size)),
-            };
-            client.send_work_result(work_result, &id);
-            // No need to clear result_buffer as it's now a new, empty Vec
+    let mut current_id: Option<String> = None;
+    loop {
+        // Check for a new ID
+        if let Ok(new_id) = id_receiver.try_recv() {
+            current_id = Some(new_id);
+            print!("Got new ID: {}", current_id.clone().unwrap());
         }
-    }
 
-    if !result_buffer.is_empty() {
-        let work_result = WorkResult {
-            alignments: result_buffer,
-        };
-        client.send_work_result(work_result, &id);
+        if let Ok(received) = receiver.try_recv() {
+            result_buffer.push(received);
+
+            if result_buffer.len() >= buffer_size {
+                // Replace the buffer with a new, empty Vec and pass the old buffer
+                let work_result = WorkResult {
+                    alignments: mem::replace(&mut result_buffer, Vec::with_capacity(buffer_size)),
+                };
+
+                match client.send_work_result(work_result, &current_id.clone().unwrap()) {
+                    Ok(_) => {
+                        println!("Successfully sent buffered work result");
+                    }
+                    Err(e) => {
+                        println!("Failed to send work result: {}", e);
+                    }
+                }
+                result_buffer.clear();
+                // No need to clear result_buffer as it's now a new, empty Vec
+            }
+        }
     }
 }
 
-// This function is called for each fetch request
-fn process_fetch_request(
-    request: &String,
-    client: &RestClient,
-    shared_map: &SharedMap,
-    work_package: &WorkPackage,
-    worker_id: &str,
-) {
-    let seq = match client.get_sequence(
-        work_package.id.clone().unwrap(),
-        request.clone(),
-        worker_id.to_string(),
-    ) {
-        Ok(sequence) => sequence,
-        Err(e) => {
-            eprintln!("Failed to fetch sequence for request {}: {}", request, e);
-            return;
-        }
-    };
+// // This function is called for each fetch request
+// fn process_fetch_request(
+//     request: &String,
+//     client: &RestClient,
+//     shared_map: &SharedMap,
+//     work_package: &WorkPackage,
+//     worker_id: &str,
+// ) {
+//     let seq = match client.get_sequence(
+//         work_package.id.clone().unwrap(),
+//         request.clone(),
+//         worker_id.to_string(),
+//     ) {
+//         Ok(sequence) => sequence,
+//         Err(e) => {
+//             eprintln!("Failed to fetch sequence for request {}: {}", request, e);
+//             return;
+//         }
+//     };
 
-    let (lock, _cvar) = &**shared_map;
-    let mut shared = lock.lock().unwrap(); // Consider handling the PoisonError here
-    shared.map.insert(Arc::new(request.clone()), Arc::new(seq));
+//     let (lock, _cvar) = &**shared_map;
+//     let mut shared = lock.lock().unwrap(); // Consider handling the PoisonError here
+//     shared.map.insert(Arc::new(request.clone()), Arc::new(seq));
+// }
+
+fn get_all_sequences<'a>(
+    work_package: &'a mut WorkPackage,
+    client: &RestClient,
+    worker_id: &str,
+) -> Result<CompleteWorkPackage<'a>, Box<dyn Error>> {
+    let mut sequences: HashMap<SequenceId, Sequence> = HashMap::new();
+    for query_target in &work_package.queries {
+        let query = &query_target.query;
+        let target = &query_target.target;
+        let work_id = work_package.id.as_ref().ok_or("Work ID is missing")?;
+        if !sequences.contains_key(query) {
+            let sequence = client.get_sequence(work_id, query, worker_id);
+            // println!("Got sequence: {:?}", sequence);
+            sequences.insert(query.clone(), sequence.unwrap());
+        }
+        if !sequences.contains_key(target) {
+            let sequence = client.get_sequence(work_id, target, worker_id);
+            sequences.insert(target.clone(), sequence.unwrap());
+        }
+    }
+    println!("Got all sequences ");
+    return Ok(CompleteWorkPackage {
+        work_package: work_package,
+        sequences: sequences,
+    });
 }
 
 // fn oldmain() {
