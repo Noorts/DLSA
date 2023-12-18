@@ -129,7 +129,7 @@ def start_experiment(experiment_config, experiment_run_name):
         "experiment_config": experiment_config,
         "time_start_epoch": time_start_epoch,
         "time_start_readable": time_start_readable,
-        "status": "FAILED"
+        "status": "STARTED"
     }
 
     with open(meta_file_path, 'w') as file:
@@ -137,6 +137,7 @@ def start_experiment(experiment_config, experiment_run_name):
 
     # Set up started job ids (for tracking and cleaning).
     jobs_started = []
+    query_res = None
 
     try:
         # Start master
@@ -191,6 +192,13 @@ def start_experiment(experiment_config, experiment_run_name):
 
         elapsed_time, computation_time = query_res["elapsed_time"], query_res["computation_time"]
 
+        logger.debug("Success!")
+    except KeyboardInterrupt:
+        logger.critical(f"Keyboard interrupt detected. Cleaning up and exiting...")
+        sys.exit(1)
+    except Exception as e:
+        logger.critical(f"Experiment failed. Error: '{e}'. Cleaning up and continuing with next available experiment...")
+    finally:
         # Write result to result file.
         with open(meta_file_path, 'r') as file:
             meta_object = json.load(file)
@@ -199,21 +207,17 @@ def start_experiment(experiment_config, experiment_run_name):
         time_end_epoch = int(time_end.timestamp())
         time_end_readable = time_end.strftime("%Y-%m-%d_%H-%M-%S")
 
-        meta_object[current_experiment_name]["result"] = query_res
-        meta_object[current_experiment_name]["status"] = "SUCCESS"
+        if query_res != None:
+            meta_object[current_experiment_name]["result"] = query_res
+            meta_object[current_experiment_name]["status"] = "SUCCESS"
+        else:
+            meta_object[current_experiment_name]["status"] = "FAILED"
         meta_object[current_experiment_name]["time_end_readable"] = time_end_readable
         meta_object[current_experiment_name]["time_end_epoch"] = time_end_epoch
 
         with open(meta_file_path, 'w') as file:
             json.dump(meta_object, file, indent=4)
 
-        logger.debug("Success!")
-    except KeyboardInterrupt:
-        logger.critical(f"Keyboard interrupt detected. Cleaning up and exiting...")
-        sys.exit(1)
-    except Exception as e:
-        logger.critical(f"Experiment failed. Error: '{e}'. Cleaning up and continuing with next available experiment...")
-    finally:
         cleanup_experiment(jobs_started)
 
 
