@@ -1,3 +1,8 @@
+# This is a quick and dirty script to automate running experiments on DAS5. Note: ideally a SLURM job should probably
+# contain the entire experiment setup (including master, worker, and query). Currently the script triggers multiple
+# SLURM jobs and manages the experiment. Furthermore, the script should've been written differently (e.g., for writing
+# to the result file a function could be used).
+
 # Run with: python3 ./utils/run_das5_experiments.py
 # Or debug: LOG_LEVEL=DEBUG python3 ./utils/run_das5_experiments.py
 
