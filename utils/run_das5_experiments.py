@@ -144,8 +144,7 @@ def start_experiment(experiment_config, experiment_run_name):
         logger.debug("Starting master...")
         master_res = start_master()
         if (master_res == None):
-            logger.error("Failed to start master. Exiting...")
-            return
+            raise Exception("Failed to start master")
 
         master_ip, master_job_id = master_res["master_ip"], master_res["master_job_id"]
         jobs_started.append(master_job_id)
@@ -154,9 +153,7 @@ def start_experiment(experiment_config, experiment_run_name):
         logger.debug(f"Starting {num_workers} worker(s)...")
         workers_res = start_workers(num_workers, master_ip)
         if (workers_res == None):
-            logger.error("Failed to start workers. Exiting...")
-            cleanup_experiment(jobs_started)
-            return
+            raise Exception("Failed to start workers")
 
         worker_job_ids = workers_res["batch_job_ids"]
         jobs_started.extend(worker_job_ids)
@@ -178,17 +175,13 @@ def start_experiment(experiment_config, experiment_run_name):
         logger.debug("Waiting for workers to connect...")
         conn_res = block_till_n_workers_connected(master_slurm_filepath, experiment_config["n_workers"], timeout_seconds)
         if (conn_res == False):
-            logger.error(f"Workers did not connect to master within timelimit {timeout_seconds}. Exiting...")
-            cleanup_experiment(jobs_started)
-            return
+            raise Exception(f"Workers did not connect to master within timelimit {timeout_seconds}")
 
         # Start query
         logger.debug("Executing query...")
         query_res = start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name)
         if (query_res == None):
-            logger.error("Query failed. Exiting...")
-            cleanup_experiment(jobs_started)
-            return
+            raise Exception("Query failed")
 
         elapsed_time, computation_time = query_res["elapsed_time"], query_res["computation_time"]
 
@@ -197,7 +190,7 @@ def start_experiment(experiment_config, experiment_run_name):
         logger.critical(f"Keyboard interrupt detected. Cleaning up and exiting...")
         sys.exit(1)
     except Exception as e:
-        logger.critical(f"Experiment failed. Error: '{e}'. Cleaning up and continuing with next available experiment...")
+        logger.error(f"Experiment failed. Error: '{e}'. Cleaning up and continuing with next available experiment...")
     finally:
         # Write result to result file.
         with open(meta_file_path, 'r') as file:
