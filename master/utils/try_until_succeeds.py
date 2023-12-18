@@ -13,6 +13,7 @@ def try_until_succeeds(
         # noinspection PyBroadException
         try:
             return func(*args, **kwargs)
-        except Exception:
+        except Exception as e:
+            print(e)
             # sleep for 5ms before retrying
             time.sleep(0.005)
