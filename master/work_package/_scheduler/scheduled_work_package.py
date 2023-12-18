@@ -4,6 +4,7 @@ from uuid import UUID
 from master.api_models import TargetQueryCombination, Sequence, SequenceId
 from master.job_queue.queued_job import QueuedJob
 from master.utils.log_time import log_time
+from master.utils.try_until_succeeds import try_until_succeeds
 from master.worker.worker import Worker
 
 
@@ -29,8 +30,8 @@ class ScheduledWorkPackage:
     def percentage_done(self) -> float:
         # Get the length of the sequences that should be done in the work package
         sequence_length = len(self.package.queries)
-        completed_sequences_set = set(self.package.job.completed_sequences.keys())
-        completed_sequences = len(self.package.queries & completed_sequences_set)
+        completed_sequences_set = self.package.job.completed_sequences.keys()
+        completed_sequences = try_until_succeeds(lambda: len(self.package.queries & completed_sequences_set))
         return completed_sequences / sequence_length
 
     def done(self) -> bool:
