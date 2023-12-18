@@ -76,9 +76,10 @@ def block_till_n_workers_connected(filepath, n_workers, timeout_seconds):
         time.sleep(1)
 
 
-def start_query(experiment_config, master_ip):
+def start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name):
     command = list(map(str, [
             "srun", "python3", "tui",
+            "--output-path", f"results/{experiment_run_name}/{current_experiment_name}/",
             "--query", experiment_config["query_path"], "--database", experiment_config["target_path"],
             "--server-url", f"http://{master_ip}:8000",
             "--match-score", experiment_config["configuration"]["match_score"],
@@ -100,14 +101,15 @@ def start_query(experiment_config, master_ip):
     } if (elapsed_time and computation_time) else None
 
 
-def start_experiment(experiment_config):
-    time_start_epoch = int(time.time())
-    time_start_readable = str(datetime.datetime.now())
+def start_experiment(experiment_config, experiment_run_name):
+    time_start = datetime.datetime.now()
+    time_start_epoch = int(time_start.timestamp())
+    time_start_readable = time_start.strftime("%Y-%m-%d_%H-%M-%S")
     num_workers = int(experiment_config["n_workers"])
 
-    experiment_name = f"{time_start_readable.replace(' ', '_')}_{str(num_workers)}"
+    current_experiment_name = f"{time_start_readable}_{str(num_workers)}"
 
-    meta_file_path = "results.json"
+    meta_file_path = f"result_{experiment_run_name}.json"
 
     # Set up meta results file if it doesnt exist.
     if not os.path.exists(meta_file_path):
@@ -118,7 +120,7 @@ def start_experiment(experiment_config):
     with open(meta_file_path, 'r') as file:
         meta_object = json.load(file)
 
-    meta_object[experiment_name] = {
+    meta_object[current_experiment_name] = {
         "experiment_config": experiment_config,
         "time_start_epoch": time_start_epoch,
         "time_start_readable": time_start_readable,
@@ -157,9 +159,9 @@ def start_experiment(experiment_config):
         with open(meta_file_path, 'r') as file:
             meta_object = json.load(file)
 
-        meta_object[experiment_name]["master_job_id"] = master_job_id
-        meta_object[experiment_name]["master_ip"] = master_ip
-        meta_object[experiment_name]["worker_job_ids"] = worker_job_ids
+        meta_object[current_experiment_name]["master_job_id"] = master_job_id
+        meta_object[current_experiment_name]["master_ip"] = master_ip
+        meta_object[current_experiment_name]["worker_job_ids"] = worker_job_ids
 
         with open(meta_file_path, 'w') as file:
             json.dump(meta_object, file, indent=4)
@@ -176,7 +178,7 @@ def start_experiment(experiment_config):
 
         # Start query
         logger.debug("Executing query...")
-        query_res = start_query(experiment_config, master_ip)
+        query_res = start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name)
         if (query_res == None):
             logger.error("Query failed. Exiting...")
             cleanup_experiment(jobs_started)
@@ -188,13 +190,14 @@ def start_experiment(experiment_config):
         with open(meta_file_path, 'r') as file:
             meta_object = json.load(file)
 
-        time_end_epoch = int(time.time())
-        time_end_readable = str(datetime.datetime.now())
+        time_end = datetime.datetime.now()
+        time_end_epoch = int(time_end.timestamp())
+        time_end_readable = time_end.strftime("%Y-%m-%d_%H-%M-%S")
 
-        meta_object[experiment_name]["result"] = query_res
-        meta_object[experiment_name]["status"] = "SUCCESS"
-        meta_object[experiment_name]["time_end_readable"] = time_end_readable
-        meta_object[experiment_name]["time_end_epoch"] = time_end_epoch
+        meta_object[current_experiment_name]["result"] = query_res
+        meta_object[current_experiment_name]["status"] = "SUCCESS"
+        meta_object[current_experiment_name]["time_end_readable"] = time_end_readable
+        meta_object[current_experiment_name]["time_end_epoch"] = time_end_epoch
 
         with open(meta_file_path, 'w') as file:
             json.dump(meta_object, file, indent=4)
@@ -216,10 +219,11 @@ def cleanup_experiment(job_ids):
 
 
 def __main__():
+    experiment_run_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     num_experiments = len(experiment_configs)
     for index, experiment_config in enumerate(experiment_configs):
         logger.info(f"Experiment {index + 1} out of {num_experiments}")
-        start_experiment(experiment_config)
+        start_experiment(experiment_config, experiment_run_name)
 
 
 if __name__ == "__main__":
