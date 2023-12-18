@@ -14,6 +14,10 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+# The number of seconds to wait for all workers to connect to the master. If they do not connect in time, then the
+# program classifies this as a failure.
+WORKER_CONNECTION_TIMEOUT_SECONDS = 60
+
 default_experiment = {
     "n_workers": 1,
     "query_path": "datasets/query.fna",
@@ -169,13 +173,12 @@ def start_experiment(experiment_config, experiment_run_name):
         with open(meta_file_path, 'w') as file:
             json.dump(meta_object, file, indent=4)
 
-        # Wait until X workers have connected.
-        timeout_seconds = 60
+        # Wait until all workers have connected to the master.
         master_slurm_filepath = os.path.join(f"slurm-{master_job_id}.out")
         logger.debug("Waiting for workers to connect...")
-        conn_res = block_till_n_workers_connected(master_slurm_filepath, experiment_config["n_workers"], timeout_seconds)
+        conn_res = block_till_n_workers_connected(master_slurm_filepath, experiment_config["n_workers"], WORKER_CONNECTION_TIMEOUT_SECONDS)
         if (conn_res == False):
-            raise Exception(f"Workers did not connect to master within timelimit {timeout_seconds}")
+            raise Exception(f"Workers did not connect to master within timelimit {WORKER_CONNECTION_TIMEOUT_SECONDS}")
 
         # Start query
         logger.debug("Executing query...")
