@@ -90,8 +90,8 @@ def start_query(experiment_config, master_ip):
     if (res.returncode != 0):
         return None
 
-    elapsed_time = re.search(r'total elapsed time: (\d+) milliseconds', res.stdout).group(1)
-    computation_time = re.search(r'Computation time: (\d+) milliseconds', res.stdout).group(1)
+    elapsed_time = re.search(r'total elapsed time: ((\d+\.)*\d+) milliseconds', res.stdout).group(1).replace('.', '')
+    computation_time = re.search(r'Computation time: ((\d+\.)*\d+) milliseconds', res.stdout).group(1).replace('.', '')
 
     return {
         "elapsed_time": int(elapsed_time),
