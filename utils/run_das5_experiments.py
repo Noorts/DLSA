@@ -1,7 +1,7 @@
 # Run with: python3 ./utils/run_das5_experiments.py
 # Or debug: LOG_LEVEL=DEBUG python3 ./utils/run_das5_experiments.py
 
-import subprocess, json, os, re, time, datetime, logging
+import subprocess, json, os, re, time, datetime, logging, sys
 
 logging.basicConfig(
     level=os.getenv('LOG_LEVEL', 'INFO'),  # Set the log level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -203,9 +203,11 @@ def start_experiment(experiment_config, experiment_run_name):
             json.dump(meta_object, file, indent=4)
 
         logger.debug("Success!")
-
-    except:
-        logger.critical("Experiment failed. Cleaning up and exiting...")
+    except KeyboardInterrupt:
+        logger.critical(f"Keyboard interrupt detected. Cleaning up and exiting...")
+        sys.exit(1)
+    except Exception as e:
+        logger.critical(f"Experiment failed. Error: '{e}'. Cleaning up and continuing with next available experiment...")
     finally:
         cleanup_experiment(jobs_started)
 
