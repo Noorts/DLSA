@@ -146,16 +146,16 @@ def start_experiment(experiment_config, experiment_run_name):
 
     current_experiment_name = f"{time_start_readable}_{str(num_workers)}"
 
-    meta_file_path = f"result_{experiment_run_name}.json"
+    result_file_path = f"result_{experiment_run_name}.json"
 
     # Set up meta results file if it doesnt exist.
-    if not os.path.exists(meta_file_path):
-        with open(meta_file_path, 'w') as file:
+    if not os.path.exists(result_file_path):
+        with open(result_file_path, 'w') as file:
             json.dump({}, file, indent=4)
 
     # Add this experiment's parameters, commit id, etc.
-    with JSONFileContext(meta_file_path) as meta_object:
-        meta_object[current_experiment_name] = {
+    with JSONFileContext(result_file_path) as result_object:
+        result_object[current_experiment_name] = {
             "experiment_config": experiment_config,
             "time_start_epoch": time_start_epoch,
             "time_start_readable": time_start_readable,
@@ -186,10 +186,10 @@ def start_experiment(experiment_config, experiment_run_name):
         jobs_started.extend(worker_job_ids)
 
         # Write result to result file.
-        with JSONFileContext(meta_file_path) as meta_object:
-            meta_object[current_experiment_name]["master_job_id"] = master_job_id
-            meta_object[current_experiment_name]["master_ip"] = master_ip
-            meta_object[current_experiment_name]["worker_job_ids"] = worker_job_ids
+        with JSONFileContext(result_file_path) as result_object:
+            result_object[current_experiment_name]["master_job_id"] = master_job_id
+            result_object[current_experiment_name]["master_ip"] = master_ip
+            result_object[current_experiment_name]["worker_job_ids"] = worker_job_ids
 
         # Wait until all workers have connected to the master.
         master_slurm_filepath = os.path.join(f"slurm-{master_job_id}.out")
@@ -207,11 +207,11 @@ def start_experiment(experiment_config, experiment_run_name):
                 raise Exception("Query failed")
 
             # Write result to result file.
-            with JSONFileContext(meta_file_path) as meta_object:
-                if "result" not in meta_object[current_experiment_name]:
-                    meta_object[current_experiment_name]["result"] = []
+            with JSONFileContext(result_file_path) as result_object:
+                if "result" not in result_object[current_experiment_name]:
+                    result_object[current_experiment_name]["result"] = []
                 current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-                meta_object[current_experiment_name]["result"].append({ "time": current_time, "query_res": query_res })
+                result_object[current_experiment_name]["result"].append({ "time": current_time, "query_res": query_res })
 
         logger.debug("  Success!")
     except KeyboardInterrupt:
@@ -224,10 +224,10 @@ def start_experiment(experiment_config, experiment_run_name):
         time_end_epoch = int(time_end.timestamp())
         time_end_readable = time_end.strftime("%Y-%m-%d_%H-%M-%S")
 
-        with JSONFileContext(meta_file_path) as meta_object:
-            meta_object[current_experiment_name]["status"] = "SUCCESS" if query_res != None else "FAILED"
-            meta_object[current_experiment_name]["time_end_readable"] = time_end_readable
-            meta_object[current_experiment_name]["time_end_epoch"] = time_end_epoch
+        with JSONFileContext(result_file_path) as result_object:
+            result_object[current_experiment_name]["status"] = "SUCCESS" if query_res != None else "FAILED"
+            result_object[current_experiment_name]["time_end_readable"] = time_end_readable
+            result_object[current_experiment_name]["time_end_epoch"] = time_end_epoch
 
         cleanup_experiment(jobs_started)
 
