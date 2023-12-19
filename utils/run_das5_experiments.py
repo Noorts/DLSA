@@ -39,6 +39,7 @@ class JSONFileContext:
 WORKER_CONNECTION_TIMEOUT_SECONDS = 60
 
 default_experiment = {
+    "query_iterations": 1,
     "n_workers": 1,
     "query_path": "datasets/query.fna",
     "target_path": "datasets/query.fna",
@@ -65,6 +66,7 @@ query_iterations = 2
 for _ in range(clean_iterations):
     for n_workers in [1, 2]:
         exp = default_experiment.copy()
+        exp["query_iterations"] = query_iterations
         exp["n_workers"] = n_workers
         experiment_configs.append(exp)
 
@@ -200,7 +202,7 @@ def start_experiment(experiment_config, experiment_run_name):
 
         # Start query
         logger.debug("  Executing queries...")
-        for i in range(query_iterations):
+        for i in range(experiment_config["query_iterations"]):
             logger.debug(f"    Query {i + 1}...")
             query_res = start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name)
             if (query_res == None):
