@@ -40,7 +40,7 @@ pub struct CompleteWorkPackage<'a> {
 
 #[derive(Serialize, Deserialize)]
 pub struct MachineSpecs {
-    pub benchmark_result: f32,
+    pub benchmark_result: i32,
 }
 
 #[derive(Serialize, Deserialize)]

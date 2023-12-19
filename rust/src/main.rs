@@ -5,7 +5,7 @@ use std::mem;
 use std::{collections::HashMap, env};
 mod api;
 mod worker;
-use std::sync::{mpsc, Arc};
+use std::sync::mpsc;
 
 use api::{
     AlignmentDetail, CompleteWorkPackage, MachineSpecs, RestClient, Sequence, SequenceId,
@@ -18,6 +18,7 @@ use sw::algorithm::{
 };
 
 use crate::api::WorkPackage;
+use crate::worker::benchmark::run_benchmark;
 use crate::worker::calculate_alignment_scores;
 
 const LANES: usize = 64;
@@ -54,11 +55,15 @@ fn main() {
     println!("Master node address: {}", master_node_address);
     let client = RestClient::new(format!("{}{}", protocol_prefix, master_node_address));
 
-    //TODO: benchmark
-
+    //TODO: benchmark and send ncpus
+    let cpus = num_cpus::get();
+    println!("Number of cpus: {}", cpus);
+    let cups: f32 = run_benchmark(std::time::Duration::from_secs(1), 2, 4) * 1e-9;
+    let cups_int = cups as i32;
+    println!("MCUPS: {}", cups_int);
     let worker_id = client
         .register_worker(MachineSpecs {
-            benchmark_result: 200000.0,
+            benchmark_result: cups_int,
         })
         .unwrap();
     println!("Successfully registered worker with id: {}", worker_id);
@@ -67,8 +72,9 @@ fn main() {
     let (alignment_sender, alignment_receiver) = mpsc::channel();
     let (id_sender, id_receiver) = mpsc::channel();
 
+    //Spawn a thread to handle the results
     let client_clone = RestClient::new(format!("{}{}", protocol_prefix, master_node_address));
-    let send_results_thread = std::thread::spawn(move || {
+    std::thread::spawn(move || {
         handle_results(
             &alignment_receiver,
             BUFFER_SIZE,
@@ -76,10 +82,13 @@ fn main() {
             &id_receiver,
         );
     });
-    let worker_id_clone = worker_id.clone();
-    let client_clone = RestClient::new(format!("{}{}", protocol_prefix, master_node_address));
 
-    let heartbeat_thread = std::thread::spawn(move || loop {
+    //Spawn a thread to send heartbeats
+    let worker_id_clone: String = worker_id.clone();
+    let client_clone: RestClient =
+        RestClient::new(format!("{}{}", protocol_prefix, master_node_address));
+
+    std::thread::spawn(move || loop {
         match client_clone.send_pulse(&worker_id_clone) {
             Ok(_) => {
                 println!("Successfully sent heartbeat");
@@ -90,7 +99,7 @@ fn main() {
         }
         std::thread::sleep(std::time::Duration::from_secs(4));
     });
-    // Spawn a single thread to handle the results
+
     loop {
         match client.get_work(&worker_id) {
             Ok(None) => {
@@ -104,12 +113,11 @@ fn main() {
                 ));
             }
             Err(e) => {
-                println!("Failed to get work: {}", e)
+                println!("Failed to get work: {}", e);
+                panic!("Failed to get work")
             }
             Ok(Some(mut work_package)) => {
-                // Clone the id first, then unwrap
                 if let Some(id) = work_package.id.clone() {
-                    //send id and total number of sequences to result handler
                     id_sender
                         .send((id.clone(), work_package.queries.len()))
                         .expect("Failed to send id");
@@ -118,13 +126,14 @@ fn main() {
                         Ok(mut complete_work_package) => {
                             let scores = calculate_alignment_scores(
                                 &mut complete_work_package.work_package,
-                                &complete_work_package.sequences, // shared_map.clone(),
-                                &alignment_sender,                // fetch_sender.clone(),
-                                                                  // alignment_sender.clone(),
+                                &complete_work_package.sequences,
+                                &alignment_sender,
                             );
-                            //clear all the variables
-                            complete_work_package.work_package.queries.clear();
-                            complete_work_package.sequences.clear();
+                            //(TODO: why would I need this?)clear all the variables
+                            // complete_work_package.work_package.queries.clear();
+                            // complete_work_package.sequences.clear();
+                            // complete_work_package.work_package.id = None;
+                            // mem::drop(complete_work_package);
 
                             println!("Scores: {:?}", scores);
                         }
@@ -182,9 +191,6 @@ pub fn handle_results(
             }
             //Send final batch
             if recv_count >= total_sequences {
-                print!("Got all results, clearing");
-                print!("Total sequences: {}", total_sequences);
-                print!("Received count: {}", recv_count);
                 let work_result = WorkResult {
                     alignments: mem::replace(&mut result_buffer, Vec::with_capacity(buffer_size)),
                 };
@@ -209,8 +215,7 @@ fn get_all_sequences<'a>(
     client: &RestClient,
     worker_id: &str,
 ) -> Result<CompleteWorkPackage<'a>, Box<dyn Error>> {
-    let mut sequences: HashMap<SequenceId, Sequence> = HashMap::new();
-    let mut received_count = 0; // Counter for received items
+    let mut sequences: HashMap<SequenceId, Sequence> = HashMap::new(); // Counter for received items
     for query_target in &work_package.queries {
         let query = &query_target.query;
         let target = &query_target.target;

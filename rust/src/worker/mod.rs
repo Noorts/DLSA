@@ -5,6 +5,7 @@ use std::{
     sync::{mpsc::Sender, Arc},
 };
 use sw::algorithm::AlignmentScores;
+pub mod benchmark;
 
 use crate::api::{
     Alignment, AlignmentDetail, Sequence, SequenceId, TargetQueryCombination, WorkPackage,
