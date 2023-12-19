@@ -204,6 +204,7 @@ def start_experiment(experiment_config, experiment_run_name):
         logger.debug("  Executing queries...")
         for i in range(experiment_config["query_iterations"]):
             logger.debug(f"    Query {i + 1}...")
+            query_res = None # Resetting to None for the setting "status" property in the finally clause.
             query_res = start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name)
             if (query_res == None):
                 raise Exception("Query failed")
