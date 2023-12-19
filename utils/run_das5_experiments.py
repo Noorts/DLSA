@@ -1,7 +1,12 @@
+# This is a quick and dirty script to automate running experiments on DAS5. Note: ideally a SLURM job should probably
+# contain the entire experiment setup (including master, worker, and query). Currently the script triggers multiple
+# SLURM jobs and manages the experiment. Furthermore, the script should've been written differently (e.g., for writing
+# to the result file a function could be used).
+
 # Run with: python3 ./utils/run_das5_experiments.py
 # Or debug: LOG_LEVEL=DEBUG python3 ./utils/run_das5_experiments.py
 
-import subprocess, json, os, re, time, datetime, logging
+import subprocess, json, os, re, time, datetime, logging, sys
 
 logging.basicConfig(
     level=os.getenv('LOG_LEVEL', 'INFO'),  # Set the log level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -9,7 +14,32 @@ logging.basicConfig(
 )
 logger = logging.getLogger(__name__)
 
+class JSONFileContext:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def __enter__(self):
+        self.data = self.load_json()
+        return self.data
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            self.save_json(self.data)
+
+    def load_json(self):
+        with open(self.file_path, 'r') as file:
+            return json.load(file)
+
+    def save_json(self, data):
+        with open(self.file_path, 'w') as file:
+            json.dump(data, file, indent=4)
+
+# The number of seconds to wait for all workers to connect to the master. If they do not connect in time, then the
+# program classifies this experiment iteration as a failure.
+WORKER_CONNECTION_TIMEOUT_SECONDS = 60
+
 default_experiment = {
+    "query_iterations": 1,
     "n_workers": 1,
     "query_path": "datasets/query.fna",
     "target_path": "datasets/query.fna",
@@ -23,11 +53,20 @@ default_experiment = {
 
 experiment_configs = []
 
-# Add the experiment to be run here.
-iterations = 10
-for _ in range(iterations):
-    for n_workers in [1, 2, 4, 8]:
+# The number of times to run a clean iteration, which means starting a fresh master, worker,
+# and then executing the query. You might want to run multiple clean iterations such that
+# the master's state does not affect the results.
+clean_iterations = 1
+
+# The number of times the query should be run within a single clean iteration.
+# E.g., we start the master, worker, and then execute the query 5 times.
+query_iterations = 2
+
+# Configure the experiments to be run here (append them to the "experiment_configs" list).
+for _ in range(clean_iterations):
+    for n_workers in [1, 2]:
         exp = default_experiment.copy()
+        exp["query_iterations"] = query_iterations
         exp["n_workers"] = n_workers
         experiment_configs.append(exp)
 
@@ -76,9 +115,10 @@ def block_till_n_workers_connected(filepath, n_workers, timeout_seconds):
         time.sleep(1)
 
 
-def start_query(experiment_config, master_ip):
+def start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name):
     command = list(map(str, [
             "srun", "python3", "tui",
+            "--output-path", f"results/{experiment_run_name}/{current_experiment_name}/",
             "--query", experiment_config["query_path"], "--database", experiment_config["target_path"],
             "--server-url", f"http://{master_ip}:8000",
             "--match-score", experiment_config["configuration"]["match_score"],
@@ -90,8 +130,8 @@ def start_query(experiment_config, master_ip):
     if (res.returncode != 0):
         return None
 
-    elapsed_time = re.search(r'total elapsed time: (\d+) milliseconds', res.stdout).group(1)
-    computation_time = re.search(r'Computation time: (\d+) milliseconds', res.stdout).group(1)
+    elapsed_time = re.search(r'total elapsed time: ((\d+\.)*\d+) milliseconds', res.stdout).group(1).replace('.', '')
+    computation_time = re.search(r'Computation time: ((\d+\.)*\d+) milliseconds', res.stdout).group(1).replace('.', '')
 
     return {
         "elapsed_time": int(elapsed_time),
@@ -100,110 +140,98 @@ def start_query(experiment_config, master_ip):
     } if (elapsed_time and computation_time) else None
 
 
-def start_experiment(experiment_config):
-    time_start_epoch = int(time.time())
-    time_start_readable = str(datetime.datetime.now())
+def start_experiment(experiment_config, experiment_run_name):
+    time_start = datetime.datetime.now()
+    time_start_epoch = int(time_start.timestamp())
+    time_start_readable = time_start.strftime("%Y-%m-%d_%H-%M-%S")
     num_workers = int(experiment_config["n_workers"])
 
-    experiment_name = f"{time_start_readable.replace(' ', '_')}_{str(num_workers)}"
+    current_experiment_name = f"{time_start_readable}_{str(num_workers)}"
 
-    meta_file_path = "results.json"
+    result_file_path = f"result_{experiment_run_name}.json"
 
     # Set up meta results file if it doesnt exist.
-    if not os.path.exists(meta_file_path):
-        with open(meta_file_path, 'w') as file:
+    if not os.path.exists(result_file_path):
+        with open(result_file_path, 'w') as file:
             json.dump({}, file, indent=4)
 
     # Add this experiment's parameters, commit id, etc.
-    with open(meta_file_path, 'r') as file:
-        meta_object = json.load(file)
-
-    meta_object[experiment_name] = {
-        "experiment_config": experiment_config,
-        "time_start_epoch": time_start_epoch,
-        "time_start_readable": time_start_readable,
-        "status": "FAILED"
-    }
-
-    with open(meta_file_path, 'w') as file:
-        json.dump(meta_object, file, indent=4)
+    with JSONFileContext(result_file_path) as result_object:
+        result_object[current_experiment_name] = {
+            "experiment_config": experiment_config,
+            "time_start_epoch": time_start_epoch,
+            "time_start_readable": time_start_readable,
+            "status": "STARTED"
+        }
 
     # Set up started job ids (for tracking and cleaning).
     jobs_started = []
+    query_res = None
 
     try:
         # Start master
-        logger.debug("Starting master...")
+        logger.debug("  Starting master...")
         master_res = start_master()
         if (master_res == None):
-            logger.error("Failed to start master. Exiting...")
-            return
+            raise Exception("Failed to start master")
 
         master_ip, master_job_id = master_res["master_ip"], master_res["master_job_id"]
         jobs_started.append(master_job_id)
 
         # Start worker(s)
-        logger.debug(f"Starting {num_workers} worker(s)...")
+        logger.debug(f"  Starting {num_workers} worker(s)...")
         workers_res = start_workers(num_workers, master_ip)
         if (workers_res == None):
-            logger.error("Failed to start workers. Exiting...")
-            cleanup_experiment(jobs_started)
-            return
+            raise Exception("Failed to start workers")
 
         worker_job_ids = workers_res["batch_job_ids"]
         jobs_started.extend(worker_job_ids)
 
         # Write result to result file.
-        with open(meta_file_path, 'r') as file:
-            meta_object = json.load(file)
+        with JSONFileContext(result_file_path) as result_object:
+            result_object[current_experiment_name]["master_job_id"] = master_job_id
+            result_object[current_experiment_name]["master_ip"] = master_ip
+            result_object[current_experiment_name]["worker_job_ids"] = worker_job_ids
 
-        meta_object[experiment_name]["master_job_id"] = master_job_id
-        meta_object[experiment_name]["master_ip"] = master_ip
-        meta_object[experiment_name]["worker_job_ids"] = worker_job_ids
-
-        with open(meta_file_path, 'w') as file:
-            json.dump(meta_object, file, indent=4)
-
-        # Wait until X workers have connected.
-        timeout_seconds = 60
+        # Wait until all workers have connected to the master.
         master_slurm_filepath = os.path.join(f"slurm-{master_job_id}.out")
-        logger.debug("Waiting for workers to connect...")
-        conn_res = block_till_n_workers_connected(master_slurm_filepath, experiment_config["n_workers"], timeout_seconds)
+        logger.debug("  Waiting for worker(s) to connect...")
+        conn_res = block_till_n_workers_connected(master_slurm_filepath, experiment_config["n_workers"], WORKER_CONNECTION_TIMEOUT_SECONDS)
         if (conn_res == False):
-            logger.error(f"Workers did not connect to master within timelimit {timeout_seconds}. Exiting...")
-            cleanup_experiment(jobs_started)
-            return
+            raise Exception(f"Workers did not connect to master within timelimit {WORKER_CONNECTION_TIMEOUT_SECONDS}")
 
         # Start query
-        logger.debug("Executing query...")
-        query_res = start_query(experiment_config, master_ip)
-        if (query_res == None):
-            logger.error("Query failed. Exiting...")
-            cleanup_experiment(jobs_started)
-            return
+        logger.debug("  Executing queries...")
+        for i in range(experiment_config["query_iterations"]):
+            logger.debug(f"    Query {i + 1}...")
+            query_res = None # Resetting to None for the setting "status" property in the finally clause.
+            query_res = start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name)
+            if (query_res == None):
+                raise Exception("Query failed")
 
-        elapsed_time, computation_time = query_res["elapsed_time"], query_res["computation_time"]
+            # Write result to result file.
+            with JSONFileContext(result_file_path) as result_object:
+                if "result" not in result_object[current_experiment_name]:
+                    result_object[current_experiment_name]["result"] = []
+                current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+                result_object[current_experiment_name]["result"].append({ "time": current_time, "query_res": query_res })
 
-        # Write result to result file.
-        with open(meta_file_path, 'r') as file:
-            meta_object = json.load(file)
-
-        time_end_epoch = int(time.time())
-        time_end_readable = str(datetime.datetime.now())
-
-        meta_object[experiment_name]["result"] = query_res
-        meta_object[experiment_name]["status"] = "SUCCESS"
-        meta_object[experiment_name]["time_end_readable"] = time_end_readable
-        meta_object[experiment_name]["time_end_epoch"] = time_end_epoch
-
-        with open(meta_file_path, 'w') as file:
-            json.dump(meta_object, file, indent=4)
-
-        logger.debug("Success!")
-
-    except:
-        logger.critical("Experiment failed. Cleaning up and exiting...")
+        logger.debug("  Success!")
+    except KeyboardInterrupt:
+        logger.critical(f"  Keyboard interrupt detected. Cleaning up and exiting...")
+        sys.exit(1)
+    except Exception as e:
+        logger.error(f"  Experiment failed. Error: '{e}'. Cleaning up and continuing with next available experiment...")
     finally:
+        time_end = datetime.datetime.now()
+        time_end_epoch = int(time_end.timestamp())
+        time_end_readable = time_end.strftime("%Y-%m-%d_%H-%M-%S")
+
+        with JSONFileContext(result_file_path) as result_object:
+            result_object[current_experiment_name]["status"] = "SUCCESS" if query_res != None else "FAILED"
+            result_object[current_experiment_name]["time_end_readable"] = time_end_readable
+            result_object[current_experiment_name]["time_end_epoch"] = time_end_epoch
+
         cleanup_experiment(jobs_started)
 
 
@@ -211,15 +239,16 @@ def start_experiment(experiment_config):
 def cleanup_experiment(job_ids):
     cancel_cmd = ["scancel"]
     cancel_cmd.extend(job_ids)
-    logger.debug(f"Cleaning up jobs: {', '.join(job_ids)}")
+    logger.debug(f"  Cleaning up jobs: {', '.join(job_ids)}")
     res = exec_cmd(cancel_cmd)
 
 
 def __main__():
+    experiment_run_name = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
     num_experiments = len(experiment_configs)
     for index, experiment_config in enumerate(experiment_configs):
         logger.info(f"Experiment {index + 1} out of {num_experiments}")
-        start_experiment(experiment_config)
+        start_experiment(experiment_config, experiment_run_name)
 
 
 if __name__ == "__main__":

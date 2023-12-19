@@ -10,8 +10,9 @@ import requests
 
 descr_map = {}
 
-PRINT_UNIT = 'milliseconds'
+PRINT_UNIT = "milliseconds"
 PRINT_UNIT_FROM_NANO_RATIO = 1_000_000
+
 
 def parse_fasta(fasta_file_path):
     with open(fasta_file_path, "r") as file:
@@ -151,8 +152,16 @@ def main():
                 total_elapsed_time = time.time_ns() - curr_time
                 computation_time = time.time_ns() - job_start
 
-                print(f'\nJob done - total elapsed time: {int(total_elapsed_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}'.replace(',', '.'))
-                print(f'Computation time: {int(computation_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}'.replace(',', '.'))
+                print(
+                    f"\nJob done - total elapsed time: {int(total_elapsed_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}".replace(
+                        ",", "."
+                    )
+                )
+                print(
+                    f"Computation time: {int(computation_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}".replace(
+                        ",", "."
+                    )
+                )
                 break
         # TODO: Sort the results by score???
         top_k_map = {}
