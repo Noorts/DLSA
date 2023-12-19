@@ -15,7 +15,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 # The number of seconds to wait for all workers to connect to the master. If they do not connect in time, then the
-# program classifies this as a failure.
+# program classifies this experiment iteration as a failure.
 WORKER_CONNECTION_TIMEOUT_SECONDS = 60
 
 default_experiment = {
@@ -32,10 +32,18 @@ default_experiment = {
 
 experiment_configs = []
 
-# Add the experiment to be run here.
-iterations = 10
-for _ in range(iterations):
-    for n_workers in [1, 2, 4, 8]:
+# The number of times to run a clean iteration, which means starting a fresh master, worker,
+# and then executing the query. You might want to run multiple clean iterations such that
+# the master's state does not affect the results.
+clean_iterations = 1
+
+# The number of times the query should be run within a single clean iteration.
+# E.g., we start the master, worker, and then execute the query 5 times.
+query_iterations = 2
+
+# Configure the experiments to be run here (append them to the "experiment_configs" list).
+for _ in range(clean_iterations):
+    for n_workers in [1, 2]:
         exp = default_experiment.copy()
         exp["n_workers"] = n_workers
         experiment_configs.append(exp)
@@ -181,12 +189,22 @@ def start_experiment(experiment_config, experiment_run_name):
             raise Exception(f"Workers did not connect to master within timelimit {WORKER_CONNECTION_TIMEOUT_SECONDS}")
 
         # Start query
-        logger.debug("Executing query...")
-        query_res = start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name)
-        if (query_res == None):
-            raise Exception("Query failed")
+        for i in range(query_iterations):
+            logger.debug(f"    Query {i + 1}...")
+            query_res = start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name)
+            if (query_res == None):
+                raise Exception("Query failed")
 
-        elapsed_time, computation_time = query_res["elapsed_time"], query_res["computation_time"]
+            with open(meta_file_path, 'r') as file:
+                meta_object = json.load(file)
+
+            if "result" not in meta_object[current_experiment_name]:
+                meta_object[current_experiment_name]["result"] = []
+            current_time = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+            meta_object[current_experiment_name]["result"].append({ "time": current_time, "query_res": query_res })
+
+            with open(meta_file_path, 'w') as file:
+                json.dump(meta_object, file, indent=4)
 
         logger.debug("Success!")
     except KeyboardInterrupt:
@@ -203,11 +221,7 @@ def start_experiment(experiment_config, experiment_run_name):
         time_end_epoch = int(time_end.timestamp())
         time_end_readable = time_end.strftime("%Y-%m-%d_%H-%M-%S")
 
-        if query_res != None:
-            meta_object[current_experiment_name]["result"] = query_res
-            meta_object[current_experiment_name]["status"] = "SUCCESS"
-        else:
-            meta_object[current_experiment_name]["status"] = "FAILED"
+        meta_object[current_experiment_name]["status"] = "SUCCESS" if query_res != None else "FAILED"
         meta_object[current_experiment_name]["time_end_readable"] = time_end_readable
         meta_object[current_experiment_name]["time_end_epoch"] = time_end_epoch
 
