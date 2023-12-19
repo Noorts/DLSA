@@ -58,9 +58,8 @@ fn main() {
     //TODO: benchmark and send ncpus
     let cpus = num_cpus::get();
     println!("Number of cpus: {}", cpus);
-    let cups: f32 = run_benchmark(std::time::Duration::from_secs(1), 2, 4) * 1e-9;
+    let cups: f32 = run_benchmark(std::time::Duration::from_secs(1), 2, 4);
     let cups_int = cups as i32;
-    println!("MCUPS: {}", cups_int);
     let worker_id = client
         .register_worker(MachineSpecs {
             benchmark_result: cups_int,
