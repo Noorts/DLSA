@@ -153,7 +153,7 @@ def start_experiment(experiment_config, experiment_run_name):
 
     try:
         # Start master
-        logger.debug("Starting master...")
+        logger.debug("  Starting master...")
         master_res = start_master()
         if (master_res == None):
             raise Exception("Failed to start master")
@@ -162,7 +162,7 @@ def start_experiment(experiment_config, experiment_run_name):
         jobs_started.append(master_job_id)
 
         # Start worker(s)
-        logger.debug(f"Starting {num_workers} worker(s)...")
+        logger.debug(f"  Starting {num_workers} worker(s)...")
         workers_res = start_workers(num_workers, master_ip)
         if (workers_res == None):
             raise Exception("Failed to start workers")
@@ -183,12 +183,13 @@ def start_experiment(experiment_config, experiment_run_name):
 
         # Wait until all workers have connected to the master.
         master_slurm_filepath = os.path.join(f"slurm-{master_job_id}.out")
-        logger.debug("Waiting for workers to connect...")
+        logger.debug("  Waiting for worker(s) to connect...")
         conn_res = block_till_n_workers_connected(master_slurm_filepath, experiment_config["n_workers"], WORKER_CONNECTION_TIMEOUT_SECONDS)
         if (conn_res == False):
             raise Exception(f"Workers did not connect to master within timelimit {WORKER_CONNECTION_TIMEOUT_SECONDS}")
 
         # Start query
+        logger.debug("  Executing queries...")
         for i in range(query_iterations):
             logger.debug(f"    Query {i + 1}...")
             query_res = start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name)
@@ -206,12 +207,12 @@ def start_experiment(experiment_config, experiment_run_name):
             with open(meta_file_path, 'w') as file:
                 json.dump(meta_object, file, indent=4)
 
-        logger.debug("Success!")
+        logger.debug("  Success!")
     except KeyboardInterrupt:
-        logger.critical(f"Keyboard interrupt detected. Cleaning up and exiting...")
+        logger.critical(f"  Keyboard interrupt detected. Cleaning up and exiting...")
         sys.exit(1)
     except Exception as e:
-        logger.error(f"Experiment failed. Error: '{e}'. Cleaning up and continuing with next available experiment...")
+        logger.error(f"  Experiment failed. Error: '{e}'. Cleaning up and continuing with next available experiment...")
     finally:
         # Write result to result file.
         with open(meta_file_path, 'r') as file:
@@ -235,7 +236,7 @@ def start_experiment(experiment_config, experiment_run_name):
 def cleanup_experiment(job_ids):
     cancel_cmd = ["scancel"]
     cancel_cmd.extend(job_ids)
-    logger.debug(f"Cleaning up jobs: {', '.join(job_ids)}")
+    logger.debug(f"  Cleaning up jobs: {', '.join(job_ids)}")
     res = exec_cmd(cancel_cmd)
 
 
