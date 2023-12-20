@@ -4,6 +4,7 @@ from uuid import UUID
 from master.api_models import TargetQueryCombination, Sequence, SequenceId
 from master.job_queue.queued_job import QueuedJob
 from master.utils.log_time import log_time
+from master.utils.time import current_ms
 from master.utils.try_until_succeeds import try_until_succeeds
 from master.worker.worker import Worker
 
@@ -24,6 +25,8 @@ class InternalWorkPackage:
 class ScheduledWorkPackage:
     package: InternalWorkPackage
     worker: Worker
+    start_time: int
+    expected_ms: int
 
     @property
     @log_time
@@ -36,3 +39,7 @@ class ScheduledWorkPackage:
 
     def done(self) -> bool:
         return self.percentage_done == 1
+
+    def is_too_slow(self) -> bool:
+        # return True if worker is 10 seconds slower than twice as slow as expected
+        return self.start_time + self.percentage_done * self.expected_ms * 10 + 60000 < current_ms()

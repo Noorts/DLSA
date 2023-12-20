@@ -12,7 +12,7 @@ use crate::utils::index;
 pub mod algorithm;
 pub mod bindings;
 
-type AlignResult = (Vec<char>, Vec<char>, i16);
+type AlignResult = (Vec<char>, Vec<char>, i16, usize, usize);
 
 pub fn find_alignment_sequential(
     query: &[char],
@@ -39,7 +39,7 @@ pub fn find_alignment_sequential(
         scores,
     );
 
-    (query_result, target_result, 0)
+    (query_result, target_result, 0, x - 1, y - x - 1)
 }
 
 pub fn find_alignment_sequential_straight(
@@ -67,7 +67,7 @@ pub fn find_alignment_sequential_straight(
         scores,
     );
 
-    (query_result, target_result, 0)
+    (query_result, target_result, 0, x, y)
 }
 
 pub fn find_alignment_parallel(
@@ -82,7 +82,8 @@ pub fn find_alignment_parallel(
 
     let width = query.len() + 1;
     if data.is_empty() {
-        return (query_result, target_result, 0);
+        // TODO what index is expected to return?
+        return (query_result, target_result, 0, 0, 0);
     }
     let argmax = data.argmax();
     let (x, y) = coord(argmax, width);
@@ -98,7 +99,7 @@ pub fn find_alignment_parallel(
         scores,
     );
 
-    (query_result, target_result, 0)
+    (query_result, target_result, 0, x - 1, y - x - 1)
 }
 
 pub fn find_alignment_simd<const LANES: usize>(
@@ -131,8 +132,7 @@ where
         &mut target_result,
         scores,
     );
-
-    (query_result, target_result, data[max_index])
+    (query_result, target_result, data[max_index], x - 1, y - x - 1)
 }
 
 pub mod utils {

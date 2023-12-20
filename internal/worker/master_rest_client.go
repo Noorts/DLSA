@@ -19,9 +19,12 @@ type QueryTargetType struct {
 }
 
 type Alignment struct {
-	AlignmentString string `json:"alignment"`
+	QueryAlignment  string `json:"query_alignment"`
+	TargetAlignment string `json:"target_alignment"`
 	Length          int    `json:"length"`
 	Score           int    `json:"score"`
+	MaxX            int    `json:"maxX"`
+	MaxY            int    `json:"maxY"`
 }
 
 type WorkPackage struct {
