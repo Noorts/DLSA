@@ -73,6 +73,10 @@ class WorkPackageCollector(Cleaner, Singleton):
         if work_package.package.job.done():
             logger.info(f"Work package {work_package.package.id} is done")
 
+        # Remove worker if it is far slower than expected
+        if work_package.is_too_slow():
+            self._worker_collector.remove_worker(work_package.worker)
+
     def get_new_work_package(self, worker_id: WorkerId) -> None | WorkPackage:
         new = self.get_new_raw_work_package(worker_id)
         if not new:
