@@ -41,5 +41,5 @@ class ScheduledWorkPackage:
         return self.percentage_done == 1
 
     def is_too_slow(self) -> bool:
-        # return True if worker is 10 seconds slower than twice as slow as expected
+        # return True if worker is 60 seconds slower than 10x as slow as expected
         return self.start_time + self.percentage_done * self.expected_ms * 10 + 60000 < current_ms()
