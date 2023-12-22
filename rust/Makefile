@@ -12,7 +12,7 @@ run:
 
 .PHONY: build-linux-avx2
 build-linux-avx2:
-	RUSTFLAGS="-C target-feature=+avx2" cargo build --release --target x86_64-unknown-linux-gnu
+	RUSTFLAGS="-C target-feature=+avx2" cargo build --release --target x86_64-unknown-linux-musl
 
 .PHONY: build-darwin-avx2
 build-macos-x86-avx2:
