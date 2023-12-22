@@ -38,9 +38,10 @@ pub fn calculate_alignment_scores(
         let query = &hash_map[query_id];
         let target = &hash_map[target_id];
 
-        let target_sequence_chars: Vec<char> = query.chars().collect();
-        let query_sequence_chars: Vec<char> = target.chars().collect();
+        let target_sequence_chars: Vec<char> = target.chars().collect();
+        let query_sequence_chars: Vec<char> = query.chars().collect();
         //TODO: fallback
+
         let (q_res, t_res, score) = sw::algorithm::find_alignment_simd_lowmem::<64>(
             &query_sequence_chars,
             &target_sequence_chars,
