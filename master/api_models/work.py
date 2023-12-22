@@ -2,7 +2,7 @@ from uuid import UUID
 
 from pydantic import BaseModel
 
-from .job import TargetQueryCombination, SequenceId, Sequence, Alignment
+from .job import TargetQueryCombination, SequenceId, Sequence
 
 
 class RawWorkPackage(BaseModel):
@@ -23,9 +23,18 @@ class WorkStatus(BaseModel):
     percentage_done: float
 
 
+class WorkAlignment(BaseModel):
+    query_alignment: str
+    target_alignment: str
+    length: int
+    score: int
+    maxX: int
+    maxY: int
+
+
 class WorkResultCombination(BaseModel):
     combination: TargetQueryCombination
-    alignment: Alignment
+    alignment: WorkAlignment
 
 
 class WorkResult(BaseModel):

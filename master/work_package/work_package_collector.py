@@ -4,10 +4,11 @@ from uuid import UUID
 
 from fastapi import HTTPException
 
-from master.api_models import WorkResult, WorkerId, WorkPackage, RawWorkPackage
+from master.api_models import WorkResult, WorkerId, WorkPackage, RawWorkPackage, Alignment
 from master.settings import SETTINGS
 from master.utils.cleaner import Cleaner
 from master.utils.singleton import Singleton
+from master.utils.verify import verify_result
 from master.worker.worker_collector import WorkerCollector
 from ._scheduler.work_scheduler import WorkPackageScheduler, ScheduledWorkPackage
 from ..utils.log_time import log_time
@@ -25,6 +26,7 @@ class WorkPackageCollector(Cleaner, Singleton):
         self._worker_collector = WorkerCollector()
         self._work_scheduler = WorkPackageScheduler.create()
         self._work_packages: list[ScheduledWorkPackage] = []
+        self._verify_work = SETTINGS.verify_work
         super().__init__(interval=SETTINGS.work_package_cleaning_interval)
 
     def get_package_by_id(self, work_package_id: UUID) -> ScheduledWorkPackage:
@@ -38,11 +40,24 @@ class WorkPackageCollector(Cleaner, Singleton):
         work_package = self.get_package_by_id(work_id)
         completed_sequences = work_package.package.job.completed_sequences
 
+        if self._verify_work and not self._worker_collector.is_alive(work_package.worker):  # malicious deleted worker is marked dead
+            return
+
         for res in result.alignments:
+            if self._verify_work and not verify_result(work_package.package, res):
+                work_package.package.job.sequences_in_progress.update(work_package.package.job.completed_sequences.keys())
+                work_package.package.job.completed_sequences.clear()
+                self._worker_collector.remove_worker(work_package.worker)
+                return
+
             if res.combination not in completed_sequences:
                 completed_sequences[res.combination] = []
 
-            completed_sequences[res.combination].append(res.alignment)
+            completed_sequences[res.combination].append(Alignment(
+                alignment=res.alignment.query_alignment,
+                length=res.alignment.length,
+                score=res.alignment.score)
+            )
             # Remove the sequence from the in progress list if it is in there
             try:
                 work_package.package.job.sequences_in_progress.remove(res.combination)
@@ -57,6 +72,10 @@ class WorkPackageCollector(Cleaner, Singleton):
         # See if the job is done
         if work_package.package.job.done():
             logger.info(f"Work package {work_package.package.id} is done")
+
+        # Remove worker if it is far slower than expected
+        if work_package.is_too_slow():
+            self._worker_collector.remove_worker(work_package.worker)
 
     def get_new_work_package(self, worker_id: WorkerId) -> None | WorkPackage:
         new = self.get_new_raw_work_package(worker_id)

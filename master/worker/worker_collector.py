@@ -62,6 +62,9 @@ class WorkerCollector(Cleaner, Singleton):
     def execute_clean(self) -> None:
         for worker in [*self._workers.values()]:
             if not self.is_alive(worker):
-                logger.info(f"Removing dead worker {worker.worker_id}")
-                worker.status = "DEAD"
-                del self._workers[worker.worker_id]
+                self.remove_worker(worker)
+
+    def remove_worker(self, worker):
+        logger.info(f"Removing dead or malicious worker {worker.worker_id}")
+        worker.status = "DEAD"
+        del self._workers[worker.worker_id]

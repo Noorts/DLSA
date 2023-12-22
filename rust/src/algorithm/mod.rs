@@ -8,6 +8,7 @@ use std::{
 };
 
 use crate::{
+    AlignResult,
     find_alignment_simd,
     utils::{self, coord, index},
 };
@@ -204,7 +205,7 @@ pub fn find_alignment_simd_lowmem<const LANES: usize>(
     query: &[char],
     target: &[char],
     scores: AlignmentScores,
-) -> (Vec<char>, Vec<char>, i16)
+) -> AlignResult
 where
     std::simd::LaneCount<LANES>: std::simd::SupportedLaneCount,
 {
@@ -240,6 +241,8 @@ where
 
     let mut data: Vec<i16> = vec![0; width * data_store_height];
     let mut current_max = 0;
+    let mut current_max_x = 0;
+    let mut current_max_y = 0;
 
     // No need to wrap the indices here as the the height is guaranteed to be at least `width`
     // high
@@ -273,7 +276,8 @@ where
         // PERF: Probably better to do this for the entire diagonal part in one run.
         if row_max > current_max {
             current_max = row_max;
-            let (max_x, _y) = coord(left + row_max_index, width);
+            (current_max_x, _) = coord(left + row_max_index, width);
+            current_max_y = y;
 
             // PERF: We should benchmark if using `with_capacity` is cheaper or not
             // This should be done with realistic workloads!
@@ -283,8 +287,8 @@ where
                 &data,
                 query,
                 target,
-                max_x,
-                y,
+                current_max_x,
+                current_max_y,
                 width,
                 &mut total_query_result,
                 &mut total_target_result,
@@ -355,7 +359,8 @@ where
             current_max = row_max;
             let left = index(1, y % data_store_height, width);
             let argmax = (&data[left..left + width - 1]).argmax();
-            let (x, _y) = coord(left + argmax, width);
+            (current_max_x, _) = coord(left + argmax, width);
+            current_max_y = y;
 
             // PERF: We should benchmark if using `with_capacity` is cheaper or not
             // This should be done with realistic workloads!
@@ -365,8 +370,8 @@ where
                 &data,
                 query,
                 target,
-                x,
-                y,
+                current_max_x,
+                current_max_y,
                 width,
                 &mut total_query_result,
                 &mut total_target_result,
@@ -410,10 +415,11 @@ where
         let row_max = data[argmax + left];
         if row_max > current_max {
             current_max = row_max;
-            let (max_x, _max_y) = coord(left + argmax, width);
+            (current_max_x, _) = coord(left + argmax, width);
+            current_max_y = y;
 
-            assert!(_max_y == y % data_store_height);
-            assert!(max_x >= start_x);
+            //assert!(_y == y % data_store_height);
+            assert!(current_max_x >= start_x);
 
             // PERF: We should benchmark if using `with_capacity` is cheaper or not
             // This should be done with realistic workloads!
@@ -423,8 +429,8 @@ where
                 &data,
                 query,
                 target,
-                max_x,
-                y,
+                current_max_x,
+                current_max_y,
                 width,
                 &mut total_query_result,
                 &mut total_target_result,
@@ -435,7 +441,7 @@ where
         start_x += 1;
     }
 
-    (total_query_result, total_target_result, current_max)
+    (total_query_result, total_target_result, current_max, current_max_x - 1, current_max_y - current_max_x - 1)
 }
 
 pub fn string_scores_parallel(
