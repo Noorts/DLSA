@@ -4,6 +4,7 @@ from master.api_models import (
     JobRequest,
     WorkResult,
     Alignment,
+    WorkAlignment,
     TargetQueryCombination,
     JobResultCombination,
     WorkResultCombination,
@@ -45,19 +46,19 @@ WORK_RESULT_COMPLETE = WorkResult(
             combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignment=Alignment(alignment="ABCD", length=4, score=4),
+            alignment=WorkAlignment(query_alignment="ABCD", target_alignment="ABCD", length=4, score=4, maxX=3, maxY=3),
         ),
         WorkResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignment=Alignment(alignment="ABCD", length=4, score=4),
+            alignment=WorkAlignment(query_alignment="ABCD", target_alignment="ABCD", length=4, score=4, maxX=3, maxY=3),
         ),
         WorkResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignment=Alignment(alignment="ABCD", length=4, score=4),
+            alignment=WorkAlignment(query_alignment="ABCD", target_alignment="ABCD", length=4, score=4, maxX=3, maxY=3),
         ),
     ]
 )
@@ -68,13 +69,13 @@ WORK_RESULT_PART_1 = WorkResult(
             combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignment=Alignment(alignment="ABCD", length=4, score=4),
+            alignment=WorkAlignment(query_alignment="ABCD", target_alignment="ABCD", length=4, score=4, maxX=3, maxY=3),
         ),
         WorkResultCombination(
             combination=TargetQueryCombination(
                 target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignment=Alignment(alignment="ABCD", length=4, score=4),
+            alignment=WorkAlignment(query_alignment="ABCD", target_alignment="ABCD", length=4, score=4, maxX=3, maxY=3),
         ),
     ]
 )
@@ -85,7 +86,7 @@ WORK_RESULT_PART_2 = WorkResult(
             combination=TargetQueryCombination(
                 target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignment=Alignment(alignment="ABCD", length=4, score=4),
+            alignment=WorkAlignment(query_alignment="ABCD", target_alignment="ABCD", length=4, score=4, maxX=3, maxY=3),
         ),
     ]
 )
@@ -95,7 +96,7 @@ WORK_RESULT_PART_2_DIFFERENT_ALIGNMENT = WorkResult(
             combination=TargetQueryCombination(
                 target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignment=Alignment(alignment="ABC", length=3, score=3),
+            alignment=WorkAlignment(query_alignment="ABC", target_alignment="ABC", length=3, score=3, maxX=2, maxY=2),
         ),
     ]
 )
@@ -123,8 +124,28 @@ JOB_RESULT_COMPLETE = JobResult(
     ]
 )
 
-_tmp = JOB_RESULT_COMPLETE.model_dump(mode="json")
-_tmp["alignments"][-1]["alignments"].append(
-    WORK_RESULT_PART_2_DIFFERENT_ALIGNMENT.model_dump(mode="json")["alignments"][0]["alignment"]
+JOB_RESULT_COMPLETE_WITH_DIFFERENT_ALIGNMENT = JobResult(
+    alignments=[
+        JobResultCombination(
+            combination=TargetQueryCombination(
+                target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("1e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
+            alignments=[Alignment(alignment="ABCD", length=4, score=4)],
+        ),
+        JobResultCombination(
+            combination=TargetQueryCombination(
+                target=UUID("0e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
+            alignments=[Alignment(alignment="ABCD", length=4, score=4)],
+        ),
+        JobResultCombination(
+            combination=TargetQueryCombination(
+                target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
+            ),
+            alignments=[
+                Alignment(alignment="ABCD", length=4, score=4),
+                Alignment(alignment="ABC", length=3, score=3)
+            ],
+        ),
+    ]
 )
-JOB_RESULT_COMPLETE_WITH_DIFFERENT_ALIGNMENT = JobResult(**_tmp)

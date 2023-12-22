@@ -3,6 +3,7 @@ from uuid import UUID
 
 from master.api_models import JobRequest, TargetQueryCombination, JobState, Alignment
 from master.utils.log_time import log_time
+from master.utils.try_until_succeeds import try_until_succeeds
 
 
 @dataclass
@@ -36,6 +37,6 @@ class QueuedJob:
         completed_set = self.completed_sequences.keys()
         in_progress_set = self.sequences_in_progress
 
-        missing = self.request.queries - (completed_set | in_progress_set)
+        missing = try_until_succeeds(lambda: self.request.queries - (completed_set | in_progress_set))
 
         return missing
