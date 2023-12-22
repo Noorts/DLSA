@@ -38,13 +38,12 @@ fn run_once(n_q: i32, n_t: i32, q_steps: i32, t_steps: i32) -> (u128, f32) {
     let query_sequence_chars: Vec<char> = (0..n_q).map(|_| 'A').collect();
     let target_sequence_chars: Vec<char> = (0..n_t).map(|_| 'A').collect();
     let start = Instant::now();
-    let (_, _, _) = sw::algorithm::find_alignment_simd_lowmem::<64>(
+    let (_, _, _, _, _) = sw::algorithm::find_alignment_simd_lowmem::<64>(
         &query_sequence_chars,
         &target_sequence_chars,
         scores,
     );
     let duration = start.elapsed();
     let cups = n_q as f32 * n_t as f32 / duration.as_secs_f32() * 1e9;
-    println!("q: {} t: {} cups: {}", n_q, n_t, cups);
     (duration.as_nanos(), cups)
 }
