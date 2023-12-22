@@ -2,7 +2,6 @@ from uuid import uuid4
 
 from master.api_models import Sequence, TargetQueryCombination
 from master.job_queue.queued_job import QueuedJob
-from master.utils.time import current_ms
 from master.work_package._scheduler.scheduled_work_package import InternalWorkPackage, ScheduledWorkPackage
 from master.worker.worker import Worker
 
@@ -19,12 +18,6 @@ def work_packages_from_queries(
 ) -> ScheduledWorkPackage | None:
     if not queries:
         return None
-
-    total_cups = 0
-    for comb in queries:
-        total_cups += len(job.request.sequences[comb.query]) * len(job.request.sequences[comb.target])
-    total_ms = total_cups / worker.resources.benchmark_result * 1000
-
     package = InternalWorkPackage(
         id=uuid4(),
         job=job,
@@ -45,6 +38,4 @@ def work_packages_from_queries(
     return ScheduledWorkPackage(
         package=package,
         worker=worker,
-        start_time=current_ms(),
-        expected_ms=max(int(total_ms), 1)
     )

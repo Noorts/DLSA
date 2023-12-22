@@ -33,25 +33,44 @@ fn parse_fasta(file_path: &str) -> io::Result<Vec<Vec<char>>> {
 fn create_target_pairs(
     file1: &str,
     file2: &str,
-) -> io::Result<Vec<(Vec<char>, Vec<char>, i16, usize, usize)>> {
-    let queries: Vec<Vec<char>> = parse_fasta(file1)?;
-    let targets: Vec<Vec<char>> = parse_fasta(file2)?;
+    parallel: bool,
+) -> io::Result<Vec<(Vec<char>, Vec<char>, i16)>> {
+    let mut queries: Vec<Vec<char>> = parse_fasta(file1)?;
+    let mut targets: Vec<Vec<char>> = parse_fasta(file2)?;
     let scores = algorithm::AlignmentScores {
         gap: -2,
         r#match: 3,
         miss: -3,
     };
-    let pairs: Vec<(Vec<char>, Vec<char>, i16, usize, usize)> =
-        iproduct!(queries.iter(), targets.iter())
+    // Using parallel iterators from rayo
+    //sort by descending length
+    queries.sort_by(|a, b| a.len().cmp(&b.len()));
+    targets.sort_by(|a, b| a.len().cmp(&b.len()));
+    let start = std::time::Instant::now();
+    if parallel {
+        let pairs: Vec<(Vec<char>, Vec<char>, i16)> = iproduct!(queries.iter(), targets.iter())
+            .par_bridge()
             .map(|(query, target)| {
-                let (q_res, t_res, score, max_x, max_y) =
+                let (q_res, t_res, score) =
                     sw::algorithm::find_alignment_simd_lowmem::<64>(query, target, scores);
-                return (q_res, t_res, score, max_x, max_y);
+                return (q_res, t_res, score);
             })
             .collect();
-    // .max_by_key(|(_, _, score)| *score)
-    // .expect("No pairs to align");
-    Ok(pairs)
+        let finish = start.elapsed();
+        println!("Time elapsed parallel: {:?}", finish);
+        return Ok(pairs);
+    } else {
+        let pairs: Vec<(Vec<char>, Vec<char>, i16)> = iproduct!(queries.iter(), targets.iter())
+            .map(|(query, target)| {
+                let (q_res, t_res, score) =
+                    sw::algorithm::find_alignment_simd_lowmem::<64>(query, target, scores);
+                return (q_res, t_res, score);
+            })
+            .collect();
+        let finish = start.elapsed();
+        println!("Time elapsed sequential: {:?}", finish);
+        return Ok(pairs);
+    }
 }
 
 fn main() {
@@ -65,15 +84,15 @@ fn main() {
         );
         std::process::exit(1);
     }
-    let mut pairs: Vec<(Vec<char>, Vec<char>, i16, usize, usize)> =
-        create_target_pairs(file1, file2).expect("Could not create pairs");
-    pairs.sort_by(|(_, _, score, _, _), (_, _, otherscore, _, _)| score.cmp(otherscore));
-    for pair in pairs {
-        println!(
-            "Q: {:?}\nT: {:?}\nScore: {}",
-            pair.0.into_iter().collect::<String>(),
-            pair.1.into_iter().collect::<String>(),
-            pair.2
-        );
-    }
+    let start = std::time::Instant::now();
+    let mut pairs: Vec<_> = create_target_pairs(file1, file2, true).unwrap();
+    pairs.sort_by(|(_, _, score), (_, _, otherscore)| score.cmp(otherscore));
+    // for pair in pairs {
+    //     println!(
+    //         "Q: {:?}\nT: {:?}\nScore: {}",
+    //         pair.0.into_iter().collect::<String>(),
+    //         pair.1.into_iter().collect::<String>(),
+    //         pair.2
+    //     );
+    // }
 }

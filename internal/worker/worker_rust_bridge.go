@@ -13,16 +13,12 @@ type Result struct {
 	QueryPtr  *C.char
 	TargetPtr *C.char
 	Score     int
-	MaxX      int
-	MaxY      int
 }
 
 type GoResult struct {
 	Query  string
 	Target string
 	Score  uint16
-	MaxX   uint64
-	MaxY   uint64
 }
 
 func cCharPtrToString(cStr *C.char) string {
@@ -34,15 +30,11 @@ func ConvertResultToGoResult(cResult *C.struct_Result) GoResult {
 	query := cCharPtrToString(cResult.query_ptr)
 	target := cCharPtrToString(cResult.target_ptr)
 	score := uint16(cResult.score)
-	maxX := uint64(cResult.max_x)
-	maxY := uint64(cResult.max_y)
 
 	return GoResult{
 		Query:  query,
 		Target: target,
 		Score:  score,
-		MaxX:   maxX,
-		MaxY:   maxY,
 	}
 }
 
@@ -133,8 +125,6 @@ func convertResultToGoResult(cResult *C.struct_Result) GoResult {
 		Query:  cCharPtrToGoString(cResult.query_ptr),
 		Target: cCharPtrToGoString(cResult.target_ptr),
 		Score:  uint16(cResult.score),
-		MaxX:   uint64(cResult.max_x),
-		MaxY:   uint64(cResult.max_y),
 	}
 }
 

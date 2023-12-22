@@ -1,6 +1,5 @@
 use crate::algorithm::find_alignment_simd_lowmem;
 use crate::algorithm::AlignmentScores;
-use std::convert::TryFrom;
 use std::ffi::{c_char, CStr, CString};
 use std::panic::{self, AssertUnwindSafe};
 
@@ -11,8 +10,6 @@ pub struct AlignmentResult {
     query: *mut c_char,
     target: *mut c_char,
     score: i16,
-    max_x: u64,
-    max_y: u64,
 }
 
 /// Find a local alignment using a parallel implementation
@@ -86,7 +83,7 @@ pub unsafe extern "C" fn find_alignment_simd(
 
         // println!("Searching for alignment: Q: {query:?}; T: {target:?}");
 
-        let (query_res, target_res, score, max_x, max_y) =
+        let (query_res, target_res, score) =
             crate::find_alignment_simd::<LANES>(&query, &target, alignment_scores);
 
         let query_res_ref: &[char] = query_res.as_ref();
@@ -101,8 +98,6 @@ pub unsafe extern "C" fn find_alignment_simd(
             query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
             target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
             score,
-            max_x: u64::try_from(max_x).unwrap(),
-            max_y: u64::try_from(max_y).unwrap(),
         });
 
         Box::into_raw(res)
@@ -131,7 +126,7 @@ pub unsafe extern "C" fn find_alignment_low_memory(
 
         // println!("Searching for alignment: Q: {query:?}; T: {target:?}");
 
-        let (query_res, target_res, score, max_x, max_y) =
+        let (query_res, target_res, score) =
             find_alignment_simd_lowmem::<LANES>(&query, &target, alignment_scores);
 
         let query_res_ref: &[char] = query_res.as_ref();
@@ -146,8 +141,6 @@ pub unsafe extern "C" fn find_alignment_low_memory(
             query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
             target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
             score,
-            max_x: u64::try_from(max_x).unwrap(),
-            max_y: u64::try_from(max_y).unwrap(),
         });
 
         Box::into_raw(res)
@@ -204,7 +197,7 @@ pub unsafe extern "C" fn find_alignment_sequential_straight(
 
         // println!("Searching for alignment: Q: {query:?}; T: {target:?}");
 
-        let (query_res, target_res, score, max_x, max_y) =
+        let (query_res, target_res, score) =
             crate::find_alignment_sequential_straight(&query, &target, alignment_scores);
 
         let query_res_ref: &[char] = query_res.as_ref();
@@ -218,8 +211,6 @@ pub unsafe extern "C" fn find_alignment_sequential_straight(
             query: CString::new(q_res.into_bytes()).unwrap().into_raw(),
             target: CString::new(t_res.into_bytes()).unwrap().into_raw(),
             score,
-            max_x: u64::try_from(max_x).unwrap(),
-            max_y: u64::try_from(max_y).unwrap(),
         });
 
         Box::into_raw(res)

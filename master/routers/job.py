@@ -22,7 +22,7 @@ _job_queue = JobQueue()
 
 # submit a job to the job job_queue, returns a job id (for client)
 @job_router.post("/job/format/json")
-async def submit_job(body: JobRequest) -> JobId:
+def submit_job(body: JobRequest) -> JobId:
     body.assert_required_sequences()
     job = _job_queue.add_job_to_queue(body)
     return JobId(id=job.id)
@@ -30,7 +30,7 @@ async def submit_job(body: JobRequest) -> JobId:
 
 # submit a job to the job job_queue, returns a job id (for client)
 @job_router.post("/job/format/multipart")
-async def submit_multipart_job(body: MultipartJobRequest, sequences: Annotated[list[UploadFile], File()]) -> Any:
+def submit_multipart_job(body: MultipartJobRequest, sequences: Annotated[list[UploadFile], File()]) -> Any:
     file_dict = {}
     for sequence in sequences:
         try:
@@ -46,14 +46,14 @@ async def submit_multipart_job(body: MultipartJobRequest, sequences: Annotated[l
 
 # returns the state of a job (for a client)
 @job_router.get("/job/{job_id}/status")
-async def get_job(job_id: UUID) -> JobStatus:
+def get_job(job_id: UUID) -> JobStatus:
     job = _job_queue.get_job_by_id(job_id)
     return JobStatus(state=job.state, progress=job.percentage_done)
 
 
 # returns the state of a job (for a client)
 @job_router.get("/job/{job_id}/result")
-async def get_job(job_id: UUID) -> JobResult:
+def get_job(job_id: UUID) -> JobResult:
     job = _job_queue.get_job_by_id(job_id)
 
     if job.state != "DONE":
@@ -71,7 +71,7 @@ async def get_job(job_id: UUID) -> JobResult:
 
 
 @job_router.delete("/job/{job_id}")
-async def delete_job(job_id: UUID):
+def delete_job(job_id: UUID):
     """
     This is only intended for testing purposes.<br>
     Job deletion might have unwanted side effects, as workers might still be working on the job and work packages are

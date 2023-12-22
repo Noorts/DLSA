@@ -134,19 +134,13 @@ func (w *Worker) ExecuteWork(work *CompleteWorkPackage, queries []QueryTargetTyp
 		}
 
 		qRes := rustRes.Query
-		tRes := rustRes.Target
 		score := int(rustRes.Score)
-		maxX := int(rustRes.MaxX)
-		maxY := int(rustRes.MaxY)
 
 		alignment := AlignmentDetail{
 			Alignment: Alignment{
-				QueryAlignment:  qRes,
-				TargetAlignment: tRes,
+				AlignmentString: qRes,
 				Score:           score,
 				Length:          len(qRes),
-				MaxX:            maxX,
-				MaxY:            maxY,
 			},
 			TargetQueryCombination: TargetQueryCombination{
 				Query:  comb.Query,

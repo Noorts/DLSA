@@ -6,8 +6,6 @@ struct Result
   char *query_ptr;
   char *target_ptr;
   uint16_t score;
-  uint64_t max_x;
-  uint64_t max_y;
 };
 
 struct AlignmentScores

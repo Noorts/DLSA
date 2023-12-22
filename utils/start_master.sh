@@ -5,7 +5,6 @@ if [ $? -eq 0 ]; then
         echo "Master started!"
     else
         echo "Starting master failed."
-        exit 1
 fi
 echo $sbatch_output | awk '{print $4}' | xargs -I {} sh -c 'while [ ! -e "slurm-{}.out" ]; do sleep 1; done; cat "slurm-{}.out" | head --lines 1'
 echo $sbatch_output | grep "Submitted batch job"

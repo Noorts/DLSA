@@ -21,7 +21,6 @@ class _Settings(BaseSettings):
     # For the time scheduler (how many seconds of work should be assigned to a worker)
     work_package_time_split_in_seconds: int = 60 * 3
     enable_job_deletion: bool = True
-    verify_work: bool = False
 
 
 SETTINGS = _Settings()
