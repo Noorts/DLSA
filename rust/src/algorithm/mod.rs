@@ -1,5 +1,4 @@
 use argminmax::ArgMinMax;
-use spin_sync::Barrier;
 use std::{
     cmp::{max, min},
     simd::Simd,
@@ -436,77 +435,6 @@ where
     }
 
     (total_query_result, total_target_result, current_max)
-}
-
-pub fn string_scores_parallel(
-    query: &[char],
-    target: &[char],
-    scores: AlignmentScores,
-    threads: usize,
-) -> Vec<i16> {
-    let width = query.len() + 1;
-    let height = query.len() + target.len() + 1;
-
-    let threads = min(threads, query.len());
-
-    let mut data = Vec::with_capacity(width * height);
-
-    let data_ptr = SendPtr(data.as_mut_ptr());
-
-    let barrier = Arc::new(Barrier::new(threads));
-
-    thread::scope(|s| {
-        let handles = (0..threads).map(|thread_index| {
-            let left = thread_index * (width - 1) / threads + 1;
-            let right = (thread_index + 1) * (width - 1) / threads + 1;
-
-            let c = Arc::clone(&barrier);
-
-            let child = s.spawn(move || {
-                let _ = &data_ptr;
-                let data_ref =
-                    unsafe { std::slice::from_raw_parts_mut(data_ptr.0, width * height) };
-
-                for y in 2..height {
-                    for x in left..right {
-                        if x >= y {
-                            continue;
-                        }
-                        if y > target.len() + x {
-                            continue;
-                        }
-
-                        let sub_score = if query[x - 1] == target[y - x - 1] {
-                            scores.r#match
-                        } else {
-                            scores.miss
-                        };
-
-                        data_ref[index(x, y, width)] = max(
-                            max(
-                                data_ref[index(x, y - 1, width)] + scores.gap, // Skip query
-                                data_ref[index(x - 1, y - 1, width)] + scores.gap, // Skip in target
-                            ),
-                            max(
-                                data_ref[index(x - 1, y - 2, width)] + sub_score, // Take or mis
-                                0,                                                // Minimum
-                            ),
-                        );
-                    }
-
-                    c.wait();
-                }
-            });
-
-            child
-        });
-
-        for handle in handles.collect::<Vec<_>>() {
-            handle.join().unwrap();
-        }
-    });
-
-    data
 }
 
 pub fn string_scores_straight(

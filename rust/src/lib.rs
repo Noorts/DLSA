@@ -3,7 +3,7 @@ use argminmax::ArgMinMax;
 extern crate test;
 
 use algorithm::{
-    string_scores_parallel, string_scores_sequential, string_scores_simd, string_scores_straight,
+    string_scores_sequential, string_scores_simd, string_scores_straight,
     traceback, traceback_straight, AlignmentScores,
 };
 use utils::coord;
@@ -56,37 +56,6 @@ pub fn find_alignment_sequential_straight(
 
     let (x, y) = coord(max_index, width);
     traceback_straight(
-        &data,
-        query,
-        target,
-        x,
-        y,
-        width,
-        &mut query_result,
-        &mut target_result,
-        scores,
-    );
-
-    (query_result, target_result, 0)
-}
-
-pub fn find_alignment_parallel(
-    query: &[char],
-    target: &[char],
-    threads: usize,
-    scores: AlignmentScores,
-) -> AlignResult {
-    let data = string_scores_parallel(query, target, scores, threads);
-    let mut query_result = Vec::with_capacity(query.len());
-    let mut target_result = Vec::with_capacity(target.len());
-
-    let width = query.len() + 1;
-    if data.is_empty() {
-        return (query_result, target_result, 0);
-    }
-    let argmax = data.argmax();
-    let (x, y) = coord(argmax, width);
-    traceback(
         &data,
         query,
         target,

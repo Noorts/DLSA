@@ -14,7 +14,7 @@ use api::{
 
 #[allow(unused_imports)]
 use sw::algorithm::{
-    string_scores_parallel, string_scores_simd, string_scores_straight, traceback,
+    string_scores_simd, string_scores_straight, traceback,
 };
 
 use crate::api::WorkPackage;

@@ -15,7 +15,6 @@ struct AlignmentScores
   uint16_t miss;
 };
 
-struct Result *find_alignment_parallel(char *query, char *target, size_t threads, struct AlignmentScores alignmentScore);
 struct Result *find_alignment_sequential(char *query, char *target, struct AlignmentScores alignmentScore);
 struct Result *find_alignment_sequential_straight(char *query, char *target, struct AlignmentScores alignmentScores);
 struct Result *find_alignment_simd(char *query, char *target, struct AlignmentScores alignmentScores);
