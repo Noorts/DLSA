@@ -12,6 +12,7 @@ from master.utils.verify import verify_result
 from master.worker.worker_collector import WorkerCollector
 from ._scheduler.work_scheduler import WorkPackageScheduler, ScheduledWorkPackage
 from ..utils.log_time import log_time
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -71,6 +72,9 @@ class WorkPackageCollector(Cleaner, Singleton):
 
         # See if the job is done
         if work_package.package.job.done():
+            t = ( time.time() - work_package.package.job.start_time)
+            print('computation time: ', t)
+            work_package.package.job.computation_time = t
             logger.info(f"Work package {work_package.package.id} is done")
 
         # Remove worker if it is far slower than expected

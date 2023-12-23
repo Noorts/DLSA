@@ -58,8 +58,8 @@ async def get_job(job_id: UUID) -> JobResult:
 
     if job.state != "DONE":
         raise HTTPException(status_code=404, detail="Job not done yet")
-
     return JobResult(
+        computation_time=job.computation_time,
         alignments=[
             JobResultCombination(
                 combination=combination,

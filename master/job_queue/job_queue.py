@@ -6,6 +6,7 @@ from fastapi import HTTPException
 from master.api_models import JobRequest
 from master.job_queue.queued_job import QueuedJob
 from master.utils.singleton import Singleton
+import time
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,8 @@ class JobQueue(Singleton):
             match_score=request.match_score,
             mismatch_penalty=request.mismatch_penalty,
             gap_penalty=request.gap_penalty,
+            start_time= time.time(),
+            computation_time=None
         )
         return self._jobs[job_id]
 

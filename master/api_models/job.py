@@ -75,3 +75,4 @@ class JobResultCombination(BaseModel):
 # the result returned to the client, ordered by length
 class JobResult(BaseModel):
     alignments: list[JobResultCombination]
+    computation_time: float

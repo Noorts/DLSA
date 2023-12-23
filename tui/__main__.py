@@ -134,7 +134,7 @@ def main():
             if response.json()["state"] == "IN_QUEUE":
                 sys.stdout.write("Job in queue, waiting for it to start\r")
                 sys.stdout.flush()
-                time.sleep(1)
+                time.sleep(0.1)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
                 continue
             elif response.json()["state"] == "IN_PROGRESS":
@@ -142,7 +142,7 @@ def main():
                     job_start = time.time_ns()
                 progress = response.json()["progress"]
                 update_progress(progress)
-                time.sleep(1)
+                time.sleep(0.1)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
             else:
                 if job_start is None:
@@ -157,16 +157,16 @@ def main():
                         ",", "."
                     )
                 )
-                print(
-                    f"Computation time: {int(computation_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}".replace(
-                        ",", "."
-                    )
-                )
+                # print(
+                #     f"Computation time: {int(computation_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}".replace(
+                #         ",", "."
+                #     )
+                # )
                 break
-        # TODO: Sort the results by score???
         top_k_map = {}
 
         response = requests.get(f"{args.server_url}/job/{job_id}/result")
+        print(f"Computation time: {response.json()['computation_time']} seconds")
         for result in response.json()["alignments"]:
             query = descr_map[result["combination"]["query"]]
             target = descr_map[result["combination"]["target"]]
