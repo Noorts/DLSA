@@ -19,5 +19,5 @@ make build-linux-avx2 && # The docker daemon should be running for this.
 cd .. &&
 rsync -ru --delete --progress --exclude='/.git' --filter="dir-merge,- .gitignore" ./* DAS5:DLSA &&
 
-rsync -ru --delete --progress --exclude '*/' rust/target/x86_64-unknown-linux-gnu/release/* DAS5:DLSA/rust/target/release
+rsync -ru --delete --progress --exclude '*/' rust/target/x86_64-unknown-linux-musl/release/* DAS5:DLSA/rust/target/release
 # Make sure the directories used here exist (on the host and on the DAS5 remote).

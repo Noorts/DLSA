@@ -10,12 +10,12 @@ run:
 	cset shield -e -- env RUSTFLAGS="-C target-cpu=native" cargo run --release
 	sudo cset shield --reset
 
-.PHONY: build-linux-avx2
+.PHONY: build-linux-avx2 # The DAS5 build.
 build-linux-avx2:
 	@if [ $$(uname -s) = "Darwin" ]; then \
-		RUSTFLAGS="-C target-feature=+avx2" cross build --release --target x86_64-unknown-linux-gnu; \
+		RUSTFLAGS="-C target-feature=+avx2" cross build --release --target x86_64-unknown-linux-musl; \
 	else \
-		RUSTFLAGS="-C target-feature=+avx2" cargo build --release --target x86_64-unknown-linux-gnu; \
+		RUSTFLAGS="-C target-feature=+avx2" cargo build --release --target x86_64-unknown-linux-musl; \
 	fi
 
 .PHONY: build-darwin-avx2
