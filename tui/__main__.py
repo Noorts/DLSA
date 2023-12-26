@@ -13,7 +13,7 @@ descr_map = {}
 PRINT_UNIT = "milliseconds"
 PRINT_UNIT_FROM_NANO_RATIO = 1_000_000
 
-POLLING_INTERVAL_IN_SECONDS = 0.2
+POLLING_INTERVAL_IN_SECONDS = 0.5
 
 
 def parse_fasta(fasta_file_path):
