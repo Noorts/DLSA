@@ -12,7 +12,11 @@ run:
 
 .PHONY: build-linux-avx2
 build-linux-avx2:
-	RUSTFLAGS="-C target-feature=+avx2" cargo build --release --target x86_64-unknown-linux-gnu
+	@if [ $$(uname -s) = "Darwin" ]; then \
+		RUSTFLAGS="-C target-feature=+avx2" cross build --release --target x86_64-unknown-linux-gnu; \
+	else \
+		RUSTFLAGS="-C target-feature=+avx2" cargo build --release --target x86_64-unknown-linux-gnu; \
+	fi
 
 .PHONY: build-darwin-avx2
 build-macos-x86-avx2:
