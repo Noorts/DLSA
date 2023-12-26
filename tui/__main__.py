@@ -13,6 +13,8 @@ descr_map = {}
 PRINT_UNIT = "milliseconds"
 PRINT_UNIT_FROM_NANO_RATIO = 1_000_000
 
+POLLING_INTERVAL_IN_SECONDS = 0.1
+
 
 def parse_fasta(fasta_file_path):
     with open(fasta_file_path, "r") as file:
@@ -134,7 +136,7 @@ def main():
             if response.json()["state"] == "IN_QUEUE":
                 sys.stdout.write("Job in queue, waiting for it to start\r")
                 sys.stdout.flush()
-                time.sleep(0.1)
+                time.sleep(POLLING_INTERVAL_IN_SECONDS)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
                 continue
             elif response.json()["state"] == "IN_PROGRESS":
@@ -142,7 +144,7 @@ def main():
                     job_start = time.time_ns()
                 progress = response.json()["progress"]
                 update_progress(progress)
-                time.sleep(0.1)
+                time.sleep(POLLING_INTERVAL_IN_SECONDS)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
             else:
                 if job_start is None:
