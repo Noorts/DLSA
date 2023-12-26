@@ -26,8 +26,8 @@ def __main__():
         no_targets=5000,
         target_min_size=1000,
         target_max_size=50000,
-        query_name="query_sequences.fasta",
-        database_name="target_sequences.fasta",
+        query_name="datasets/query_sequences.fasta",
+        database_name="datasets/target_sequences.fasta",
     )
 
 
