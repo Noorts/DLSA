@@ -32,7 +32,7 @@ class JobQueue(Singleton):
             match_score=request.match_score,
             mismatch_penalty=request.mismatch_penalty,
             gap_penalty=request.gap_penalty,
-            start_time= time.time(),
+            start_time=time.time_ns(),
             computation_time=None
         )
         return self._jobs[job_id]

@@ -91,6 +91,8 @@ def update_progress(progress):
 
 
 def main():
+    cli_invocation_time = time.time_ns()
+
     parser = argparse.ArgumentParser(description="Send FASTA sequences to a server.")
     parser.add_argument("--query", type=str, required=True, help="Path to query FASTA file")
     parser.add_argument("--database", type=str, required=True, help="Path to database FASTA file")
@@ -108,7 +110,6 @@ def main():
     sequences_query = parse_fasta(args.query)
     sequences_database = parse_fasta(args.database)
 
-    # TODO: Send the scores and penalties to the server
     response = send_to_server(
         sequences_query,
         sequences_database,
@@ -118,18 +119,10 @@ def main():
         args.gap_penalty,
     )
 
-    # print(f'Server response: HTTP {response.status_code} - {response.text}')
-
-    # print (response.status_code)
-
     job_id = response.json()["id"]
-    # print(f'Job ID: {job_id}')
 
     # if response is successful, poll for results
-    curr_time = time.time_ns()
-    job_start = None
     if response.status_code == 200:
-        # print('Polling for results...')
         response = requests.get(f"{args.server_url}/job/{job_id}/status")
         print(f"Job Successfully submitted, job ID: {job_id}")
         while response.status_code == 200:
@@ -140,35 +133,29 @@ def main():
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
                 continue
             elif response.json()["state"] == "IN_PROGRESS":
-                if job_start is None:
-                    job_start = time.time_ns()
                 progress = response.json()["progress"]
                 update_progress(progress)
                 time.sleep(POLLING_INTERVAL_IN_SECONDS)
                 response = requests.get(f"{args.server_url}/job/{job_id}/status")
             else:
-                if job_start is None:
-                    job_start = time.time_ns()
-                    total_elapsed_time = time.time_ns() - job_start
                 update_progress(1.0)
-                total_elapsed_time = time.time_ns() - curr_time
-                computation_time = time.time_ns() - job_start
-
-                print(
-                    f"\nJob done - total elapsed time: {int(total_elapsed_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}".replace(
-                        ",", "."
-                    )
-                )
-                # print(
-                #     f"Computation time: {int(computation_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}".replace(
-                #         ",", "."
-                #     )
-                # )
                 break
+
+        # The result has been returned, printing time since the submission of the job using this CLI.
+        total_elapsed_time = time.time_ns() - cli_invocation_time
+        print(
+            f"\nJob done - total elapsed time: {int(total_elapsed_time / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}".replace(
+                ",", "."
+            )
+        )
+
+        # Process and store results to disk.
         top_k_map = {}
 
         response = requests.get(f"{args.server_url}/job/{job_id}/result")
-        print(f"Computation time: {response.json()['computation_time']} seconds")
+        print(f"Computation time: {int(response.json()['computation_time'] / PRINT_UNIT_FROM_NANO_RATIO):,} {PRINT_UNIT}".replace(
+                ",", "."
+            ))
         for result in response.json()["alignments"]:
             query = descr_map[result["combination"]["query"]]
             target = descr_map[result["combination"]["target"]]

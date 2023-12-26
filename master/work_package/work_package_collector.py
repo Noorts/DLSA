@@ -72,7 +72,7 @@ class WorkPackageCollector(Cleaner, Singleton):
 
         # See if the job is done
         if work_package.package.job.done():
-            t = ( time.time() - work_package.package.job.start_time)
+            t = ( time.time_ns() - work_package.package.job.start_time)
             print('computation time: ', t)
             work_package.package.job.computation_time = t
             logger.info(f"Work package {work_package.package.id} is done")
