@@ -12,7 +12,7 @@ import (
 const ipv4WithPortRegex = `^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$` // Note: does not include `localhost`.
 const protocolPrefix = "http://"
 const defaultMasterNodeAddress = "0.0.0.0:8000" // Default address and port of the master node.
-const retryDelayGetWorkInSeconds = 1
+const retryDelayGetWorkInMilliseconds = 500
 
 func main() {
 	masterNodeAddress := defaultMasterNodeAddress
@@ -47,13 +47,13 @@ func main() {
 
 		if err != nil {
 			log.Printf("Error fetching work: %v", err)
-			time.Sleep(retryDelayGetWorkInSeconds * time.Second)
+			time.Sleep(retryDelayGetWorkInMilliseconds * time.Millisecond)
 			continue
 		}
 
 		// If there is no work available, we wait for a bit and try again
 		if work == nil {
-			time.Sleep(retryDelayGetWorkInSeconds * time.Second)
+			time.Sleep(retryDelayGetWorkInMilliseconds * time.Millisecond)
 			continue
 		}
 
