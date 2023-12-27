@@ -3,8 +3,9 @@
 # SLURM jobs and manages the experiment. Furthermore, the script should've been written differently (e.g., for writing
 # to the result file a function could be used).
 
-# Run with: python3 ./utils/run_das5_experiments.py
-# Or debug: LOG_LEVEL=DEBUG python3 ./utils/run_das5_experiments.py
+# Adjust the configuration below.
+# Then run with: python3 ./utils/run_das5_experiments.py
+# Or with debug logging: LOG_LEVEL=DEBUG python3 ./utils/run_das5_experiments.py
 
 import subprocess, json, os, re, time, datetime, logging, sys
 
@@ -38,6 +39,12 @@ class JSONFileContext:
 # program classifies this experiment iteration as a failure.
 WORKER_CONNECTION_TIMEOUT_SECONDS = 60
 
+
+############################################
+### CONFIGURE THE EXPERIMENT TO RUN HERE ###
+############################################
+
+
 default_experiment = {
     "query_iterations": 1,
     "n_workers": 1,
@@ -69,6 +76,11 @@ for _ in range(clean_iterations):
         exp["query_iterations"] = query_iterations
         exp["n_workers"] = n_workers
         experiment_configs.append(exp)
+
+
+############################################
+############################################
+############################################
 
 
 def exec_cmd(command): # e.g., ["ls", "-l"]
