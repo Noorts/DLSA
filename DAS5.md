@@ -1,6 +1,7 @@
 # Running on DAS5
 
-This document describes instructions for running this project on the [DAS5](https://www.cs.vu.nl/das5/home.shtml)'s compute nodes. Also check out the main [README.md](README.md)
+This document describes instructions for running this project on the [DAS5](https://www.cs.vu.nl/das5/home.shtml)'s compute nodes. Also check out the main [README.md](README.md).
+
 ## Connecting to DAS5
 
 The first step is to connect to the DAS5 fileserver, from which you can schedule the jobs to be run on the compute nodes. To connect to this fileserver from outside of the VU network, you'll have to connect to the (proxy) access server. See below or [here](https://www.cs.vu.nl/das5/accounts.shtml) for more details.
@@ -87,7 +88,7 @@ go version # should now print `go version go1.21.4 linux/amd64`.
 
 ### 4. Rust Setup
 
-Because DAS5 does not have nightly rust available, we have to cross compile or to simply compile on the same architecture. Thus far we've compiled the rust binary on a Linux machine and then transferred it to the DAS5 node.
+Because DAS5 does not have nightly rust available, we have to cross compile or to simply compile on the same architecture. Thus far we've compiled the rust binary on a Linux machine and then transferred it to the DAS5 node. See the [sync_das5.sh](utils/sync_das5.sh) utility for more information.
 
 ## Run
 
@@ -103,3 +104,9 @@ With the setup complete, run the following commands to start and test the system
 # spawn a job
 poetry run python3 tui --query datasets/query_sequences.fasta --database datasets/target_sequences.fasta --server-url http://10.149.0.59:8000 --match-score 2 --mismatch-penalty 1 --gap-penalty 1 --top-k 5
 ```
+
+## Experiments
+
+To effortlessly run experiments on the DAS5 cluster, the [run_das5_experiments.py](utils/run_das5_experiments.py) was created. This quick and dirty script automates the starting of the master and workers, the submission of a job using the CLI, and collects all results into a JSON file. See the script for more information.
+
+For detailed experiment setups and results, and plotting see the [DLSA-Experiments](https://github.com/Noorts/DLSA-Experiments) repository.

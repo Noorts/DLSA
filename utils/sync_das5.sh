@@ -15,7 +15,8 @@ if ! docker info &> /dev/null; then
 fi
 
 cd rust &&
-make build-linux-avx2 && # The docker daemon should be running for this.
+# The docker daemon should be running for this. See the Makefile inside of the rust directory for more information.
+make build-linux-avx2 &&
 cd .. &&
 rsync -ru --delete --progress --exclude='/.git' --filter="dir-merge,- .gitignore" ./* DAS5:DLSA &&
 

@@ -71,3 +71,9 @@ The result of the alignments will be saved to the `results` directory, where for
 
 ## Synthetic Dataset Generation
 To generate a synthetic query and a target/database file you can use the [generate_synthetic_dataset.py](utils/generate_synthetic_data.py) script. First adjust the configuration in the script, and then execute `python3 ./utils/generate_synthetic_data.py`, the query and target files will be saved to the current working directory.
+
+## Experiments
+
+To effortlessly run experiments on the DAS5 cluster, the [run_das5_experiments.py](utils/run_das5_experiments.py) was created. This quick and dirty script automates the starting of the master and workers, the submission of a job using the CLI, and collects all results into a JSON file. See the script and [DAS5.md](DAS5.md) for more information.
+
+For detailed experiment setups and results, and plotting see the [DLSA-Experiments](https://github.com/Noorts/DLSA-Experiments) repository.
