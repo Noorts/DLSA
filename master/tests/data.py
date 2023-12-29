@@ -121,7 +121,8 @@ JOB_RESULT_COMPLETE = JobResult(
             ),
             alignments=[Alignment(alignment="ABCD", length=4, score=4)],
         ),
-    ]
+    ],
+    computation_time=0.0,
 )
 
 JOB_RESULT_COMPLETE_WITH_DIFFERENT_ALIGNMENT = JobResult(
@@ -142,10 +143,8 @@ JOB_RESULT_COMPLETE_WITH_DIFFERENT_ALIGNMENT = JobResult(
             combination=TargetQueryCombination(
                 target=UUID("2e22cdce-68b5-4f94-a8a0-2980cbeeb74c"), query=UUID("3e22cdce-68b5-4f94-a8a0-2980cbeeb74c")
             ),
-            alignments=[
-                Alignment(alignment="ABCD", length=4, score=4),
-                Alignment(alignment="ABC", length=3, score=3)
-            ],
+            alignments=[Alignment(alignment="ABCD", length=4, score=4), Alignment(alignment="ABC", length=3, score=3)],
         ),
-    ]
+    ],
+    computation_time=0.0,
 )

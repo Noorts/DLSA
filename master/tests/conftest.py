@@ -1,6 +1,9 @@
 import pytest
 from fastapi.testclient import TestClient
 
+from master.settings import SETTINGS
+
+SETTINGS.scheduler_type = "primitive"
 from master.api_models import JobId, WorkerResources, WorkerId, WorkPackage
 from master.main import app
 from master.settings import SETTINGS

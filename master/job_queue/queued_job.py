@@ -16,7 +16,7 @@ class QueuedJob:
     mismatch_penalty: int
     gap_penalty: int
     start_time: float
-    computation_time: float
+    computation_time: float | None
 
     @property
     def state(self) -> JobState:
@@ -26,7 +26,6 @@ class QueuedJob:
             return "IN_PROGRESS"
         else:
             return "IN_QUEUE"
-
 
     @property
     def percentage_done(self) -> float:
