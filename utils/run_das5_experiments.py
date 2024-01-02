@@ -7,38 +7,6 @@
 # Then run with: python3 ./utils/run_das5_experiments.py
 # Or with debug logging: LOG_LEVEL=DEBUG python3 ./utils/run_das5_experiments.py
 
-import subprocess, json, os, re, time, datetime, logging, sys
-
-logging.basicConfig(
-    level=os.getenv('LOG_LEVEL', 'INFO'),  # Set the log level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
-    format='%(asctime)s [%(levelname)-8s] %(message)s'
-)
-logger = logging.getLogger(__name__)
-
-class JSONFileContext:
-    def __init__(self, file_path):
-        self.file_path = file_path
-
-    def __enter__(self):
-        self.data = self.load_json()
-        return self.data
-
-    def __exit__(self, exc_type, exc_value, traceback):
-        if exc_type is None:
-            self.save_json(self.data)
-
-    def load_json(self):
-        with open(self.file_path, 'r') as file:
-            return json.load(file)
-
-    def save_json(self, data):
-        with open(self.file_path, 'w') as file:
-            json.dump(data, file, indent=4)
-
-# The number of seconds to wait for all workers to connect to the master. If they do not connect in time, then the
-# program classifies this experiment iteration as a failure.
-WORKER_CONNECTION_TIMEOUT_SECONDS = 60
-
 
 ############################################
 ### CONFIGURE THE EXPERIMENT TO RUN HERE ###
@@ -81,6 +49,39 @@ for _ in range(clean_iterations):
 ############################################
 ############################################
 ############################################
+
+
+import subprocess, json, os, re, time, datetime, logging, sys
+
+logging.basicConfig(
+    level=os.getenv('LOG_LEVEL', 'INFO'),  # Set the log level (e.g., DEBUG, INFO, WARNING, ERROR, CRITICAL)
+    format='%(asctime)s [%(levelname)-8s] %(message)s'
+)
+logger = logging.getLogger(__name__)
+
+class JSONFileContext:
+    def __init__(self, file_path):
+        self.file_path = file_path
+
+    def __enter__(self):
+        self.data = self.load_json()
+        return self.data
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if exc_type is None:
+            self.save_json(self.data)
+
+    def load_json(self):
+        with open(self.file_path, 'r') as file:
+            return json.load(file)
+
+    def save_json(self, data):
+        with open(self.file_path, 'w') as file:
+            json.dump(data, file, indent=4)
+
+# The number of seconds to wait for all workers to connect to the master. If they do not connect in time, then the
+# program classifies this experiment iteration as a failure.
+WORKER_CONNECTION_TIMEOUT_SECONDS = 60
 
 
 def exec_cmd(command): # e.g., ["ls", "-l"]
