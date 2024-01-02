@@ -107,6 +107,6 @@ poetry run python3 tui --query datasets/query_sequences.fasta --database dataset
 
 ## Experiments
 
-To effortlessly run experiments on the DAS5 cluster, the [run_das5_experiments.py](utils/run_das5_experiments.py) was created. This quick and dirty script automates the starting of the master and workers, the submission of a job using the CLI, and collects all results into a JSON file. See the script for more information.
+To effortlessly run experiments on the DAS5 cluster, the [run_das5_experiments.py](utils/run_das5_experiments.py) was created. This quick and dirty script automates the starting of the master and workers, the submission of a job using the CLI, and collects all results into a JSON file. See the script for more information. Note: the default file quotum for the home directory is 4GB, so large sequence files will have to be stored in the scratch directory (for more see [here](https://www.cs.vu.nl/das5/accounts.shtml)).
 
 For detailed experiment setups and results, and plotting see the [DLSA-Experiments](https://github.com/Noorts/DLSA-Experiments) repository.
