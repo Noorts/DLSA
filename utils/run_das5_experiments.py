@@ -130,7 +130,7 @@ def block_till_n_workers_connected(filepath, n_workers, timeout_seconds):
 
 def start_query(experiment_config, master_ip, experiment_run_name, current_experiment_name):
     command = list(map(str, [
-            "srun", "python3", "tui",
+            "srun", "python3", "cli",
             "--output-path", f"results/{experiment_run_name}/{current_experiment_name}/",
             "--query", experiment_config["query_path"], "--database", experiment_config["target_path"],
             "--server-url", f"http://{master_ip}:8000",

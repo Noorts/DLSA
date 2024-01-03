@@ -102,7 +102,7 @@ With the setup complete, run the following commands to start and test the system
 ./utils/start_worker.sh <number_of_workers> <ip_address_of_master>
 
 # spawn a job
-poetry run python3 tui --query datasets/query_sequences.fasta --database datasets/target_sequences.fasta --server-url http://10.149.0.59:8000 --match-score 2 --mismatch-penalty 1 --gap-penalty 1 --top-k 5
+poetry run python3 cli --query datasets/query_sequences.fasta --database datasets/target_sequences.fasta --server-url http://10.149.0.59:8000 --match-score 2 --mismatch-penalty 1 --gap-penalty 1 --top-k 5
 ```
 
 ## Experiments

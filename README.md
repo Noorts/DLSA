@@ -63,9 +63,9 @@ The worker runs in an infinite loop, which tries to register with the master nod
 
 A command-line tool has been developed that allows one to submit sequence alignment jobs.
 
-Run `poetry run python3 tui [params]` to submit a job. Run it without any parameters for help.
+Run `poetry run python3 cli [params]` to submit a job. Run it without any parameters for help.
 
-An example use: `poetry run python3 tui --query datasets/query_sequences.fasta --database datasets/target_sequences.fasta --server-url http://0.0.0.0:8000 --match-score 2 --mismatch-penalty 1 --gap-penalty 1 --top-k 5`
+An example use: `poetry run python3 cli --query datasets/query_sequences.fasta --database datasets/target_sequences.fasta --server-url http://0.0.0.0:8000 --match-score 2 --mismatch-penalty 1 --gap-penalty 1 --top-k 5`
 
 The result of the alignments will be saved to the `results` directory, where for every query sequence, a file is generated, with the corresponding best result for every target in the database file, with the same id as in the original files.
 
