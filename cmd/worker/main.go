@@ -12,7 +12,7 @@ import (
 const ipv4WithPortRegex = `^\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3}:\d{1,5}$` // Note: does not include `localhost`.
 const protocolPrefix = "http://"
 const defaultMasterNodeAddress = "0.0.0.0:8000" // Default address and port of the master node.
-const retryDelayGetWorkInMilliseconds = 500
+const retryDelayGetWorkInMilliseconds = 250
 
 func main() {
 	masterNodeAddress := defaultMasterNodeAddress
