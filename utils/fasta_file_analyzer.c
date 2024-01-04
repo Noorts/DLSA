@@ -44,7 +44,7 @@ int main(int argc, char *argv[]) {
             strcpy(current_desc, line); // Store the current descriptor
             in_sequence = 1;
         } else {
-            current_length += strlen(line) - (line[strlen(line) - 1] == '\n' ? 1 : 0);
+            current_length += strcspn(line, "\r\n");
         }
     }
 
