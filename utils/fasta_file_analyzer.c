@@ -1,5 +1,3 @@
-// Warning: this is a work-in-progress tool, testing on the competition datasets has shown that the sequence length outputs are inaccurate.
-
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -62,7 +60,6 @@ int main(int argc, char *argv[]) {
 
     fclose(file);
 
-    printf("Warning: this is a work-in-progress tool, testing on the competition datasets has shown that the sequence length outputs are inaccurate.\n");
     printf("Number of sequences: %d\n", sequence_count);
     printf("Maximum sequence length: %d\n", max_length);
     printf("Maximum sequence descriptor:\n%s", max_desc);
