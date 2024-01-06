@@ -211,6 +211,10 @@ fn visualize(data: &[i16], query: &[char], target: &[char]) {
     }
 }
 
+pub fn get_version() -> Option<&'static str> {
+    option_env!("GIT_HASH")
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
