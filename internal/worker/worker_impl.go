@@ -201,10 +201,16 @@ func findAlignmentWithFallback(query, target string, alignmentScore smithwaterma
 
 }
 
-func (w *Worker) ExecuteWorkInParallel(work *CompleteWorkPackage) {
+func (w *Worker) ExecuteWorkInParallel(work *CompleteWorkPackage, n_cpus int) {
 	var cpuCount = runtime.NumCPU() - 1
 	var workPackages = work.Queries
 	var numWorkPackages = len(workPackages)
+
+	if n_cpus != 0 {
+		if n_cpus-1 < cpuCount {
+			cpuCount = n_cpus
+		}
+	}
 
 	// Split the work packages into chunks
 	var chunks = make([][]QueryTargetType, cpuCount)
@@ -214,6 +220,8 @@ func (w *Worker) ExecuteWorkInParallel(work *CompleteWorkPackage) {
 		chunks[i] = workPackages[start:end]
 	}
 	var wg sync.WaitGroup
+
+	fmt.Printf("Executing work in parallel with %d threads\n", cpuCount)
 
 	for i := 0; i < cpuCount; i++ {
 		wg.Add(1)

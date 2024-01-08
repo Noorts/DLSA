@@ -7,7 +7,8 @@ It was developed as a lab project for the 2023/2024 Distributed Systems course a
 The key idea of the project is to enable crowdsourced local sequence alignment. This allows heterogeneous computers of different sizes (e.g., a laptop or a compute cluster node) to work together to perform sequence alignment jobs for scientists (this is a similar idea to [Folding@Home](https://en.wikipedia.org/wiki/Folding@home)).
 
 ## Overview
-The project consists of two main aspects, 1) an implementation of the [Smith-Waterman algorithm](https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm), and 2) a [coordinator-worker architecture](https://en.wikipedia.org/wiki/Master%E2%80%93slave_(technology)) that is able to "intelligently" schedule and distribute the sequence alignment jobs across the pool of workers. The heterogeneous workers individually run a compute capacity estimation benchmark (using synthetic sequences), which is communicated to and used by the scheduler to distribute the work.
+
+The project consists of two main aspects, 1) an implementation of the [Smith-Waterman algorithm](https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm), and 2) a [coordinator-worker architecture](<https://en.wikipedia.org/wiki/Master%E2%80%93slave_(technology)>) that is able to "intelligently" schedule and distribute the sequence alignment jobs across the pool of workers. The heterogeneous workers individually run a compute capacity estimation benchmark (using synthetic sequences), which is communicated to and used by the scheduler to distribute the work.
 
 The diagram below depicts the coordinator-worker architecture. The project requires 1 master node, and 1+ worker nodes to be spun up (see instructions below). A command-line tool (see [CLI](#cli) below) can be used by the "User" (i.e., scientists) to submit sequence alignment jobs to the master node. The master will subsequently schedule and distribute the work across the pool of worker nodes, returning the result to the user when the work is finished.
 
@@ -16,12 +17,13 @@ For more details check out the project report.
 ![The Architecture](assets/aah_architecture_overview.png)
 
 ## Prerequisites
+
 The project uses Python, Golang, and (nightly) Rust.
 
 We've used the following versions in our testing. Nightly rust is currently being used for the [std::simd](https://doc.rust-lang.org/nightly/std/simd/index.html) module. Once the module is stabilized then stable rust can be used.
 
 | Dependency | Version                                     |
-|------------|---------------------------------------------|
+| ---------- | ------------------------------------------- |
 | Python     | 3.11.5                                      |
 | poetry     | 1.7.1                                       |
 | Go         | go1.21.4 linux/amd64                        |
@@ -50,6 +52,8 @@ Run `poetry run pytest master` inside the root directory.
 
 Execute `go run cmd/worker/main.go "0.0.0.0:8000"` to start the worker node. Golang should automatically install the required dependencies.
 
+To use a manual number of cores run `go run cmd/worker/main.go "0.0.0.0:8000 4"` for 4 cores, this is just for experimentation purposes, by default it uses all available cores
+
 If the "master node IP and port" argument is not supplied, then the worker will connect to a default master node hosted locally at `0.0.0.0:8000`.
 
 ### Testing
@@ -57,6 +61,7 @@ If the "master node IP and port" argument is not supplied, then the worker will 
 Run `go test ./...` inside the root directory.
 
 ### Inner Workings
+
 The worker runs in an infinite loop, which tries to register with the master node every X seconds. If the registration is successful, the worker starts sending a pulse to show the master it is alive every Y seconds, the worker also enters another loop state in which it asks for work every Z seconds. If it receives work from the master, it iterates through every query-target pair it was tasked to calculate and performs the Smith-Waterman algorithm. After it calculates the result of each pair, the worker immediately sends the result to the master such that if the worker were to shut down in the midst of calculations, the rest of the work could be delegated to another worker.
 
 ## CLI
@@ -70,6 +75,7 @@ An example use: `poetry run python3 cli --query datasets/query_sequences.fasta -
 The result of the alignments will be saved to the `results` directory, where for every query sequence, a file is generated, with the corresponding best result for every target in the database file, with the same id as in the original files.
 
 ## Synthetic Dataset Generation
+
 To generate a synthetic query and a target/database file you can use the [generate_synthetic_dataset.py](utils/generate_synthetic_data.py) script. First adjust the configuration in the script, and then execute `python3 ./utils/generate_synthetic_data.py`, the query and target files will be saved to the current working directory.
 
 ## Experiments

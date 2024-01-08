@@ -6,6 +6,7 @@ import (
 	"os"
 	"regexp"
 	"runtime"
+	"strconv"
 	"time"
 )
 
@@ -18,11 +19,24 @@ func main() {
 	masterNodeAddress := defaultMasterNodeAddress
 
 	// To supply the master node address via the CLI run: `go run cmd/worker/main.go 192.168.0.1:8000`.
-	if len(os.Args) == 2 && regexp.MustCompile(ipv4WithPortRegex).MatchString(os.Args[1]) {
+	if len(os.Args) > 1 && regexp.MustCompile(ipv4WithPortRegex).MatchString(os.Args[1]) {
 		masterNodeAddress = os.Args[1]
 		log.Printf("Master node address: %v", protocolPrefix+masterNodeAddress)
 	} else {
 		log.Printf("Master node address not passed. Falling back to default. %v", protocolPrefix+masterNodeAddress)
+	}
+
+	n_cpus := 0
+	if len(os.Args) > 2 {
+		var err error
+		n_cpus, err = strconv.Atoi(os.Args[2])
+		if err != nil {
+			log.Printf("Error parsing number of CPUs: %v", err)
+			return
+		} else {
+			log.Printf("Using manual number of cores: %v", n_cpus)
+		}
+
 	}
 
 	log.Printf("Benchmarking worker...")
@@ -59,7 +73,7 @@ func main() {
 
 		log.Printf("Got work. Start calculating alignments...")
 		log.Printf("Calculating %d queries", len(work.Queries))
-		w.ExecuteWorkInParallel(work)
+		w.ExecuteWorkInParallel(work, n_cpus)
 		log.Printf("Done calculating alignments.")
 		log.Printf("Waiting for work...")
 	}

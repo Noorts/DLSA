@@ -23,11 +23,11 @@ def __main__():
         no_queries=10,
         query_min_size=200,
         query_max_size=1000,
-        no_targets=5000,
-        target_min_size=1000,
-        target_max_size=50000,
-        query_name="datasets/query_sequences.fasta",
-        database_name="datasets/target_sequences.fasta",
+        no_targets=800,
+        target_min_size=10000,
+        target_max_size=200000,
+        query_name="datasets/query_sequences_8k.fasta",
+        database_name="datasets/target_sequences_8k.fasta",
     )
 
 
