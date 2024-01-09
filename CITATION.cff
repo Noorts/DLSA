@@ -1,0 +1,65 @@
+# This CITATION.cff file was generated with cffinit.
+# Visit https://bit.ly/cffinit to generate yours today!
+
+cff-version: 1.2.0
+title: >-
+  Distributing Local Sequence Alignment using Volunteer
+  Computing
+message: >-
+  If you use this software, please cite it using the
+  metadata from this file.
+type: software
+authors:
+  - family-names: Davíðsson
+    given-names: Haraldur
+    email: h.b.davidsson@student.vu.nl
+    affiliation: Vrije Universiteit Amsterdam
+  - given-names: Paul
+    family-names: Groß
+    email: p.gross@student.vu.nl
+    affiliation: Vrije Universiteit Amsterdam
+  - given-names: Niclas
+    family-names: Haderer
+    email: n.haderer@student.vu.nl
+    affiliation: Vrije Universiteit Amsterdam
+  - given-names: Simon
+    name-particle: van
+    family-names: Noort
+    email: s.l.j.van.noort@student.vu.nl
+    affiliation: Vrije Universiteit Amsterdam
+  - given-names: Daniël
+    family-names: Voogsgerd
+    email: d.j.m.voogsgerd@student.vu.nl
+    affiliation: Vrije Universiteit Amsterdam
+  - given-names: Enrico
+    family-names: Zeilmaker
+    email: e.b.zeilmaker@student.vu.nl
+    affiliation: Vrije Universiteit Amsterdam
+  - given-names: Tiziano
+    name-particle: De
+    family-names: Matteis
+    email: t.de.matteis@vu.nl
+    affiliation: Vrije Universiteit Amsterdam
+repository-code: 'https://github.com/noorts/DLSA'
+repository-artifact: 'https://github.com/noorts/DLSA-experiments'
+abstract: >-
+  Sequence alignment is a technique for arranging DNA, RNA,
+  and protein sequences, which is crucial for understanding
+  relationships between organisms and analysing genetic
+  variation. We propose, "Alignment@Home", a
+  coordinator-worker-based distributed system for
+  crowdsourced local sequence alignment, which leverages the
+  Smith-Waterman algorithm for parallel processing across
+  multiple nodes. The system supports numerous features,
+  which include many-to-many alignment, intelligent
+  capacity-based work scheduling, top-k results, an
+  easy-to-use CLI tool, and fault tolerance. Our study
+  analyses scalability and performance through experiments
+  at system-, worker- and algorithm-level. The results of
+  these experiments indicate limitations in the scalability
+  of our system, particularly regarding the Coordinator and
+  the communication between nodes.
+keywords:
+  - Local sequence alignment
+  - Volunteer computing
+  - Smith-Waterman
