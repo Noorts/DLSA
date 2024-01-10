@@ -6,13 +6,13 @@ It was developed as a lab project for the 2023/2024 Distributed Systems course a
 
 The key idea of the project is to enable crowdsourced local sequence alignment. This allows heterogeneous computers of different sizes (e.g., a laptop or a compute cluster node) to work together to perform sequence alignment jobs for scientists (this is a similar idea to [Folding@Home](https://en.wikipedia.org/wiki/Folding@home)).
 
+> The project report can be found [here](./Report.pdf).
+
 ## Overview
 
 The project consists of two main aspects, 1) an implementation of the [Smith-Waterman algorithm](https://en.wikipedia.org/wiki/Smith%E2%80%93Waterman_algorithm), and 2) a [coordinator-worker architecture](<https://en.wikipedia.org/wiki/Master%E2%80%93slave_(technology)>) that is able to "intelligently" schedule and distribute the sequence alignment jobs across the pool of workers. The heterogeneous workers individually run a compute capacity estimation benchmark (using synthetic sequences), which is communicated to and used by the scheduler to distribute the work.
 
 The diagram below depicts the coordinator-worker architecture. The project requires 1 master node, and 1+ worker nodes to be spun up (see instructions below). A command-line tool (see [CLI](#cli) below) can be used by the "User" (i.e., scientists) to submit sequence alignment jobs to the master node. The master will subsequently schedule and distribute the work across the pool of worker nodes, returning the result to the user when the work is finished.
-
-For more details check out the project report.
 
 ![The Architecture](assets/aah_architecture_overview.png)
 
