@@ -3,9 +3,9 @@
   Distributing Local Sequence Alignment using Volunteer Computing
   <br>
 </h1>
-<h4 align="center">
+<h3 align="center">
   A coordinator-worker based distributed system for crowdsourced local <a href="https://en.wikipedia.org/wiki/Sequence_alignment">sequence alignment</a>.
-</h4>
+</h3>
 <br>
 
 It was developed as a lab project for the 2023/2024 Distributed Systems course at the Vrije Universiteit Amsterdam.
