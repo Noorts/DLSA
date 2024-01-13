@@ -1,18 +1,12 @@
-<h1 align="center">
-  <br>
-  Distributing Local Sequence Alignment using Volunteer Computing
-  <br>
-</h1>
-<h3 align="center">
-  A coordinator-worker based distributed system for crowdsourced local <a href="https://en.wikipedia.org/wiki/Sequence_alignment">sequence alignment</a>.
-</h3>
-<br>
+# Distributing Local Sequence Alignment using Volunteer Computing
+
+A coordinator-worker based distributed system for crowdsourced local [sequence alignment](https://en.wikipedia.org/wiki/Sequence_alignment).
 
 It was developed as a lab project for the 2023/2024 Distributed Systems course at the Vrije Universiteit Amsterdam.
 
 The key idea of the project is to enable crowdsourced local sequence alignment. This allows heterogeneous computers of different sizes (e.g., a laptop or a compute cluster node) to work together to perform sequence alignment jobs for scientists (this is a similar idea to [Folding@Home](https://en.wikipedia.org/wiki/Folding@home)).
 
-> The project report can be found [here](./Report.pdf).
+> The project report can be found [here](./Report.pdf), and the experiment archive is over at [DLSA-Experiments](https://github.com/Noorts/DLSA-Experiments).
 
 ## Overview
 
